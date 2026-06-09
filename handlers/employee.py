@@ -107,7 +107,7 @@ async def ask_status(cb: CallbackQuery):
         return
     lang = user["lang"]
     task = await db.get_task(task_id)
-    if not task or task["assignee_id"] != user["id"]:
+    if not task or (task["assignee_id"] != user["id"] and not is_admin(user)):
         await cb.answer(T(lang, "no_permission"), show_alert=True)
         return
     await cb.message.edit_text(
@@ -127,7 +127,7 @@ async def set_status(cb: CallbackQuery, state: FSMContext):
         return
     lang = user["lang"]
     task = await db.get_task(task_id)
-    if not task or task["assignee_id"] != user["id"]:
+    if not task or (task["assignee_id"] != user["id"] and not is_admin(user)):
         await cb.answer(T(lang, "no_permission"), show_alert=True)
         return
     if new_status == "cancelled":
@@ -175,7 +175,7 @@ async def ask_progress(cb: CallbackQuery, state: FSMContext):
         return
     lang = user["lang"]
     task = await db.get_task(task_id)
-    if not task or task["assignee_id"] != user["id"]:
+    if not task or (task["assignee_id"] != user["id"] and not is_admin(user)):
         await cb.answer(T(lang, "no_permission"), show_alert=True)
         return
     await state.update_data(task_id=task_id, user_db_id=user["id"], lang=lang)
@@ -216,7 +216,7 @@ async def ask_upload(cb: CallbackQuery, state: FSMContext):
         return
     lang = user["lang"]
     task = await db.get_task(task_id)
-    if not task or task["assignee_id"] != user["id"]:
+    if not task or (task["assignee_id"] != user["id"] and not is_admin(user)):
         await cb.answer(T(lang, "no_permission"), show_alert=True)
         return
     await state.update_data(task_id=task_id, user_db_id=user["id"], lang=lang)
