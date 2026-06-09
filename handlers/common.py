@@ -52,6 +52,33 @@ async def cmd_start(msg: Message, state: FSMContext):
     await show_main(msg, lang, user)
 
 
+# ─── /help ───────────────────────────────────────────────────────
+
+@router.message(Command("help"))
+async def cmd_help(msg: Message):
+    user = await db.get_user(msg.from_user.id)
+    lang = user["lang"] if user else "uz"
+    admin = is_admin(user)
+    text = T(lang, "help_admin") if admin else T(lang, "help_employee")
+    await msg.answer(text, parse_mode="HTML", reply_markup=back_kb(lang, "main"))
+
+
+@router.callback_query(F.data == "go:help")
+async def go_help(cb: CallbackQuery):
+    user = await db.get_user(cb.from_user.id)
+    if not user:
+        await cb.answer(T("uz", "not_registered"), show_alert=True)
+        return
+    lang  = user["lang"]
+    admin = is_admin(user)
+    text  = T(lang, "help_admin") if admin else T(lang, "help_employee")
+    try:
+        await cb.message.edit_text(text, parse_mode="HTML", reply_markup=back_kb(lang, "main"))
+    except Exception:
+        await cb.message.answer(text, parse_mode="HTML", reply_markup=back_kb(lang, "main"))
+    await cb.answer()
+
+
 # ─── /cancel /bekor ──────────────────────────────────────────────
 
 @router.message(Command("cancel"))

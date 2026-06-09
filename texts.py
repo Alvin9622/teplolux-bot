@@ -151,6 +151,87 @@ TEXTS = {
         "btn_overdue":      "🔴 Kechikkanlar",
         "btn_export_excel": "📥 Excel eksport",
 
+        "help_employee": (
+            "📖 <b>FOYDALANISH YO'RIQNOMASI</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+
+            "🚀 <b>Boshlash</b>\n"
+            "/start — asosiy menyu\n"
+            "/mytasks — vazifalarim\n"
+            "/bekor — jarayonni bekor qilish\n\n"
+
+            "📋 <b>Vazifa holatlari</b>\n"
+            "🆕 Yangi — hali boshlanmagan\n"
+            "🔄 Jarayonda — bajarilmoqda\n"
+            "👀 Tekshiruvda — ko'rib chiqilmoqda\n"
+            "✅ Bajarildi — tugallangan\n"
+            "❌ Bekor — bajarilib bo'lmaydi\n\n"
+
+            "✅ <b>Vazifani tasdiqlash</b>\n"
+            "Yangi vazifa kelganda «Qabul qildim» tugmasini bosing.\n"
+            "Tasdiqlamasangiz har soatda eslatma keladi!\n\n"
+
+            "🔄 <b>Holatni yangilash</b>\n"
+            "Vazifa → «Holatni yangilash» → holatni tanlang\n\n"
+
+            "📊 <b>Foizni yangilash</b>\n"
+            "Vazifa → «Foizni yangilash» → 0-100 kiriting\n\n"
+
+            "📎 <b>Fayl yuborish</b>\n"
+            "Vazifa → «Fayl yuborish» → rasm/video/hujjat yuboring\n\n"
+
+            "💬 <b>Izoh qoldirish</b>\n"
+            "Vazifa → «Izoh qoldirish» → xabar yuboring\n\n"
+
+            "🔔 <b>Avtomatik eslatmalar</b>\n"
+            "🌅 09:00 — kunlik vazifalar ro'yhati\n"
+            "⚠️ Muddatga 3 kun qolganda\n"
+            "🚨 Muddatga 1 kun qolganda\n"
+            "🔴 Muddat o'tib ketganda\n\n"
+
+            "❓ <b>Muammo bo'lsa</b>\n"
+            "/bekor yuboring va qaytadan boshlang\n"
+            "Yoki adminizga murojaat qiling."
+        ),
+
+        "help_admin": (
+            "📖 <b>ADMIN YO'RIQNOMASI</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+
+            "⚙️ <b>Admin paneli</b> — /admin\n\n"
+
+            "➕ <b>Vazifa qo'shish</b>\n"
+            "Nom → Tavsif → Kategoriya → Hodim → Muddat → Ustuvorlik → Eslatma\n\n"
+
+            "📋 <b>Vazifalar ko'rish</b>\n"
+            "Barcha vazifalar — filter bilan\n"
+            "Hodimlar bo'yicha — har bir hodim alohida\n\n"
+
+            "🏆 <b>Reyting</b>\n"
+            "Barcha vaqt uchun hodimlar reytingi\n\n"
+
+            "🔴 <b>Kechikkanlar</b>\n"
+            "Muddati o'tgan vazifalar ro'yhati\n\n"
+
+            "⏳ <b>Tasdiqlanmaganlar</b>\n"
+            "Tasdiqlash kutayotgan vazifalar + eslatma yuborish\n\n"
+
+            "📥 <b>Excel eksport</b>\n"
+            "Oyni tanlang → .xlsx fayl yuklab olinadi\n\n"
+
+            "📊 <b>Oylik statistika</b>\n"
+            "Oy tanlang → batafsil hisobot\n\n"
+
+            "📨 <b>Hisobot yuborish</b>\n"
+            "Barcha hodimga oylik hisobot yuborish\n\n"
+
+            "👥 <b>Hodimlar</b>\n"
+            "Qo'shish, bloklash, admin qilish\n\n"
+
+            "🗓 <b>Majlislar</b>\n"
+            "Yaratish, vazifa biriktirish, hisobot"
+        ),
+
         "categories": [
             "📱 SMM va Kontent",
             "🔍 SEO va Sayt",
@@ -312,6 +393,87 @@ TEXTS = {
         "btn_leaderboard":  "🏆 Рейтинг",
         "btn_overdue":      "🔴 Просроченные",
         "btn_export_excel": "📥 Экспорт Excel",
+
+        "help_employee": (
+            "📖 <b>РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+
+            "🚀 <b>Начало работы</b>\n"
+            "/start — главное меню\n"
+            "/mytasks — мои задачи\n"
+            "/bekor — отменить действие\n\n"
+
+            "📋 <b>Статусы задач</b>\n"
+            "🆕 Новая — ещё не начата\n"
+            "🔄 В процессе — выполняется\n"
+            "👀 На проверке — ожидает проверки\n"
+            "✅ Выполнена — завершена\n"
+            "❌ Отменена — не может быть выполнена\n\n"
+
+            "✅ <b>Подтверждение задачи</b>\n"
+            "При получении новой задачи нажмите «Принял».\n"
+            "Без подтверждения каждый час будет напоминание!\n\n"
+
+            "🔄 <b>Обновить статус</b>\n"
+            "Задача → «Обновить статус» → выберите статус\n\n"
+
+            "📊 <b>Обновить процент</b>\n"
+            "Задача → «Обновить процент» → введите 0-100\n\n"
+
+            "📎 <b>Прикрепить файл</b>\n"
+            "Задача → «Загрузить файл» → отправьте фото/видео/документ\n\n"
+
+            "💬 <b>Оставить комментарий</b>\n"
+            "Задача → «Комментарий» → отправьте сообщение\n\n"
+
+            "🔔 <b>Автоматические напоминания</b>\n"
+            "🌅 09:00 — дневной список задач\n"
+            "⚠️ За 3 дня до срока\n"
+            "🚨 За 1 день до срока\n"
+            "🔴 При просрочке\n\n"
+
+            "❓ <b>Проблемы?</b>\n"
+            "Отправьте /bekor и начните заново\n"
+            "Или обратитесь к администратору."
+        ),
+
+        "help_admin": (
+            "📖 <b>РУКОВОДСТВО АДМИНИСТРАТОРА</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+
+            "⚙️ <b>Панель админа</b> — /admin\n\n"
+
+            "➕ <b>Создать задачу</b>\n"
+            "Название → Описание → Категория → Сотрудник → Срок → Приоритет → Напоминание\n\n"
+
+            "📋 <b>Просмотр задач</b>\n"
+            "Все задачи — с фильтрацией\n"
+            "По сотрудникам — каждый отдельно\n\n"
+
+            "🏆 <b>Рейтинг</b>\n"
+            "Рейтинг сотрудников за всё время\n\n"
+
+            "🔴 <b>Просроченные</b>\n"
+            "Список задач с истёкшим сроком\n\n"
+
+            "⏳ <b>Неподтверждённые</b>\n"
+            "Задачи ожидающие подтверждения + напоминание\n\n"
+
+            "📥 <b>Экспорт Excel</b>\n"
+            "Выберите месяц → скачать .xlsx файл\n\n"
+
+            "📊 <b>Статистика</b>\n"
+            "Выберите месяц → подробный отчёт\n\n"
+
+            "📨 <b>Отправить отчёт</b>\n"
+            "Отправить месячный отчёт всем сотрудникам\n\n"
+
+            "👥 <b>Сотрудники</b>\n"
+            "Добавить, заблокировать, назначить админом\n\n"
+
+            "🗓 <b>Совещания</b>\n"
+            "Создать, прикрепить задачи, отчёт"
+        ),
 
         "categories": [
             "📱 SMM и Контент",

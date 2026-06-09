@@ -24,12 +24,14 @@ async def set_commands(bot: Bot):
     user_cmds = [
         BotCommand(command="start",   description="🏠 Asosiy menyu"),
         BotCommand(command="mytasks", description="📋 Mening vazifalarim"),
+        BotCommand(command="help",    description="📖 Yo'riqnoma"),
         BotCommand(command="bekor",   description="❌ Jarayonni bekor qilish"),
     ]
     admin_cmds = [
         BotCommand(command="start",   description="🏠 Asosiy menyu"),
         BotCommand(command="admin",   description="⚙️ Admin paneli"),
         BotCommand(command="mytasks", description="📋 Vazifalar"),
+        BotCommand(command="help",    description="📖 Yo'riqnoma"),
         BotCommand(command="bekor",   description="❌ Bekor qilish"),
     ]
     for aid in ADMIN_IDS:
