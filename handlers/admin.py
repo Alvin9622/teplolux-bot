@@ -17,7 +17,8 @@ from keyboards.kb import (
 )
 from texts import T, TEXTS, status_txt, priority_txt, reminder_txt
 from utils.formatters import (
-    task_card, monthly_stats_text, emp_tasks_detail, employee_monthly_report
+    task_card, monthly_stats_text, emp_tasks_detail, employee_monthly_report,
+    leaderboard_text, overdue_tasks_text
 )
 from utils.reminders import send_monthly_reports, safe_send
 
@@ -1357,6 +1358,250 @@ async def meeting_report(cb: CallbackQuery):
     except Exception:
         await cb.message.answer(text, reply_markup=back_kb(lang, "admin:meetings"), parse_mode="HTML")
     await cb.answer()
+
+
+# ═══════════════════════════════════════════════════════════════
+# REYTING (LEADERBOARD)
+# ═══════════════════════════════════════════════════════════════
+
+@router.callback_query(F.data == "admin:leaderboard")
+async def show_leaderboard(cb: CallbackQuery):
+    user, lang = await get_ul(cb.from_user.id)
+    if not is_admin(user):
+        await cb.answer()
+        return
+    emp_list = await db.get_all_time_leaderboard()
+    text     = leaderboard_text(emp_list, lang)
+    try:
+        await cb.message.edit_text(
+            text,
+            reply_markup=back_kb(lang, "admin"),
+            parse_mode="HTML"
+        )
+    except Exception:
+        await cb.message.answer(text, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
+    await cb.answer()
+
+
+# ═══════════════════════════════════════════════════════════════
+# KECHIKKAN VAZIFALAR
+# ═══════════════════════════════════════════════════════════════
+
+@router.callback_query(F.data == "admin:overdue")
+async def show_overdue(cb: CallbackQuery):
+    user, lang = await get_ul(cb.from_user.id)
+    if not is_admin(user):
+        await cb.answer()
+        return
+    tasks = await db.get_overdue_tasks_admin()
+    if not tasks:
+        txt = "✅ Kechikkan vazifa yo'q!" if lang == "uz" else "✅ Просроченных задач нет!"
+        try:
+            await cb.message.edit_text(txt, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
+        except Exception:
+            await cb.message.answer(txt, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
+        await cb.answer()
+        return
+
+    text = overdue_tasks_text(tasks, lang)
+    PAGE = 5
+    rows = []
+    for t in tasks[:PAGE]:
+        aname = (t.get("assignee_name") or "—")[:16]
+        rows.append([InlineKeyboardButton(
+            text=f"🔴 {t['title'][:24]} — {aname}",
+            callback_data=f"task:view:{t['id']}"
+        )])
+    rows.append([InlineKeyboardButton(text=T(lang, "back"), callback_data="go:admin")])
+    try:
+        await cb.message.edit_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+            parse_mode="HTML"
+        )
+    except Exception:
+        await cb.message.answer(
+            text,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+            parse_mode="HTML"
+        )
+    await cb.answer()
+
+
+# ═══════════════════════════════════════════════════════════════
+# TASDIQLANMAGAN VAZIFALAR
+# ═══════════════════════════════════════════════════════════════
+
+@router.callback_query(F.data == "admin:unconfirmed")
+async def show_unconfirmed(cb: CallbackQuery):
+    user, lang = await get_ul(cb.from_user.id)
+    if not is_admin(user):
+        await cb.answer()
+        return
+    tasks = await db.get_unconfirmed_tasks_admin()
+    if not tasks:
+        txt = "✅ Barcha vazifalar tasdiqlangan!" if lang == "uz" else "✅ Все задачи подтверждены!"
+        try:
+            await cb.message.edit_text(txt, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
+        except Exception:
+            await cb.message.answer(txt, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
+        await cb.answer()
+        return
+
+    lines = [
+        f"⏳ <b>Tasdiqlanmagan vazifalar — {len(tasks)} ta</b>\n" if lang == "uz"
+        else f"⏳ <b>Неподтверждённые задачи — {len(tasks)} шт.</b>\n"
+    ]
+    for t in tasks:
+        dl    = datetime.date.fromisoformat(t["deadline"][:10]).strftime("%d.%m.%Y") if t.get("deadline") else "—"
+        aname = t.get("assignee_name") or "—"
+        sent  = t.get("confirm_sent_count") or 0
+        lines.append(
+            f"📋 <b>{t['title']}</b>\n"
+            f"👤 {aname} | 📅 {dl}\n"
+            f"📨 Yuborildi: {sent}/3 marta\n"
+            f"🆔 #{t['id']}\n"
+        )
+
+    rows = []
+    for t in tasks[:8]:
+        aname = (t.get("assignee_name") or "—")[:16]
+        rows.append([InlineKeyboardButton(
+            text=f"⏳ {t['title'][:24]} — {aname}",
+            callback_data=f"task:view:{t['id']}"
+        )])
+    rows.append([InlineKeyboardButton(
+        text="📨 Barchasiga eslatma" if lang == "uz" else "📨 Напомнить всем",
+        callback_data="admin:remind_all_unconfirmed"
+    )])
+    rows.append([InlineKeyboardButton(text=T(lang, "back"), callback_data="go:admin")])
+
+    text = "\n".join(lines)
+    try:
+        await cb.message.edit_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+            parse_mode="HTML"
+        )
+    except Exception:
+        await cb.message.answer(
+            text,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+            parse_mode="HTML"
+        )
+    await cb.answer()
+
+
+@router.callback_query(F.data == "admin:remind_all_unconfirmed")
+async def remind_all_unconfirmed(cb: CallbackQuery):
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton as IKB
+    user, lang = await get_ul(cb.from_user.id)
+    if not is_admin(user):
+        await cb.answer()
+        return
+    tasks = await db.get_unconfirmed_tasks_admin()
+    sent  = 0
+    for t in tasks:
+        u = await db.get_user_by_id(t["assignee_id"])
+        if not u:
+            continue
+        a_lang = u.get("lang") or "uz"
+        dl_fmt = datetime.date.fromisoformat(t["deadline"][:10]).strftime("%d.%m.%Y") if t.get("deadline") else "—"
+        msg = (
+            f"⏳ Vazifani tasdiqlamadingiz!\n\n📋 {t['title']}\n📅 {dl_fmt}"
+            if a_lang == "uz" else
+            f"⏳ Вы не подтвердили задачу!\n\n📋 {t['title']}\n📅 {dl_fmt}"
+        )
+        confirm_kb = InlineKeyboardMarkup(inline_keyboard=[[IKB(
+            text="✅ Qabul qildim" if a_lang == "uz" else "✅ Принял",
+            callback_data=f"task:confirm:{t['id']}"
+        )]])
+        try:
+            await cb.bot.send_message(u["telegram_id"], msg, reply_markup=confirm_kb, parse_mode="HTML")
+            await db.increment_confirm_sent(t["id"])
+            sent += 1
+        except Exception:
+            pass
+    await cb.answer(
+        f"✅ {sent} ta eslatma yuborildi" if lang == "uz" else f"✅ Отправлено {sent} напоминаний",
+        show_alert=True
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
+# EXCEL EKSPORT
+# ═══════════════════════════════════════════════════════════════
+
+@router.callback_query(F.data.startswith("admin:export:"))
+async def export_menu(cb: CallbackQuery):
+    user, lang = await get_ul(cb.from_user.id)
+    if not is_admin(user):
+        await cb.answer()
+        return
+    rows = []
+    now = datetime.datetime.now()
+    months = TEXTS[lang]["months"]
+    for i in range(3, -1, -1):
+        d = (now.replace(day=1) - datetime.timedelta(days=i * 28)).replace(day=1)
+        rows.append([InlineKeyboardButton(
+            text=f"📥 {months[d.month-1]} {d.year}",
+            callback_data=f"admin:do_export:{d.month}:{d.year}"
+        )])
+    rows.append([InlineKeyboardButton(
+        text="📥 Barcha vazifalar" if lang == "uz" else "📥 Все задачи",
+        callback_data="admin:do_export:0:0"
+    )])
+    rows.append([InlineKeyboardButton(text=T(lang, "back"), callback_data="go:admin")])
+    try:
+        await cb.message.edit_text(
+            "📥 <b>Excel eksport — oyni tanlang:</b>" if lang == "uz"
+            else "📥 <b>Экспорт Excel — выберите период:</b>",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+            parse_mode="HTML"
+        )
+    except Exception:
+        await cb.message.answer(
+            "📥 <b>Excel eksport:</b>",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+            parse_mode="HTML"
+        )
+    await cb.answer()
+
+
+@router.callback_query(F.data.startswith("admin:do_export:"))
+async def do_export(cb: CallbackQuery):
+    from aiogram.types import BufferedInputFile
+    from utils.excel_export import build_tasks_excel
+    user, lang = await get_ul(cb.from_user.id)
+    if not is_admin(user):
+        await cb.answer()
+        return
+    await cb.answer("⏳ Tayyorlanmoqda..." if lang == "uz" else "⏳ Готовится...", show_alert=False)
+
+    parts = cb.data.split(":")
+    month = int(parts[3])
+    year  = int(parts[4])
+
+    tasks = await db.get_all_tasks_for_export(month or None, year or None)
+    if not tasks:
+        await cb.message.answer("📭 Vazifa topilmadi." if lang == "uz" else "📭 Задачи не найдены.")
+        return
+
+    buf = build_tasks_excel(tasks, month or None, year or None)
+    now = datetime.datetime.now()
+    if month:
+        months = TEXTS[lang]["months"]
+        fname  = f"teplolux_{months[month-1].lower()}_{year}.xlsx"
+    else:
+        fname = f"teplolux_all_{now.strftime('%Y%m%d')}.xlsx"
+
+    doc = BufferedInputFile(buf.read(), filename=fname)
+    caption = (
+        f"📊 <b>Excel hisobot</b>\n📋 {len(tasks)} ta vazifa\n📅 {now.strftime('%d.%m.%Y %H:%M')}"
+        if lang == "uz" else
+        f"📊 <b>Excel отчёт</b>\n📋 {len(tasks)} задач\n📅 {now.strftime('%d.%m.%Y %H:%M')}"
+    )
+    await cb.message.answer_document(doc, caption=caption, parse_mode="HTML")
 
 
 @router.callback_query(F.data.startswith("meeting:delete:"))

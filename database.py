@@ -606,6 +606,64 @@ async def get_monthly_stats(month, year):
 
 # ─── REMINDERS ──────────────────────────────────────────────────
 
+async def get_all_time_leaderboard():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT u.id,u.full_name,u.position,"
+            "COUNT(t.id) as total,"
+            "SUM(CASE WHEN t.status='done' THEN 1 ELSE 0 END) as done,"
+            "SUM(CASE WHEN t.status='in_progress' THEN 1 ELSE 0 END) as in_progress,"
+            "SUM(CASE WHEN t.status='cancelled' THEN 1 ELSE 0 END) as cancelled,"
+            "SUM(CASE WHEN t.status NOT IN ('done','cancelled') AND t.deadline < date('now') THEN 1 ELSE 0 END) as overdue,"
+            "AVG(CASE WHEN t.status='done' THEN t.progress_pct ELSE NULL END) as avg_progress,"
+            "COUNT(CASE WHEN t.status='done' AND t.done_at <= t.deadline THEN 1 END) as done_on_time "
+            "FROM users u LEFT JOIN tasks t ON u.id=t.assignee_id "
+            "WHERE u.is_active=1 GROUP BY u.id ORDER BY done DESC, total DESC"
+        ) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+
+async def get_overdue_tasks_admin():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        today = datetime.date.today().isoformat()
+        async with db.execute(
+            "SELECT t.*,u.full_name as assignee_name,u.telegram_id,u.position "
+            "FROM tasks t JOIN users u ON t.assignee_id=u.id "
+            "WHERE t.deadline < ? AND t.status NOT IN ('done','cancelled') AND u.is_active=1 "
+            "ORDER BY t.deadline",
+            (today,)
+        ) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+
+async def get_all_tasks_for_export(month=None, year=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        if month and year:
+            async with db.execute(
+                "SELECT t.*,u.full_name as assignee_name,u.position as assignee_position,"
+                "cb.full_name as creator_name "
+                "FROM tasks t "
+                "LEFT JOIN users u ON t.assignee_id=u.id "
+                "LEFT JOIN users cb ON t.created_by=cb.id "
+                "WHERE strftime('%m',t.created_at)=? AND strftime('%Y',t.created_at)=? "
+                "ORDER BY t.status,t.deadline",
+                (f"{month:02d}", str(year))
+            ) as c:
+                return [_row(r) for r in await c.fetchall()]
+        async with db.execute(
+            "SELECT t.*,u.full_name as assignee_name,u.position as assignee_position,"
+            "cb.full_name as creator_name "
+            "FROM tasks t "
+            "LEFT JOIN users u ON t.assignee_id=u.id "
+            "LEFT JOIN users cb ON t.created_by=cb.id "
+            "ORDER BY t.created_at DESC"
+        ) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+
 async def check_reminder_sent(task_id, rtype):
     today = datetime.date.today().isoformat()
     async with aiosqlite.connect(DB_PATH) as db:

@@ -147,6 +147,10 @@ TEXTS = {
         "user_notified": "Xabar yuborildi ✅",
         "user_not_notified": "⚠️ Xabar yuborib bo'lmadi (bot bilan muloqot qilmagan)",
 
+        "btn_leaderboard":  "🏆 Reyting",
+        "btn_overdue":      "🔴 Kechikkanlar",
+        "btn_export_excel": "📥 Excel eksport",
+
         "categories": [
             "📱 SMM va Kontent",
             "🔍 SEO va Sayt",
@@ -304,6 +308,10 @@ TEXTS = {
         "user_added": "✅ <b>Сотрудник добавлен!</b>\n\n👤 {name}\n💼 {position}\n🎭 {role}\n\n{notif}",
         "user_notified": "Сообщение отправлено ✅",
         "user_not_notified": "⚠️ Не удалось отправить (не начал чат с ботом)",
+
+        "btn_leaderboard":  "🏆 Рейтинг",
+        "btn_overdue":      "🔴 Просроченные",
+        "btn_export_excel": "📥 Экспорт Excel",
 
         "categories": [
             "📱 SMM и Контент",

@@ -177,6 +177,52 @@ def employee_monthly_report(user, tasks, month, year, lang):
     return "\n".join(lines)
 
 
+def leaderboard_text(emp_list, lang):
+    medals = ["🥇", "🥈", "🥉"]
+    lines = [
+        "🏆 <b>Xodimlar reytingi (Jami)</b>" if lang == "uz" else "🏆 <b>Рейтинг сотрудников (Всего)</b>",
+        "─" * 26, ""
+    ]
+    for i, e in enumerate(emp_list):
+        total    = e.get("total") or 0
+        done     = e.get("done") or 0
+        over     = e.get("overdue") or 0
+        on_time  = e.get("done_on_time") or 0
+        pct      = round(done / total * 100) if total else 0
+        medal    = medals[i] if i < 3 else f"{i+1}."
+        pos      = f"\n   💼 {e['position']}" if e.get("position") else ""
+        warn     = f" ⚠️{over}" if over else ""
+        on_time_txt = f" ⏱{on_time}" if on_time else ""
+        lines.append(
+            f"{medal} <b>{e['full_name']}</b>{pos}\n"
+            f"   ✅{done}/{total} ({pct}%){warn}{on_time_txt}\n"
+            f"   {progress_bar(pct, 8)}"
+        )
+        lines.append("")
+    return "\n".join(lines)
+
+
+def overdue_tasks_text(tasks, lang):
+    lines = [
+        f"🔴 <b>Kechikkan vazifalar — {len(tasks)} ta</b>" if lang == "uz"
+        else f"🔴 <b>Просроченные задачи — {len(tasks)} шт.</b>",
+        "─" * 26, ""
+    ]
+    for t in tasks:
+        d = datetime.date.fromisoformat(t["deadline"][:10])
+        days_late = (datetime.date.today() - d).days
+        aname = t.get("assignee_name") or "—"
+        pos   = f" ({t['assignee_position']})" if t.get("assignee_position") else ""
+        lines.append(
+            f"📋 <b>{t['title']}</b>\n"
+            f"👤 {aname}{pos}\n"
+            f"📅 {fmt_date(t['deadline'])} | 🔴 {days_late} kun kech\n"
+            f"📊 {t.get('progress_pct', 0)}% | 🆔 #{t['id']}"
+        )
+        lines.append("")
+    return "\n".join(lines)
+
+
 def emp_tasks_detail(emp, tasks, lang):
     total = len(tasks)
     done  = sum(1 for t in tasks if t["status"]=="done")

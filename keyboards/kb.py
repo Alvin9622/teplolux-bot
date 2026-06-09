@@ -25,16 +25,19 @@ def main_kb(lang, is_admin=False):
 
 def admin_kb(lang):
     return ik(
-        [btn(T(lang, "btn_add_task"),    "admin:add_task")],
-        [btn(T(lang, "btn_add_plan"),    "admin:add_plan")],
-        [btn(T(lang, "btn_all_tasks"),   "admin:tasks:all:0"),
-         btn(T(lang, "btn_by_employee"), "admin:by_emp")],
-        [btn(T(lang, "btn_all_plans"),   "admin:plans")],
-        [btn(T(lang, "btn_stats"),       "admin:stats")],
-        [btn(T(lang, "btn_users"),       "admin:users")],
-        [btn(T(lang, "btn_send_report"), "admin:send_report")],
-        [btn("🗓 Majlislar",             "admin:meetings")],
-        [btn("⏳ Tasdiqlanmaganlar",     "admin:unconfirmed")],
+        [btn(T(lang, "btn_add_task"),      "admin:add_task")],
+        [btn(T(lang, "btn_add_plan"),      "admin:add_plan")],
+        [btn(T(lang, "btn_all_tasks"),     "admin:tasks:all:0"),
+         btn(T(lang, "btn_by_employee"),   "admin:by_emp")],
+        [btn(T(lang, "btn_all_plans"),     "admin:plans")],
+        [btn(T(lang, "btn_stats"),         "admin:stats"),
+         btn(T(lang, "btn_leaderboard"),   "admin:leaderboard")],
+        [btn(T(lang, "btn_overdue"),       "admin:overdue"),
+         btn("⏳ Tasdiqlanmaganlar",       "admin:unconfirmed")],
+        [btn(T(lang, "btn_users"),         "admin:users")],
+        [btn(T(lang, "btn_send_report"),   "admin:send_report"),
+         btn(T(lang, "btn_export_excel"),  "admin:export:current")],
+        [btn("🗓 Majlislar",               "admin:meetings")],
         [back_btn(lang, "main")],
     )
 
