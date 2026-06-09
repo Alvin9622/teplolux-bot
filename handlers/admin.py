@@ -186,6 +186,21 @@ async def t_category(cb: CallbackQuery, state: FSMContext):
     lang = data["lang"]
     idx  = int(cb.data.split(":")[1])
     cat  = TEXTS[lang]["categories"][idx]
+
+    # Tahrirlash rejimi
+    if "edit_task_id" in data:
+        task_id = data["edit_task_id"]
+        await state.clear()
+        await db.update_task(task_id, category=cat)
+        await cb.message.edit_text(
+            f"✅ Kategoriya o'zgartirildi: <b>{cat}</b>" if lang == "uz"
+            else f"✅ Категория изменена: <b>{cat}</b>",
+            reply_markup=back_kb(lang, f"task_view_{task_id}"),
+            parse_mode="HTML"
+        )
+        await cb.answer()
+        return
+
     await state.update_data(category=cat)
     await state.set_state(AdminStates.task_assignee)
     emps = await db.get_all_employees()
@@ -225,9 +240,25 @@ async def t_deadline_cal(cb: CallbackQuery, state: FSMContext):
 
 @router.callback_query(AdminStates.task_priority, F.data.startswith("priority:"))
 async def t_priority(cb: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    lang = data["lang"]
-    await state.update_data(priority=cb.data.split(":")[1])
+    data     = await state.get_data()
+    lang     = data["lang"]
+    priority = cb.data.split(":")[1]
+
+    # Tahrirlash rejimi
+    if "edit_task_id" in data:
+        task_id = data["edit_task_id"]
+        await state.clear()
+        await db.update_task(task_id, priority=priority)
+        await cb.message.edit_text(
+            f"✅ Ustuvorlik o'zgartirildi: <b>{priority_txt(lang, priority)}</b>" if lang == "uz"
+            else f"✅ Приоритет изменён: <b>{priority_txt(lang, priority)}</b>",
+            reply_markup=back_kb(lang, f"task_view_{task_id}"),
+            parse_mode="HTML"
+        )
+        await cb.answer()
+        return
+
+    await state.update_data(priority=priority)
     await state.set_state(AdminStates.task_reminder)
     await cb.message.edit_text(
         T(lang, "ask_reminder", cancel=T(lang, "cancel_action")),
@@ -241,6 +272,21 @@ async def t_reminder(cb: CallbackQuery, state: FSMContext):
     data   = await state.get_data()
     lang   = data["lang"]
     r_days = int(cb.data.split(":")[1])
+
+    # Tahrirlash rejimi
+    if "edit_task_id" in data:
+        task_id = data["edit_task_id"]
+        await state.clear()
+        await db.update_task(task_id, reminder_days=r_days)
+        await cb.message.edit_text(
+            f"✅ Eslatma o'zgartirildi: <b>{reminder_txt(lang, r_days)}</b>" if lang == "uz"
+            else f"✅ Напоминание изменено: <b>{reminder_txt(lang, r_days)}</b>",
+            reply_markup=back_kb(lang, f"task_view_{task_id}"),
+            parse_mode="HTML"
+        )
+        await cb.answer()
+        return
+
     await state.clear()
 
     task_id  = await db.create_task(
@@ -378,40 +424,6 @@ async def task_edit_field(cb: CallbackQuery, state: FSMContext):
             reply_markup=reminder_kb(lang), parse_mode="HTML"
         )
     await cb.answer()
-
-
-@router.message(AdminStates.edit_value)
-async def edit_value_received(msg: Message, state: FSMContext):
-    data    = await state.get_data()
-    lang    = data["lang"]
-    field   = data["edit_field"]
-    task_id = data["edit_task_id"]
-    await state.clear()
-    if field == "title":
-        await db.update_task(task_id, title=msg.text.strip())
-    elif field == "desc":
-        await db.update_task(task_id, description=msg.text.strip())
-    await msg.answer(
-        "✅ O'zgartirildi!" if lang=="uz" else "✅ Изменено!",
-        reply_markup=back_kb(lang, f"task_view_{task_id}"),
-        parse_mode="HTML"
-    )
-
-
-@router.callback_query(AdminStates.edit_deadline, F.data.startswith("cal:"))
-async def edit_deadline_cal(cb: CallbackQuery, state: FSMContext):
-    async def on_day(cb, state, selected, lang):
-        data    = await state.get_data()
-        task_id = data["edit_task_id"]
-        await state.clear()
-        await db.update_task(task_id, deadline=selected.isoformat())
-        dl_fmt = selected.strftime("%d.%m.%Y")
-        await cb.message.edit_text(
-            f"✅ Muddat o'zgartirildi: <b>{dl_fmt}</b>",
-            reply_markup=back_kb(lang, f"task_view_{task_id}"),
-            parse_mode="HTML"
-        )
-    await _handle_cal(cb, state, on_day)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1426,106 +1438,6 @@ async def show_overdue(cb: CallbackQuery):
             parse_mode="HTML"
         )
     await cb.answer()
-
-
-# ═══════════════════════════════════════════════════════════════
-# TASDIQLANMAGAN VAZIFALAR
-# ═══════════════════════════════════════════════════════════════
-
-@router.callback_query(F.data == "admin:unconfirmed")
-async def show_unconfirmed(cb: CallbackQuery):
-    user, lang = await get_ul(cb.from_user.id)
-    if not is_admin(user):
-        await cb.answer()
-        return
-    tasks = await db.get_unconfirmed_tasks_admin()
-    if not tasks:
-        txt = "✅ Barcha vazifalar tasdiqlangan!" if lang == "uz" else "✅ Все задачи подтверждены!"
-        try:
-            await cb.message.edit_text(txt, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
-        except Exception:
-            await cb.message.answer(txt, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
-        await cb.answer()
-        return
-
-    lines = [
-        f"⏳ <b>Tasdiqlanmagan vazifalar — {len(tasks)} ta</b>\n" if lang == "uz"
-        else f"⏳ <b>Неподтверждённые задачи — {len(tasks)} шт.</b>\n"
-    ]
-    for t in tasks:
-        dl    = datetime.date.fromisoformat(t["deadline"][:10]).strftime("%d.%m.%Y") if t.get("deadline") else "—"
-        aname = t.get("assignee_name") or "—"
-        sent  = t.get("confirm_sent_count") or 0
-        lines.append(
-            f"📋 <b>{t['title']}</b>\n"
-            f"👤 {aname} | 📅 {dl}\n"
-            f"📨 Yuborildi: {sent}/3 marta\n"
-            f"🆔 #{t['id']}\n"
-        )
-
-    rows = []
-    for t in tasks[:8]:
-        aname = (t.get("assignee_name") or "—")[:16]
-        rows.append([InlineKeyboardButton(
-            text=f"⏳ {t['title'][:24]} — {aname}",
-            callback_data=f"task:view:{t['id']}"
-        )])
-    rows.append([InlineKeyboardButton(
-        text="📨 Barchasiga eslatma" if lang == "uz" else "📨 Напомнить всем",
-        callback_data="admin:remind_all_unconfirmed"
-    )])
-    rows.append([InlineKeyboardButton(text=T(lang, "back"), callback_data="go:admin")])
-
-    text = "\n".join(lines)
-    try:
-        await cb.message.edit_text(
-            text,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
-            parse_mode="HTML"
-        )
-    except Exception:
-        await cb.message.answer(
-            text,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
-            parse_mode="HTML"
-        )
-    await cb.answer()
-
-
-@router.callback_query(F.data == "admin:remind_all_unconfirmed")
-async def remind_all_unconfirmed(cb: CallbackQuery):
-    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton as IKB
-    user, lang = await get_ul(cb.from_user.id)
-    if not is_admin(user):
-        await cb.answer()
-        return
-    tasks = await db.get_unconfirmed_tasks_admin()
-    sent  = 0
-    for t in tasks:
-        u = await db.get_user_by_id(t["assignee_id"])
-        if not u:
-            continue
-        a_lang = u.get("lang") or "uz"
-        dl_fmt = datetime.date.fromisoformat(t["deadline"][:10]).strftime("%d.%m.%Y") if t.get("deadline") else "—"
-        msg = (
-            f"⏳ Vazifani tasdiqlamadingiz!\n\n📋 {t['title']}\n📅 {dl_fmt}"
-            if a_lang == "uz" else
-            f"⏳ Вы не подтвердили задачу!\n\n📋 {t['title']}\n📅 {dl_fmt}"
-        )
-        confirm_kb = InlineKeyboardMarkup(inline_keyboard=[[IKB(
-            text="✅ Qabul qildim" if a_lang == "uz" else "✅ Принял",
-            callback_data=f"task:confirm:{t['id']}"
-        )]])
-        try:
-            await cb.bot.send_message(u["telegram_id"], msg, reply_markup=confirm_kb, parse_mode="HTML")
-            await db.increment_confirm_sent(t["id"])
-            sent += 1
-        except Exception:
-            pass
-    await cb.answer(
-        f"✅ {sent} ta eslatma yuborildi" if lang == "uz" else f"✅ Отправлено {sent} напоминаний",
-        show_alert=True
-    )
 
 
 # ═══════════════════════════════════════════════════════════════
