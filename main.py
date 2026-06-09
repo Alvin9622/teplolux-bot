@@ -7,7 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import BOT_TOKEN, ADMIN_IDS
 from database import init_db
-from handlers import admin, employee, common, confirm
+from handlers import admin, employee, common, confirm, group
 from utils.reminders import (
     send_reminders, send_daily_digest,
     send_confirm_reminders, send_weekly_report
@@ -52,6 +52,7 @@ async def main():
     dp.include_router(admin.router)
     dp.include_router(employee.router)
     dp.include_router(confirm.router)
+    dp.include_router(group.router)
 
     await set_commands(bot)
 
