@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 import database as db
-from config import ADMIN_IDS
+from config import ADMIN_IDS, GROUP_ID
 from keyboards.kb import tasks_list_kb, task_actions_kb, status_kb, back_kb
 from texts import T, status_txt
 from utils.formatters import task_card, progress_bar, employee_monthly_report
@@ -199,6 +199,26 @@ async def recv_progress(msg: Message, state: FSMContext):
         return
     await state.clear()
     await db.update_task_progress(data["task_id"], pct, data["user_db_id"])
+
+    task = await db.get_task(data["task_id"])
+    user = await db.get_user_by_id(data["user_db_id"])
+    if task and user:
+        notif = (
+            f"📊 <b>Foiz yangilandi</b>\n\n"
+            f"📋 {task['title']}\n"
+            f"👤 {user['full_name']}\n"
+            f"📈 {pct}%\n"
+            f"{progress_bar(pct)}"
+        )
+        targets = list(ADMIN_IDS)
+        if GROUP_ID:
+            targets.append(GROUP_ID)
+        for target in targets:
+            try:
+                await msg.bot.send_message(target, notif, parse_mode="HTML")
+            except Exception:
+                pass
+
     await msg.answer(
         T(lang, "progress_updated", pct=pct) + f"\n{progress_bar(pct)}",
         reply_markup=back_kb(lang, "mytasks"), parse_mode="HTML"
@@ -256,12 +276,18 @@ async def recv_file(msg: Message, state: FSMContext):
     notif = f"{icon} <b>Yangi fayl!</b>\n\n📋 {task['title']}\n👤 {user['full_name'] if user else '?'}"
     if caption:
         notif += f"\n💬 {caption}"
-    for aid in ADMIN_IDS:
+
+    targets = list(ADMIN_IDS)
+    if GROUP_ID:
+        targets.append(GROUP_ID)
+
+    for target in targets:
         try:
-            await msg.bot.send_message(aid, notif, parse_mode="HTML")
-            if ft=="photo":    await msg.bot.send_photo(aid, file_id)
-            elif ft=="video":  await msg.bot.send_video(aid, file_id)
-            elif ft=="document": await msg.bot.send_document(aid, file_id)
+            await msg.bot.send_message(target, notif, parse_mode="HTML")
+            if ft=="photo":      await msg.bot.send_photo(target, file_id)
+            elif ft=="video":    await msg.bot.send_video(target, file_id)
+            elif ft=="document": await msg.bot.send_document(target, file_id)
+            elif ft=="audio":    await msg.bot.send_audio(target, file_id)
         except Exception:
             pass
     await msg.answer(
@@ -328,9 +354,14 @@ async def recv_comment(msg: Message, state: FSMContext):
     task = await db.get_task(task_id)
     user = await db.get_user_by_id(user_id)
     notif = f"💬 <b>Yangi izoh</b>\n\n📋 {task['title']}\n👤 {user['full_name'] if user else '?'}\n\n{msg.text}"
-    for aid in ADMIN_IDS:
+
+    targets = list(ADMIN_IDS)
+    if GROUP_ID:
+        targets.append(GROUP_ID)
+
+    for target in targets:
         try:
-            await msg.bot.send_message(aid, notif, parse_mode="HTML")
+            await msg.bot.send_message(target, notif, parse_mode="HTML")
         except Exception:
             pass
     await msg.answer(
