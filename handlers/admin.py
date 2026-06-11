@@ -121,14 +121,46 @@ async def _handle_cal(cb, state, next_state_fn):
         await state.clear()
         await cb.answer()
         if "edit_task_id" in data:
-            tid = data["edit_task_id"]
-            cb.data = f"task:edit:{tid}"
-            await task_edit_menu(cb)
+            tid  = int(data["edit_task_id"])
+            task = await db.get_task(tid)
+            if task:
+                asgn  = await db.get_user_by_id(task["assignee_id"])
+                aname = asgn["full_name"] if asgn else "—"
+                text  = (
+                    f"✏️ <b>Vazifani tahrirlash</b>\n\n"
+                    f"📋 {task['title']}\n"
+                    f"👤 {aname}\n"
+                    f"📅 {task.get('deadline','—')}\n\n"
+                    f"Nimani o'zgartirmoqchisiz?"
+                )
+                try:
+                    await cb.message.edit_text(text, reply_markup=task_edit_kb(lang, tid), parse_mode="HTML")
+                except Exception:
+                    await cb.message.answer(text, reply_markup=task_edit_kb(lang, tid), parse_mode="HTML")
             return
         if "edit_meeting_id" in data:
-            mid = data["edit_meeting_id"]
-            cb.data = f"meeting:edit:{mid}"
-            await meeting_edit(cb, state)
+            mid     = int(data["edit_meeting_id"])
+            meeting = await db.get_meeting(mid)
+            if meeting:
+                rows = [
+                    [InlineKeyboardButton(text="📝 Mavzuni o'zgartirish",       callback_data=f"medit:title:{mid}")],
+                    [InlineKeyboardButton(text="📄 Kun tartibini o'zgartirish", callback_data=f"medit:desc:{mid}")],
+                    [InlineKeyboardButton(text="✅ Qarorlar qo'shish",          callback_data=f"medit:decisions:{mid}")],
+                    [InlineKeyboardButton(text="📅 Sanani o'zgartirish",        callback_data=f"medit:date:{mid}")],
+                    [InlineKeyboardButton(text=T(lang, "back"),                 callback_data=f"meeting:view:{mid}")],
+                ]
+                try:
+                    await cb.message.edit_text(
+                        f"✏️ <b>{meeting['title']}</b>\n\nNimani o'zgartirish?",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+                        parse_mode="HTML"
+                    )
+                except Exception:
+                    await cb.message.answer(
+                        f"✏️ <b>{meeting['title']}</b>\n\nNimani o'zgartirish?",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+                        parse_mode="HTML"
+                    )
             return
         await cb.message.edit_text(T(lang, "cancelled"))
         return
@@ -140,10 +172,12 @@ async def _handle_cal(cb, state, next_state_fn):
         else:
             m += 1
             if m > 12: m = 1; y += 1
-        await cb.message.edit_text(
-            "📅 <b>Muddatni tanlang:</b>",
-            reply_markup=calendar_kb(y, m), parse_mode="HTML"
-        )
+        # Preserve tid: in message text if present
+        import re as _re
+        txt       = cb.message.text or ""
+        tid_match = _re.search(r'tid:(\d+)', txt)
+        new_text  = f"📅 <b>Yangi muddatni tanlang:</b>\n<code>tid:{tid_match.group(1)}</code>" if tid_match else "📅 <b>Muddatni tanlang:</b>"
+        await cb.message.edit_text(new_text, reply_markup=calendar_kb(y, m), parse_mode="HTML")
         await cb.answer()
         return
     if action == "day":
@@ -1292,10 +1326,9 @@ async def edit_deadline_any(cb: CallbackQuery, state: FSMContext):
                     reply_markup=back_kb(lang, f"meeting:view:{data['edit_meeting_id']}"),
                     parse_mode="HTML"
                 )
-            else:
-                await cb.answer(f"⚠️ data yo'q: {list(data.keys())}", show_alert=True)
         except Exception as e:
-            await cb.answer(f"❌ Xato: {e}", show_alert=True)
+            import logging
+            logging.getLogger(__name__).error(f"edit_deadline on_day error: {e}", exc_info=True)
     await _handle_cal(cb, state, on_day)
 
 
@@ -1357,9 +1390,22 @@ async def cal_fallback(cb: CallbackQuery, state: FSMContext):
         if tid_match:
             user, lang = await get_ul(cb.from_user.id)
             task_id = int(tid_match.group(1))
-            cb.data = f"task:edit:{task_id}"
+            task    = await db.get_task(task_id)
             await cb.answer()
-            await task_edit_menu(cb)
+            if task:
+                asgn  = await db.get_user_by_id(task["assignee_id"])
+                aname = asgn["full_name"] if asgn else "—"
+                text  = (
+                    f"✏️ <b>Vazifani tahrirlash</b>\n\n"
+                    f"📋 {task['title']}\n"
+                    f"👤 {aname}\n"
+                    f"📅 {task.get('deadline','—')}\n\n"
+                    f"Nimani o'zgartirmoqchisiz?"
+                )
+                try:
+                    await cb.message.edit_text(text, reply_markup=task_edit_kb(lang, task_id), parse_mode="HTML")
+                except Exception:
+                    await cb.message.answer(text, reply_markup=task_edit_kb(lang, task_id), parse_mode="HTML")
             return
 
     await cb.answer("⚠️ Sessiya tugagan. Vazifani qaytadan oching.", show_alert=True)
