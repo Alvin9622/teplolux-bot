@@ -198,6 +198,7 @@ async def update_task(task_id, title=None, description=None, category=None,
                       deadline=None, priority=None, reminder_days=None):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
         t = _row(await (await db.execute("SELECT * FROM tasks WHERE id=?", (task_id,))).fetchone())
         if not t:
             return
