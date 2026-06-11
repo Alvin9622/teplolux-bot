@@ -83,6 +83,7 @@ def task_actions_kb(lang, task_id, is_mine=True, is_admin=False, back_to="mytask
         rows.append([btn("🔄 Holatni yangilash",  f"task:status:{task_id}")])
         rows.append([btn("📊 Foizni yangilash",   f"task:progress:{task_id}")])
         rows.append([btn("📎 Fayl yuborish",      f"task:upload:{task_id}")])
+    if is_mine or is_admin:
         rows.append([btn("💬 Izoh qoldirish",     f"task:comment:{task_id}")])
     rows.append([btn("🗂 Fayllarni ko'rish",     f"task:files:{task_id}"),
                  btn("💬 Izohlar",               f"task:comments:{task_id}")])

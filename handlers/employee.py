@@ -366,7 +366,7 @@ async def recv_comment(msg: Message, state: FSMContext):
             pass
     await msg.answer(
         "✅ Izoh qo'shildi!" if lang=="uz" else "✅ Комментарий добавлен!",
-        reply_markup=back_kb(lang, "mytasks"), parse_mode="HTML"
+        reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML"
     )
 
 
@@ -382,10 +382,11 @@ async def view_comments(cb: CallbackQuery):
         await cb.answer("💬 Izoh yo'q", show_alert=True)
         return
     await cb.answer()
+    lang = user["lang"]
     text = "💬 <b>Izohlar:</b>\n\n"
     for c in comments:
         text += f"👤 <b>{c['full_name']}</b> | {c['created_at'][:10]}\n{c['text']}\n\n"
-    await cb.message.answer(text, parse_mode="HTML")
+    await cb.message.answer(text, parse_mode="HTML", reply_markup=back_kb(lang, f"task_view_{task_id}"))
 
 
 # ─── MY STATS ────────────────────────────────────────────────────
