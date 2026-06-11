@@ -37,18 +37,10 @@ async def confirm_task_cb(cb: CallbackQuery):
         await cb.answer("Vazifa topilmadi", show_alert=True)
         return
     if task["confirmed_at"]:
-        await cb.answer(
-            "✅ Allaqachon qabul qilingan" if lang=="uz" else "✅ Уже принято",
-            show_alert=True
-        )
+        await cb.answer(T(lang, "confirm_already"), show_alert=True)
         return
     await db.confirm_task(task_id, user["id"])
-    notif = (
-        f"✅ <b>Vazifa qabul qilindi</b>\n\n"
-        f"📋 {task['title']}\n"
-        f"👤 {user['full_name']}\n"
-        f"🆔 #{task_id}"
-    )
+    notif = T("uz", "confirm_notif", title=task["title"], name=user["full_name"], id=task_id)
     for aid in ADMIN_IDS:
         try:
             await cb.bot.send_message(aid, notif, parse_mode="HTML")
@@ -59,7 +51,7 @@ async def confirm_task_cb(cb: CallbackQuery):
             await cb.bot.send_message(GROUP_ID, notif, parse_mode="HTML")
         except Exception:
             pass
-    await cb.answer("✅ Qabul qilindi!" if lang=="uz" else "✅ Принято!", show_alert=True)
+    await cb.answer(T(lang, "confirm_accepted"), show_alert=True)
     try:
         await cb.message.edit_reply_markup(reply_markup=None)
     except Exception:
@@ -250,12 +242,7 @@ async def ask_upload(cb: CallbackQuery, state: FSMContext):
         return
     await state.update_data(task_id=task_id, user_db_id=user["id"], lang=lang)
     await state.set_state(EmpStates.upload_file)
-    text = (
-        "📎 <b>Fayl yuborish</b>\n\nRasm, video yoki hujjat yuboring.\n\n⬅️ Bekor: /bekor"
-        if lang=="uz" else
-        "📎 <b>Загрузить файл</b>\n\nОтправьте фото, видео или документ.\n\n⬅️ Отмена: /bekor"
-    )
-    await cb.message.answer(text, parse_mode="HTML")
+    await cb.message.answer(T(lang, "file_ask"), parse_mode="HTML")
     await cb.answer()
 
 
@@ -299,10 +286,7 @@ async def recv_file(msg: Message, state: FSMContext):
             elif ft=="audio":    await msg.bot.send_audio(target, file_id)
         except Exception:
             pass
-    await msg.answer(
-        "✅ Fayl yuklandi!" if lang=="uz" else "✅ Файл загружен!",
-        reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML"
-    )
+    await msg.answer(T(lang, "file_uploaded"), reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML")
 
 
 @router.callback_query(F.data.startswith("task:files:"))
@@ -331,10 +315,7 @@ async def view_files(cb: CallbackQuery):
             elif ft=="audio":  await cb.message.answer_audio(f["file_id"], caption=cap)
         except Exception:
             pass
-    await cb.message.answer(
-        f"📎 {len(files)} ta fayl" if lang=="uz" else f"📎 {len(files)} файл(ов)",
-        reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML"
-    )
+    await cb.message.answer(T(lang, "files_count", n=len(files)), reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML")
 
 
 # ─── COMMENTS ────────────────────────────────────────────────────
@@ -349,11 +330,7 @@ async def ask_comment(cb: CallbackQuery, state: FSMContext):
     lang = user["lang"]
     await state.update_data(task_id=task_id, user_db_id=user["id"], lang=lang)
     await state.set_state(EmpStates.comment)
-    await cb.message.answer(
-        "💬 Izohingizni yozing:\n\n⬅️ Bekor: /bekor" if lang=="uz" else
-        "💬 Напишите комментарий:\n\n⬅️ Отмена: /bekor",
-        parse_mode="HTML"
-    )
+    await cb.message.answer(T(lang, "comment_ask"), parse_mode="HTML")
     await cb.answer()
 
 
@@ -378,10 +355,7 @@ async def recv_comment(msg: Message, state: FSMContext):
             await msg.bot.send_message(target, notif, parse_mode="HTML")
         except Exception:
             pass
-    await msg.answer(
-        "✅ Izoh qo'shildi!" if lang=="uz" else "✅ Комментарий добавлен!",
-        reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML"
-    )
+    await msg.answer(T(lang, "comment_added"), reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML")
 
 
 @router.callback_query(F.data.startswith("task:comments:"))

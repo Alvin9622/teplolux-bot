@@ -150,6 +150,96 @@ TEXTS = {
         "btn_leaderboard":  "🏆 Reyting",
         "btn_overdue":      "🔴 Kechikkanlar",
         "btn_export_excel": "📥 Excel eksport",
+        "btn_unconfirmed":  "⏳ Tasdiqlanmaganlar",
+
+        # Task edit
+        "task_edit_header": "✏️ <b>Vazifani tahrirlash</b>\n\n📋 {title}\n👤 {name}\n📅 {deadline}\n\nNimani o'zgartirmoqchisiz?",
+        "field_updated":    "✅ O'zgartirildi!",
+        "task_deleted":     "🗑 Vazifa o'chirildi.",
+        "category_updated": "✅ Kategoriya o'zgartirildi: <b>{val}</b>",
+        "priority_updated": "✅ Ustuvorlik o'zgartirildi: <b>{val}</b>",
+        "reminder_updated": "✅ Eslatma o'zgartirildi: <b>{val}</b>",
+        "deadline_updated": "✅ Muddat: <b>{dl}</b>",
+        "date_updated":     "✅ Sana: <b>{dl}</b>",
+        "deadline_select":  "📅 <b>Yangi muddatni tanlang:</b>",
+        "date_select":      "📅 Yangi sanani tanlang:",
+        "session_expired":  "⚠️ Sessiya tugagan. Vazifani qaytadan oching.",
+
+        # Plans
+        "plan_update_btn":    "✏️ Bajarilganini yangilash",
+        "plan_update_select": "📅 Qaysi rejaning bajarilganini yangilash?",
+        "plan_done_ask":      "🎯 Bajarilgan sonini kiriting (0 dan boshlab):\n\n{cancel}",
+        "plan_updated":       "✅ Yangilandi! Bajarildi: {done}",
+
+        # Stats/report
+        "month_select_stats":  "📊 <b>Oyni tanlang:</b>",
+        "month_select_report": "📨 <b>Hisobot uchun oyni tanlang:</b>",
+
+        # Employees
+        "tasks_by_employee": "👥 <b>Hodimlar bo'yicha vazifalar:</b>",
+        "employees_title":   "👥 <b>Hodimlar</b> — {n} kishi:",
+        "employees_short":   "👥 <b>Hodimlar:</b>",
+        "role_admin":        "👑 Admin",
+        "role_employee":     "👤 Hodim",
+        "welcome_added_uz":  "👋 Xush kelibsiz, {name}!\n\nTeplolux monitoring tizimiga qo'shildingiz.\n🎭 {role}\n\n/start yuboring.",
+
+        # Meetings
+        "meetings_title":       "🗓 <b>Majlislar</b> — {n} ta:",
+        "new_meeting_btn":      "➕ Yangi majlis",
+        "meeting_new_title_ask":"📝 Majlis mavzusini kiriting:",
+        "meeting_agenda_ask":   "📄 Kun tartibi / muhokama qilinadigan masalalar:\n(yoki /skip)",
+        "meeting_date_select":  "📅 <b>Majlis sanasini tanlang:</b>",
+        "meeting_created":      "✅ <b>Majlis yaratildi!</b>\n\n📋 {title}\n📅 {dl}\n\nBarcha xabardor qilindi.\n🆔 #{id}",
+        "meeting_notif":        "🗓 <b>Yangi majlis!</b>\n\n📋 <b>{title}</b>\n📅 {dl}",
+        "meeting_edit_what":    "Nimani o'zgartirish?",
+        "meeting_edit_topic":   "📝 Mavzuni o'zgartirish",
+        "meeting_edit_agenda":  "📄 Kun tartibini o'zgartirish",
+        "meeting_edit_dec":     "✅ Qarorlar qo'shish",
+        "meeting_edit_date":    "📅 Sanani o'zgartirish",
+        "meeting_tasks_title":  "📋 Vazifalar: {n} ta",
+        "meeting_report_title": "📊 <b>Majlis hisoboti</b>",
+        "meeting_tasks_status": "<b>Vazifalar holati:</b>",
+        "link_task_btn":        "📋 Vazifa biriktirish",
+        "task_select":          "📋 Vazifani tanlang:",
+        "linked":               "✅ Biriktirildi!",
+        "meeting_deleted":      "✅ O'chirildi",
+        "meeting_edit_btn":     "✏️ Tahrirlash",
+        "meeting_report_btn":   "📊 Hisobot",
+        "meeting_delete_btn":   "🗑 O'chirish",
+        "enter_new_topic":      "📝 Yangi mavzuni kiriting:",
+        "enter_new_agenda":     "📄 Yangi kun tartibini kiriting:",
+        "enter_decisions":      "✅ Qabul qilingan qarorlarni kiriting:",
+
+        # Unconfirmed
+        "unconfirmed_none":  "✅ Tasdiqlanmagan vazifa yo'q!",
+        "unconfirmed_title": "⏳ <b>Tasdiqlanmagan vazifalar</b> — {n} ta:",
+
+        # Excel export
+        "excel_select_period": "📥 <b>Excel eksport — oyni tanlang:</b>",
+        "excel_all_tasks_btn": "📥 Barcha vazifalar",
+        "excel_send_group":    "📤 Guruhga yuborish",
+        "excel_sent_group":    "✅ Guruhga yuborildi!",
+        "group_not_set":       "❌ Guruh sozlanmagan!",
+        "no_tasks_found":      "📭 Vazifa topilmadi.",
+
+        # Comments / files
+        "comment_ask":    "💬 Izohingizni yozing:\n\n⬅️ Bekor: /bekor",
+        "comment_added":  "✅ Izoh qo'shildi!",
+        "file_ask":       "📎 <b>Fayl yuborish</b>\n\nRasm, video yoki hujjat yuboring.\n\n⬅️ Bekor: /bekor",
+        "file_uploaded":  "✅ Fayl yuklandi!",
+        "files_count":    "📎 {n} ta fayl",
+
+        # Confirm task
+        "confirm_accepted":    "✅ Qabul qilindi!",
+        "confirm_already":     "✅ Allaqachon qabul qilingan",
+        "confirm_not_found":   "Vazifa topilmadi",
+        "confirm_notif":       "✅ <b>Vazifa qabul qilindi</b>\n\n📋 {title}\n👤 {name}\n🆔 #{id}",
+
+        # Overdue
+        "overdue_none": "✅ Kechikkan vazifa yo'q!",
+
+        # Common
+        "no_active_process": "Hozir hech qanday jarayon yo'q.",
 
         "help_employee": (
             "📖 <b>FOYDALANISH YO'RIQNOMASI</b>\n"
@@ -393,6 +483,96 @@ TEXTS = {
         "btn_leaderboard":  "🏆 Рейтинг",
         "btn_overdue":      "🔴 Просроченные",
         "btn_export_excel": "📥 Экспорт Excel",
+        "btn_unconfirmed":  "⏳ Неподтверждённые",
+
+        # Task edit
+        "task_edit_header": "✏️ <b>Редактирование задачи</b>\n\n📋 {title}\n👤 {name}\n📅 {deadline}\n\nЧто изменить?",
+        "field_updated":    "✅ Изменено!",
+        "task_deleted":     "🗑 Задача удалена.",
+        "category_updated": "✅ Категория изменена: <b>{val}</b>",
+        "priority_updated": "✅ Приоритет изменён: <b>{val}</b>",
+        "reminder_updated": "✅ Напоминание изменено: <b>{val}</b>",
+        "deadline_updated": "✅ Срок: <b>{dl}</b>",
+        "date_updated":     "✅ Дата: <b>{dl}</b>",
+        "deadline_select":  "📅 <b>Выберите новый срок:</b>",
+        "date_select":      "📅 Выберите новую дату:",
+        "session_expired":  "⚠️ Сессия истекла. Откройте задачу заново.",
+
+        # Plans
+        "plan_update_btn":    "✏️ Обновить выполненное",
+        "plan_update_select": "📅 Какой план обновить?",
+        "plan_done_ask":      "🎯 Введите выполненное количество (от 0):\n\n{cancel}",
+        "plan_updated":       "✅ Обновлено! Выполнено: {done}",
+
+        # Stats/report
+        "month_select_stats":  "📊 <b>Выберите месяц:</b>",
+        "month_select_report": "📨 <b>Выберите месяц для отчёта:</b>",
+
+        # Employees
+        "tasks_by_employee": "👥 <b>Задачи по сотрудникам:</b>",
+        "employees_title":   "👥 <b>Сотрудники</b> — {n} чел:",
+        "employees_short":   "👥 <b>Сотрудники:</b>",
+        "role_admin":        "👑 Администратор",
+        "role_employee":     "👤 Сотрудник",
+        "welcome_added_uz":  "👋 Добро пожаловать, {name}!\n\nВы добавлены в систему Teplolux.\n🎭 {role}\n\n/start",
+
+        # Meetings
+        "meetings_title":       "🗓 <b>Совещания</b> — {n} шт:",
+        "new_meeting_btn":      "➕ Новое совещание",
+        "meeting_new_title_ask":"📝 Введите тему совещания:",
+        "meeting_agenda_ask":   "📄 Повестка дня / обсуждаемые вопросы:\n(или /skip)",
+        "meeting_date_select":  "📅 <b>Выберите дату совещания:</b>",
+        "meeting_created":      "✅ <b>Совещание создано!</b>\n\n📋 {title}\n📅 {dl}\n\nВсе уведомлены.\n🆔 #{id}",
+        "meeting_notif":        "🗓 <b>Новое совещание!</b>\n\n📋 <b>{title}</b>\n📅 {dl}",
+        "meeting_edit_what":    "Что изменить?",
+        "meeting_edit_topic":   "📝 Изменить тему",
+        "meeting_edit_agenda":  "📄 Изменить повестку",
+        "meeting_edit_dec":     "✅ Добавить решения",
+        "meeting_edit_date":    "📅 Изменить дату",
+        "meeting_tasks_title":  "📋 Задачи: {n} шт",
+        "meeting_report_title": "📊 <b>Отчёт совещания</b>",
+        "meeting_tasks_status": "<b>Статус задач:</b>",
+        "link_task_btn":        "📋 Прикрепить задачу",
+        "task_select":          "📋 Выберите задачу:",
+        "linked":               "✅ Прикреплено!",
+        "meeting_deleted":      "✅ Удалено",
+        "meeting_edit_btn":     "✏️ Редактировать",
+        "meeting_report_btn":   "📊 Отчёт",
+        "meeting_delete_btn":   "🗑 Удалить",
+        "enter_new_topic":      "📝 Введите новую тему:",
+        "enter_new_agenda":     "📄 Введите новую повестку:",
+        "enter_decisions":      "✅ Введите принятые решения:",
+
+        # Unconfirmed
+        "unconfirmed_none":  "✅ Нет неподтверждённых задач!",
+        "unconfirmed_title": "⏳ <b>Неподтверждённые задачи</b> — {n} шт:",
+
+        # Excel export
+        "excel_select_period": "📥 <b>Экспорт Excel — выберите период:</b>",
+        "excel_all_tasks_btn": "📥 Все задачи",
+        "excel_send_group":    "📤 Отправить в группу",
+        "excel_sent_group":    "✅ Отправлено в группу!",
+        "group_not_set":       "❌ Группа не настроена!",
+        "no_tasks_found":      "📭 Задачи не найдены.",
+
+        # Comments / files
+        "comment_ask":    "💬 Напишите комментарий:\n\n⬅️ Отмена: /bekor",
+        "comment_added":  "✅ Комментарий добавлен!",
+        "file_ask":       "📎 <b>Загрузить файл</b>\n\nОтправьте фото, видео или документ.\n\n⬅️ Отмена: /bekor",
+        "file_uploaded":  "✅ Файл загружен!",
+        "files_count":    "📎 {n} файл(ов)",
+
+        # Confirm task
+        "confirm_accepted":    "✅ Принято!",
+        "confirm_already":     "✅ Уже принято",
+        "confirm_not_found":   "Задача не найдена",
+        "confirm_notif":       "✅ <b>Задача принята</b>\n\n📋 {title}\n👤 {name}\n🆔 #{id}",
+
+        # Overdue
+        "overdue_none": "✅ Просроченных задач нет!",
+
+        # Common
+        "no_active_process": "Нет активного процесса.",
 
         "help_employee": (
             "📖 <b>РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ</b>\n"

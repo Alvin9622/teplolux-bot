@@ -34,7 +34,7 @@ def admin_kb(lang):
         [btn(T(lang, "btn_stats"),         "admin:stats"),
          btn(T(lang, "btn_leaderboard"),   "admin:leaderboard")],
         [btn(T(lang, "btn_overdue"),       "admin:overdue"),
-         btn("⏳ Tasdiqlanmaganlar",       "admin:unconfirmed")],
+         btn(T(lang, "btn_unconfirmed"),  "admin:unconfirmed")],
         [btn(T(lang, "btn_users"),         "admin:users")],
         [btn(T(lang, "btn_send_report"),   "admin:send_report"),
          btn(T(lang, "btn_export_excel"),  "admin:export:current")],

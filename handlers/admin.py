@@ -126,13 +126,9 @@ async def _handle_cal(cb, state, next_state_fn):
             if task:
                 asgn  = await db.get_user_by_id(task["assignee_id"])
                 aname = asgn["full_name"] if asgn else "—"
-                text  = (
-                    f"✏️ <b>Vazifani tahrirlash</b>\n\n"
-                    f"📋 {task['title']}\n"
-                    f"👤 {aname}\n"
-                    f"📅 {task.get('deadline','—')}\n\n"
-                    f"Nimani o'zgartirmoqchisiz?"
-                )
+                text  = T(lang, "task_edit_header",
+                          title=task["title"], name=aname,
+                          deadline=task.get("deadline","—"))
                 try:
                     await cb.message.edit_text(text, reply_markup=task_edit_kb(lang, tid), parse_mode="HTML")
                 except Exception:
@@ -143,21 +139,21 @@ async def _handle_cal(cb, state, next_state_fn):
             meeting = await db.get_meeting(mid)
             if meeting:
                 rows = [
-                    [InlineKeyboardButton(text="📝 Mavzuni o'zgartirish",       callback_data=f"medit:title:{mid}")],
-                    [InlineKeyboardButton(text="📄 Kun tartibini o'zgartirish", callback_data=f"medit:desc:{mid}")],
-                    [InlineKeyboardButton(text="✅ Qarorlar qo'shish",          callback_data=f"medit:decisions:{mid}")],
-                    [InlineKeyboardButton(text="📅 Sanani o'zgartirish",        callback_data=f"medit:date:{mid}")],
-                    [InlineKeyboardButton(text=T(lang, "back"),                 callback_data=f"meeting:view:{mid}")],
+                    [InlineKeyboardButton(text=T(lang,"meeting_edit_topic"), callback_data=f"medit:title:{mid}")],
+                    [InlineKeyboardButton(text=T(lang,"meeting_edit_agenda"),callback_data=f"medit:desc:{mid}")],
+                    [InlineKeyboardButton(text=T(lang,"meeting_edit_dec"),   callback_data=f"medit:decisions:{mid}")],
+                    [InlineKeyboardButton(text=T(lang,"meeting_edit_date"),  callback_data=f"medit:date:{mid}")],
+                    [InlineKeyboardButton(text=T(lang,"back"),               callback_data=f"meeting:view:{mid}")],
                 ]
                 try:
                     await cb.message.edit_text(
-                        f"✏️ <b>{meeting['title']}</b>\n\nNimani o'zgartirish?",
+                        f"✏️ <b>{meeting['title']}</b>\n\n{T(lang,'meeting_edit_what')}",
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
                         parse_mode="HTML"
                     )
                 except Exception:
                     await cb.message.answer(
-                        f"✏️ <b>{meeting['title']}</b>\n\nNimani o'zgartirish?",
+                        f"✏️ <b>{meeting['title']}</b>\n\n{T(lang,'meeting_edit_what')}",
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
                         parse_mode="HTML"
                     )
@@ -176,7 +172,7 @@ async def _handle_cal(cb, state, next_state_fn):
         import re as _re
         txt       = cb.message.text or ""
         tid_match = _re.search(r'tid:(\d+)', txt)
-        new_text  = f"📅 <b>Yangi muddatni tanlang:</b>\n<code>tid:{tid_match.group(1)}</code>" if tid_match else "📅 <b>Muddatni tanlang:</b>"
+        new_text  = f"{T(lang,'deadline_select')}\n<code>tid:{tid_match.group(1)}</code>" if tid_match else T(lang,"deadline_select")
         await cb.message.edit_text(new_text, reply_markup=calendar_kb(y, m), parse_mode="HTML")
         await cb.answer()
         return
@@ -237,8 +233,7 @@ async def t_category(cb: CallbackQuery, state: FSMContext):
         await state.clear()
         await db.update_task(task_id, category=cat)
         await cb.message.edit_text(
-            f"✅ Kategoriya o'zgartirildi: <b>{cat}</b>" if lang == "uz"
-            else f"✅ Категория изменена: <b>{cat}</b>",
+            T(lang, "category_updated", val=cat),
             reply_markup=back_kb(lang, f"task_view_{task_id}"),
             parse_mode="HTML"
         )
@@ -294,8 +289,7 @@ async def t_priority(cb: CallbackQuery, state: FSMContext):
         await state.clear()
         await db.update_task(task_id, priority=priority)
         await cb.message.edit_text(
-            f"✅ Ustuvorlik o'zgartirildi: <b>{priority_txt(lang, priority)}</b>" if lang == "uz"
-            else f"✅ Приоритет изменён: <b>{priority_txt(lang, priority)}</b>",
+            T(lang, "priority_updated", val=priority_txt(lang, priority)),
             reply_markup=back_kb(lang, f"task_view_{task_id}"),
             parse_mode="HTML"
         )
@@ -323,8 +317,7 @@ async def t_reminder(cb: CallbackQuery, state: FSMContext):
         await state.clear()
         await db.update_task(task_id, reminder_days=r_days)
         await cb.message.edit_text(
-            f"✅ Eslatma o'zgartirildi: <b>{reminder_txt(lang, r_days)}</b>" if lang == "uz"
-            else f"✅ Напоминание изменено: <b>{reminder_txt(lang, r_days)}</b>",
+            T(lang, "reminder_updated", val=reminder_txt(lang, r_days)),
             reply_markup=back_kb(lang, f"task_view_{task_id}"),
             parse_mode="HTML"
         )
@@ -401,13 +394,7 @@ async def task_edit_menu(cb: CallbackQuery):
         return
     assignee = await db.get_user_by_id(task["assignee_id"])
     aname    = assignee["full_name"] if assignee else "—"
-    text = (
-        f"✏️ <b>Vazifani tahrirlash</b>\n\n"
-        f"📋 {task['title']}\n"
-        f"👤 {aname}\n"
-        f"📅 {task.get('deadline','—')}\n\n"
-        f"Nimani o'zgartirmoqchisiz?"
-    )
+    text = T(lang, "task_edit_header", title=task["title"], name=aname, deadline=task.get("deadline","—"))
     try:
         await cb.message.edit_text(text, reply_markup=task_edit_kb(lang, task_id), parse_mode="HTML")
     except Exception:
@@ -455,7 +442,7 @@ async def task_edit_field(cb: CallbackQuery, state: FSMContext):
         await state.set_state(AdminStates.edit_deadline)
         now = datetime.date.today()
         await cb.message.edit_text(
-            f"📅 <b>Yangi muddatni tanlang:</b>\n<code>tid:{task_id}</code>",
+            f"{T(lang,'deadline_select')}\n<code>tid:{task_id}</code>",
             reply_markup=calendar_kb(now.year, now.month), parse_mode="HTML"
         )
     elif field == "priority":
@@ -533,12 +520,12 @@ async def by_employee(cb: CallbackQuery):
     emp_list = await db.get_tasks_by_assignee_grouped()
     try:
         await cb.message.edit_text(
-            "👥 <b>Hodimlar bo'yicha vazifalar:</b>",
+            T(lang, "tasks_by_employee"),
             reply_markup=by_employee_kb(lang, emp_list), parse_mode="HTML"
         )
     except Exception:
         await cb.message.answer(
-            "👥 <b>Hodimlar bo'yicha vazifalar:</b>",
+            T(lang, "tasks_by_employee"),
             reply_markup=by_employee_kb(lang, emp_list), parse_mode="HTML"
         )
     await cb.answer()
@@ -602,10 +589,10 @@ async def delete_task(cb: CallbackQuery):
         return
     task_id = int(cb.data.split(":")[2])
     await db.delete_task(task_id)
-    await cb.answer("✅ O'chirildi", show_alert=True)
+    await cb.answer(T(lang, "meeting_deleted"), show_alert=True)
     try:
         await cb.message.edit_text(
-            "🗑 Vazifa o'chirildi.", reply_markup=back_kb(lang, "admin"), parse_mode="HTML"
+            T(lang, "task_deleted"), reply_markup=back_kb(lang, "admin"), parse_mode="HTML"
         )
     except Exception:
         pass
@@ -731,7 +718,7 @@ async def all_plans(cb: CallbackQuery):
         await cb.message.edit_text(
             text,
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="✏️ Bajarilganini yangilash", callback_data="admin:update_plans")],
+                [InlineKeyboardButton(text=T(lang,"plan_update_btn"), callback_data="admin:update_plans")],
                 [InlineKeyboardButton(text=T(lang,"back"), callback_data="go:admin")]
             ]),
             parse_mode="HTML"
@@ -751,13 +738,13 @@ async def update_plans_menu(cb: CallbackQuery):
     plans = await db.get_plans(now.month, now.year)
     try:
         await cb.message.edit_text(
-            "📅 Qaysi rejaning bajarilganini yangilash?",
+            T(lang, "plan_update_select"),
             reply_markup=plan_list_kb(lang, plans),
             parse_mode="HTML"
         )
     except Exception:
         await cb.message.answer(
-            "📅 Qaysi rejaning bajarilganini yangilash?",
+            T(lang, "plan_update_select"),
             reply_markup=plan_list_kb(lang, plans),
             parse_mode="HTML"
         )
@@ -774,7 +761,7 @@ async def plan_edit_done(cb: CallbackQuery, state: FSMContext):
     await state.update_data(lang=lang, plan_id=plan_id)
     await state.set_state(AdminStates.plan_done)
     await cb.message.edit_text(
-        "🎯 Bajarilgan sonini kiriting (0 dan boshlab):\n\n" + T(lang, "cancel_action"),
+        T(lang, "plan_done_ask", cancel=T(lang, "cancel_action")),
         parse_mode="HTML"
     )
     await cb.answer()
@@ -791,10 +778,7 @@ async def plan_done_received(msg: Message, state: FSMContext):
         return
     await state.clear()
     await db.update_plan_done(data["plan_id"], done)
-    await msg.answer(
-        f"✅ Yangilandi! Bajarildi: {done}",
-        reply_markup=back_kb(lang, "admin"), parse_mode="HTML"
-    )
+    await msg.answer(T(lang, "plan_updated", done=done), reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -809,11 +793,11 @@ async def stats_menu(cb: CallbackQuery):
         return
     try:
         await cb.message.edit_text(
-            "📊 <b>Oyni tanlang:</b>",
+            T(lang, "month_select_stats"),
             reply_markup=stats_months_kb(lang), parse_mode="HTML"
         )
     except Exception:
-        await cb.message.answer("📊 <b>Oyni tanlang:</b>",
+        await cb.message.answer(T(lang, "month_select_stats"),
                                 reply_markup=stats_months_kb(lang), parse_mode="HTML")
     await cb.answer()
 
@@ -846,11 +830,11 @@ async def send_report_menu(cb: CallbackQuery):
         return
     try:
         await cb.message.edit_text(
-            "📨 <b>Hisobot uchun oyni tanlang:</b>",
+            T(lang, "month_select_report"),
             reply_markup=report_months_kb(lang), parse_mode="HTML"
         )
     except Exception:
-        await cb.message.answer("📨 <b>Hisobot uchun oyni tanlang:</b>",
+        await cb.message.answer(T(lang, "month_select_report"),
                                 reply_markup=report_months_kb(lang), parse_mode="HTML")
     await cb.answer()
 
@@ -882,12 +866,12 @@ async def users_menu(cb: CallbackQuery):
     emps = await db.get_all_employees()
     try:
         await cb.message.edit_text(
-            f"👥 <b>Hodimlar</b> — {len(emps)} kishi:",
+            T(lang, "employees_title", n=len(emps)),
             reply_markup=employees_list_kb(lang, emps), parse_mode="HTML"
         )
     except Exception:
         await cb.message.answer(
-            f"👥 <b>Hodimlar</b> — {len(emps)} kishi:",
+            T(lang, "employees_title", n=len(emps)),
             reply_markup=employees_list_kb(lang, emps), parse_mode="HTML"
         )
     await cb.answer()
@@ -912,7 +896,7 @@ async def user_manage(cb: CallbackQuery):
     over  = es["overdue"] if es else 0
     pct   = round(done/total*100) if total else 0
     pos   = f"\n💼 {emp['position']}" if emp.get("position") else ""
-    rl    = "👑 Admin" if emp["role"]=="admin" else "👤 Hodim"
+    rl    = T(lang,"role_admin") if emp["role"]=="admin" else T(lang,"role_employee")
     ll    = "O'zbekcha" if emp["lang"]=="uz" else "Русский"
     al    = "✅ Faol" if emp["is_active"] else "🚫 Bloklangan"
     text  = (
@@ -946,11 +930,11 @@ async def toggle_role(cb: CallbackQuery):
         await cb.answer()
         return
     await db.set_user_role(emp["telegram_id"], new_role)
-    rl = "👑 Admin" if new_role=="admin" else "👤 Hodim"
+    rl = T(lang,"role_admin") if new_role=="admin" else T(lang,"role_employee")
     await cb.answer(f"✅ {emp['full_name']} → {rl}", show_alert=True)
     emps = await db.get_all_employees()
     await cb.message.edit_text(
-        "👥 <b>Hodimlar:</b>",
+        T(lang, "employees_short"),
         reply_markup=employees_list_kb(lang, emps), parse_mode="HTML"
     )
 
@@ -972,7 +956,7 @@ async def block_user(cb: CallbackQuery):
     await cb.answer(f"✅ {emp['full_name']} {lbl}", show_alert=True)
     emps = await db.get_all_employees()
     await cb.message.edit_text(
-        "👥 <b>Hodimlar:</b>",
+        T(lang, "employees_short"),
         reply_markup=employees_list_kb(lang, emps), parse_mode="HTML"
     )
 
@@ -1006,7 +990,7 @@ async def au_id(msg: Message, state: FSMContext):
         return
     existing = await db.get_user(tg_id)
     if existing:
-        rl = "👑 Admin" if existing["role"]=="admin" else "👤 Hodim"
+        rl = T(lang,"role_admin") if existing["role"]=="admin" else T(lang,"role_employee")
         await msg.answer(
             T(lang, "user_already_exists", name=existing["full_name"], role=rl),
             reply_markup=back_kb(lang, "admin:users"), parse_mode="HTML"
@@ -1045,15 +1029,11 @@ async def au_lang(cb: CallbackQuery, state: FSMContext):
     name  = data["new_name"]
     role  = data["new_role"]
     await db.create_user(tg_id, name, None, role, new_lang, "")
-    rl   = "👑 Admin" if role=="admin" else "👤 Hodim"
+    rl   = T(new_lang,"role_admin") if role=="admin" else T(new_lang,"role_employee")
     ll   = "O'zbekcha" if new_lang=="uz" else "Русский"
     ok   = False
     try:
-        welcome = (
-            f"👋 Xush kelibsiz, {name}!\n\nTeplolux monitoring tizimiga qo'shildingiz.\n🎭 {rl}\n\n/start yuboring."
-        ) if new_lang=="uz" else (
-            f"👋 Добро пожаловать, {name}!\n\nВы добавлены в систему Teplolux.\n🎭 {rl}\n\n/start"
-        )
+        welcome = T(new_lang, "welcome_added_uz", name=name, role=rl)
         await cb.bot.send_message(tg_id, welcome, parse_mode="HTML")
         ok = True
     except Exception:
@@ -1088,9 +1068,9 @@ async def meetings_menu(cb: CallbackQuery):
             text=f"📋 {m['title'][:25]} | {dl}",
             callback_data=f"meeting:view:{m['id']}"
         )])
-    rows.append([InlineKeyboardButton(text="➕ Yangi majlis", callback_data="meeting:new")])
+    rows.append([InlineKeyboardButton(text=T(lang,"new_meeting_btn"), callback_data="meeting:new")])
     rows.append([InlineKeyboardButton(text=T(lang,"back"), callback_data="go:admin")])
-    text = f"🗓 <b>Majlislar</b> — {len(meetings)} ta:"
+    text = T(lang, "meetings_title", n=len(meetings))
     try:
         await cb.message.edit_text(
             text, reply_markup=InlineKeyboardMarkup(inline_keyboard=rows), parse_mode="HTML"
@@ -1111,7 +1091,7 @@ async def new_meeting(cb: CallbackQuery, state: FSMContext):
     await state.update_data(lang=lang, creator_id=user["id"])
     await state.set_state(AdminStates.meeting_title)
     await cb.message.edit_text(
-        "🗓 <b>Yangi majlis</b>\n\n📝 Majlis mavzusini kiriting:\n\n" + T(lang,"cancel_action"),
+        f"🗓 <b>{T(lang,'new_meeting_btn')}</b>\n\n{T(lang,'meeting_new_title_ask')}\n\n{T(lang,'cancel_action')}",
         parse_mode="HTML"
     )
     await cb.answer()
@@ -1122,9 +1102,7 @@ async def m_title(msg: Message, state: FSMContext):
     data = await state.get_data()
     await state.update_data(title=msg.text.strip())
     await state.set_state(AdminStates.meeting_desc)
-    await msg.answer(
-        "📄 Kun tartibi / muhokama qilinadigan masalalar:\n(yoki /skip)\n\n" + T(data["lang"],"cancel_action")
-    )
+    await msg.answer(f"{T(data['lang'],'meeting_agenda_ask')}\n\n{T(data['lang'],'cancel_action')}")
 
 
 @router.message(AdminStates.meeting_desc)
@@ -1134,10 +1112,8 @@ async def m_desc(msg: Message, state: FSMContext):
     await state.update_data(desc=desc)
     await state.set_state(AdminStates.meeting_date)
     now = datetime.date.today()
-    await msg.answer(
-        "📅 <b>Majlis sanasini tanlang:</b>",
-        reply_markup=calendar_kb(now.year, now.month), parse_mode="HTML"
-    )
+    lang = data["lang"]
+    await msg.answer(T(lang, "meeting_date_select"), reply_markup=calendar_kb(now.year, now.month), parse_mode="HTML")
 
 
 @router.callback_query(AdminStates.meeting_date, F.data.startswith("cal:"))
@@ -1150,25 +1126,29 @@ async def m_date_cal(cb: CallbackQuery, state: FSMContext):
             title=data["title"], description=data.get("desc",""),
             meeting_date=selected.isoformat(), created_by=data["creator_id"]
         )
-        # Barcha hodimga xabar
+        # Barcha hodimga xabar (har birining tilida)
         users = await db.get_all_active_users()
-        notif = f"🗓 <b>Yangi majlis!</b>\n\n📋 <b>{data['title']}</b>\n📅 {dl_fmt}"
-        if data.get("desc"):
-            notif += f"\n📄 {data['desc']}"
         for u in users:
+            ul    = u.get("lang") or "uz"
+            notif = T(ul, "meeting_notif", title=data["title"], dl=dl_fmt)
+            if data.get("desc"):
+                notif += f"\n📄 {data['desc']}"
             try:
                 await cb.bot.send_message(u["telegram_id"], notif, parse_mode="HTML")
             except Exception:
                 pass
         if GROUP_ID:
             try:
-                await cb.bot.send_message(GROUP_ID, notif, parse_mode="HTML")
+                grp_notif = T("uz", "meeting_notif", title=data["title"], dl=dl_fmt)
+                if data.get("desc"):
+                    grp_notif += f"\n📄 {data['desc']}"
+                await cb.bot.send_message(GROUP_ID, grp_notif, parse_mode="HTML")
             except Exception:
                 pass
         await cb.message.edit_text(
-            f"✅ <b>Majlis yaratildi!</b>\n\n📋 {data['title']}\n📅 {dl_fmt}\n\nBarcha xabardor qilindi.\n🆔 #{meeting_id}",
+            T(lang, "meeting_created", title=data["title"], dl=dl_fmt, id=meeting_id),
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="📋 Vazifa biriktirish", callback_data=f"meeting:tasks:{meeting_id}")],
+                [InlineKeyboardButton(text=T(lang,"link_task_btn"), callback_data=f"meeting:tasks:{meeting_id}")],
                 [InlineKeyboardButton(text=T(lang,"back"), callback_data="admin:meetings")],
             ]),
             parse_mode="HTML"
@@ -1192,17 +1172,18 @@ async def _render_meeting(cb: CallbackQuery, meeting_id: int):
     if meeting.get("description"):
         text += f"📄 {meeting['description']}\n"
     if meeting.get("decisions"):
-        text += f"\n✅ <b>Qarorlar:</b>\n{meeting['decisions']}\n"
-    text += f"\n📋 <b>Vazifalar: {len(tasks)} ta</b>\n"
+        dec_label = "✅ <b>Qarorlar:</b>" if lang=="uz" else "✅ <b>Решения:</b>"
+        text += f"\n{dec_label}\n{meeting['decisions']}\n"
+    text += f"\n{T(lang,'meeting_tasks_title',n=len(tasks))}\n"
     for t in tasks:
         icon = {"new":"🆕","in_progress":"🔄","done":"✅","cancelled":"❌","review":"👀"}.get(t["status"],"📌")
         text += f"{icon} {t['title']} — {t.get('assignee_name','—')}\n"
     rows = [
-        [InlineKeyboardButton(text="✏️ Tahrirlash",       callback_data=f"meeting:edit:{meeting_id}")],
-        [InlineKeyboardButton(text="📊 Hisobot",           callback_data=f"meeting:report:{meeting_id}")],
-        [InlineKeyboardButton(text="📋 Vazifa biriktirish",callback_data=f"meeting:tasks:{meeting_id}")],
-        [InlineKeyboardButton(text="🗑 O'chirish",         callback_data=f"meeting:delete:{meeting_id}")],
-        [InlineKeyboardButton(text=T(lang,"back"),         callback_data="admin:meetings")],
+        [InlineKeyboardButton(text=T(lang,"meeting_edit_btn"),  callback_data=f"meeting:edit:{meeting_id}")],
+        [InlineKeyboardButton(text=T(lang,"meeting_report_btn"),callback_data=f"meeting:report:{meeting_id}")],
+        [InlineKeyboardButton(text=T(lang,"link_task_btn"),     callback_data=f"meeting:tasks:{meeting_id}")],
+        [InlineKeyboardButton(text=T(lang,"meeting_delete_btn"),callback_data=f"meeting:delete:{meeting_id}")],
+        [InlineKeyboardButton(text=T(lang,"back"),              callback_data="admin:meetings")],
     ]
     try:
         await cb.message.edit_text(
@@ -1233,15 +1214,15 @@ async def meeting_edit(cb: CallbackQuery, state: FSMContext):
         await cb.answer()
         return
     rows = [
-        [InlineKeyboardButton(text="📝 Mavzuni o'zgartirish",   callback_data=f"medit:title:{meeting_id}")],
-        [InlineKeyboardButton(text="📄 Kun tartibini o'zgartirish", callback_data=f"medit:desc:{meeting_id}")],
-        [InlineKeyboardButton(text="✅ Qarorlar qo'shish",       callback_data=f"medit:decisions:{meeting_id}")],
-        [InlineKeyboardButton(text="📅 Sanani o'zgartirish",     callback_data=f"medit:date:{meeting_id}")],
+        [InlineKeyboardButton(text=T(lang,"meeting_edit_topic"), callback_data=f"medit:title:{meeting_id}")],
+        [InlineKeyboardButton(text=T(lang,"meeting_edit_agenda"),callback_data=f"medit:desc:{meeting_id}")],
+        [InlineKeyboardButton(text=T(lang,"meeting_edit_dec"),   callback_data=f"medit:decisions:{meeting_id}")],
+        [InlineKeyboardButton(text=T(lang,"meeting_edit_date"),  callback_data=f"medit:date:{meeting_id}")],
         [InlineKeyboardButton(text=T(lang,"back"),               callback_data=f"meeting:view:{meeting_id}")],
     ]
     try:
         await cb.message.edit_text(
-            f"✏️ <b>{meeting['title']}</b>\n\nNimani o'zgartirish?",
+            f"✏️ <b>{meeting['title']}</b>\n\n{T(lang,'meeting_edit_what')}",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
             parse_mode="HTML"
         )
@@ -1265,15 +1246,15 @@ async def meeting_edit_field(cb: CallbackQuery, state: FSMContext):
         await state.set_state(AdminStates.edit_deadline)
         now = datetime.date.today()
         await cb.message.edit_text(
-            "📅 Yangi sanani tanlang:",
+            T(lang, "date_select"),
             reply_markup=calendar_kb(now.year, now.month), parse_mode="HTML"
         )
     else:
         await state.set_state(AdminStates.edit_value)
         prompts = {
-            "title":     "📝 Yangi mavzuni kiriting:",
-            "desc":      "📄 Yangi kun tartibini kiriting:",
-            "decisions": "✅ Qabul qilingan qarorlarni kiriting:",
+            "title":     T(lang, "enter_new_topic"),
+            "desc":      T(lang, "enter_new_agenda"),
+            "decisions": T(lang, "enter_decisions"),
         }
         await cb.message.edit_text(
             prompts.get(field, "Kiriting:") + "\n\n" + T(lang, "cancel_action"),
@@ -1295,7 +1276,7 @@ async def edit_value_any(msg: Message, state: FSMContext):
             await db.update_task(task_id, title=msg.text.strip())
         elif field == "desc":
             await db.update_task(task_id, description=msg.text.strip())
-        await msg.answer("✅ O'zgartirildi!", reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML")
+        await msg.answer(T(lang,"field_updated"), reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML")
     elif "edit_meeting_id" in data:
         meeting_id = data["edit_meeting_id"]
         kwargs = {}
@@ -1306,7 +1287,7 @@ async def edit_value_any(msg: Message, state: FSMContext):
         elif field == "decisions":
             kwargs["decisions"] = msg.text.strip()
         await db.update_meeting(meeting_id, **kwargs)
-        await msg.answer("✅ O'zgartirildi!", reply_markup=back_kb(lang, f"meeting:view:{meeting_id}"), parse_mode="HTML")
+        await msg.answer(T(lang,"field_updated"), reply_markup=back_kb(lang, f"meeting:view:{meeting_id}"), parse_mode="HTML")
 
 
 @router.callback_query(AdminStates.edit_deadline, F.data.startswith("cal:"))
@@ -1319,14 +1300,14 @@ async def edit_deadline_any(cb: CallbackQuery, state: FSMContext):
             if "edit_task_id" in data:
                 await db.update_task(int(data["edit_task_id"]), deadline=selected.isoformat())
                 await cb.message.edit_text(
-                    f"✅ Muddat: <b>{dl_fmt}</b>",
+                    T(lang, "deadline_updated", dl=dl_fmt),
                     reply_markup=back_kb(lang, f"task_view_{data['edit_task_id']}"),
                     parse_mode="HTML"
                 )
             elif "edit_meeting_id" in data:
                 await db.update_meeting(int(data["edit_meeting_id"]), meeting_date=selected.isoformat())
                 await cb.message.edit_text(
-                    f"✅ Sana: <b>{dl_fmt}</b>",
+                    T(lang, "date_updated", dl=dl_fmt),
                     reply_markup=back_kb(lang, f"meeting:view:{data['edit_meeting_id']}"),
                     parse_mode="HTML"
                 )
@@ -1364,7 +1345,7 @@ async def cal_fallback(cb: CallbackQuery, state: FSMContext):
         import re as _re
         txt = cb.message.text or cb.message.caption or ""
         tid_match = _re.search(r'tid:(\d+)', txt)
-        new_text = f"📅 <b>Yangi muddatni tanlang:</b>\n<code>tid:{tid_match.group(1)}</code>" if tid_match else "📅 <b>Muddatni tanlang:</b>"
+        new_text = f"📅 <b>Yangi muddatni tanlang:</b>\n<code>tid:{tid_match.group(1)}</code>" if tid_match else "📅 <b>Yangi muddatni tanlang:</b>"
         await cb.message.edit_text(new_text, reply_markup=calendar_kb(y, m), parse_mode="HTML")
         await cb.answer()
         return
@@ -1399,20 +1380,17 @@ async def cal_fallback(cb: CallbackQuery, state: FSMContext):
             if task:
                 asgn  = await db.get_user_by_id(task["assignee_id"])
                 aname = asgn["full_name"] if asgn else "—"
-                text  = (
-                    f"✏️ <b>Vazifani tahrirlash</b>\n\n"
-                    f"📋 {task['title']}\n"
-                    f"👤 {aname}\n"
-                    f"📅 {task.get('deadline','—')}\n\n"
-                    f"Nimani o'zgartirmoqchisiz?"
-                )
+                text  = T(lang, "task_edit_header",
+                          title=task["title"], name=aname,
+                          deadline=task.get("deadline","—"))
                 try:
                     await cb.message.edit_text(text, reply_markup=task_edit_kb(lang, task_id), parse_mode="HTML")
                 except Exception:
                     await cb.message.answer(text, reply_markup=task_edit_kb(lang, task_id), parse_mode="HTML")
             return
 
-    await cb.answer("⚠️ Sessiya tugagan. Vazifani qaytadan oching.", show_alert=True)
+    user2, lang2 = await get_ul(cb.from_user.id)
+    await cb.answer(T(lang2 or "uz", "session_expired"), show_alert=True)
 
 
 @router.callback_query(F.data.startswith("meeting:tasks:"))
@@ -1435,12 +1413,12 @@ async def meeting_add_tasks(cb: CallbackQuery):
     rows.append([InlineKeyboardButton(text=T(lang,"back"), callback_data=f"meeting:view:{meeting_id}")])
     try:
         await cb.message.edit_text(
-            "📋 Vazifani tanlang:",
+            T(lang, "task_select"),
             reply_markup=InlineKeyboardMarkup(inline_keyboard=rows), parse_mode="HTML"
         )
     except Exception:
         await cb.message.answer(
-            "📋 Vazifani tanlang:",
+            T(lang, "task_select"),
             reply_markup=InlineKeyboardMarkup(inline_keyboard=rows), parse_mode="HTML"
         )
     await cb.answer()
@@ -1452,7 +1430,8 @@ async def link_task(cb: CallbackQuery):
     meeting_id = int(parts[2])
     task_id    = int(parts[3])
     await db.link_task_to_meeting(meeting_id, task_id)
-    await cb.answer("✅ Biriktirildi!", show_alert=True)
+    user_lnk, lang_lnk = await get_ul(cb.from_user.id)
+    await cb.answer(T(lang_lnk, "linked"), show_alert=True)
     await _render_meeting(cb, meeting_id)
 
 
@@ -1476,14 +1455,15 @@ async def meeting_report(cb: CallbackQuery):
     canc  = sum(1 for t in tasks if t["status"]=="cancelled")
     pct   = round(done/total*100) if total else 0
     from utils.formatters import progress_bar
+    tasks_label = "Vazifalar holati:" if lang=="uz" else "Статус задач:"
     text = (
-        f"📊 <b>Majlis hisoboti</b>\n"
+        f"{T(lang,'meeting_report_title')}\n"
         f"📋 {meeting['title']}\n"
         f"📅 {dl}\n"
         f"{'—'*22}\n\n"
         f"📌 Jami: {total} | ✅ {done} | 🔄 {prog} | ❌ {canc}\n"
         f"🎯 {pct}%\n{progress_bar(pct)}\n\n"
-        f"<b>Vazifalar holati:</b>\n"
+        f"<b>{tasks_label}</b>\n"
     )
     for t in tasks:
         icon = {"new":"🆕","in_progress":"🔄","done":"✅","cancelled":"❌","review":"👀"}.get(t["status"],"📌")
@@ -1540,7 +1520,7 @@ async def show_overdue(cb: CallbackQuery):
         return
     tasks = await db.get_overdue_tasks_admin()
     if not tasks:
-        txt = "✅ Kechikkan vazifa yo'q!" if lang == "uz" else "✅ Просроченных задач нет!"
+        txt = T(lang, "overdue_none")
         try:
             await cb.message.edit_text(txt, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
         except Exception:
@@ -1585,7 +1565,7 @@ async def show_unconfirmed(cb: CallbackQuery):
         return
     tasks = await db.get_unconfirmed_tasks_admin()
     if not tasks:
-        txt = "✅ Tasdiqlanmagan vazifa yo'q!" if lang=="uz" else "✅ Нет неподтверждённых задач!"
+        txt = T(lang, "unconfirmed_none")
         try:
             await cb.message.edit_text(txt, reply_markup=back_kb(lang, "admin"), parse_mode="HTML")
         except Exception:
@@ -1600,11 +1580,7 @@ async def show_unconfirmed(cb: CallbackQuery):
             callback_data=f"task:view:{t['id']}"
         )])
     rows.append([InlineKeyboardButton(text=T(lang,"back"), callback_data="go:admin")])
-    text = (
-        f"⏳ <b>Tasdiqlanmagan vazifalar</b> — {len(tasks)} ta:"
-        if lang=="uz" else
-        f"⏳ <b>Неподтверждённые задачи</b> — {len(tasks)} шт:"
-    )
+    text = T(lang, "unconfirmed_title", n=len(tasks))
     try:
         await cb.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=rows), parse_mode="HTML")
     except Exception:
@@ -1632,20 +1608,19 @@ async def export_menu(cb: CallbackQuery):
             callback_data=f"admin:do_export:{d.month}:{d.year}"
         )])
     rows.append([InlineKeyboardButton(
-        text="📥 Barcha vazifalar" if lang == "uz" else "📥 Все задачи",
+        text=T(lang, "excel_all_tasks_btn"),
         callback_data="admin:do_export:0:0"
     )])
     rows.append([InlineKeyboardButton(text=T(lang, "back"), callback_data="go:admin")])
     try:
         await cb.message.edit_text(
-            "📥 <b>Excel eksport — oyni tanlang:</b>" if lang == "uz"
-            else "📥 <b>Экспорт Excel — выберите период:</b>",
+            T(lang, "excel_select_period"),
             reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
             parse_mode="HTML"
         )
     except Exception:
         await cb.message.answer(
-            "📥 <b>Excel eksport:</b>",
+            T(lang, "excel_select_period"),
             reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
             parse_mode="HTML"
         )
@@ -1668,10 +1643,7 @@ async def do_export(cb: CallbackQuery):
 
     tasks = await db.get_all_tasks_for_export(month or None, year or None)
     if not tasks:
-        await cb.message.answer(
-            "📭 Vazifa topilmadi." if lang == "uz" else "📭 Задачи не найдены.",
-            reply_markup=back_kb(lang, "admin")
-        )
+        await cb.message.answer(T(lang, "no_tasks_found"), reply_markup=back_kb(lang, "admin"))
         return
 
     buf = build_tasks_excel(tasks, month or None, year or None)
@@ -1692,7 +1664,7 @@ async def do_export(cb: CallbackQuery):
     data_key = f"{month}:{year}"
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text="📤 Guruhga yuborish" if lang=="uz" else "📤 Отправить в группу",
+            text=T(lang, "excel_send_group"),
             callback_data=f"admin:export_to_group:{data_key}"
         )],
         [InlineKeyboardButton(text=T(lang, "back"), callback_data="go:admin")],
@@ -1710,17 +1682,14 @@ async def export_to_group(cb: CallbackQuery):
         await cb.answer()
         return
     if not GROUP_ID:
-        await cb.answer(
-            "❌ Guruh sozlanmagan!" if lang=="uz" else "❌ Группа не настроена!",
-            show_alert=True
-        )
+        await cb.answer(T(lang, "group_not_set"), show_alert=True)
         return
     parts = cb.data.split(":")
     month = int(parts[2])
     year  = int(parts[3])
     tasks = await db.get_all_tasks_for_export(month or None, year or None)
     if not tasks:
-        await cb.answer("📭 Vazifa topilmadi.", show_alert=True)
+        await cb.answer(T(lang, "no_tasks_found"), show_alert=True)
         return
     buf = build_tasks_excel(tasks, month or None, year or None)
     now = datetime.datetime.now()
@@ -1739,7 +1708,7 @@ async def export_to_group(cb: CallbackQuery):
             caption=f"📊 <b>Excel hisobot</b>\n📋 {len(tasks)} ta vazifa\n📅 {period}\n👤 {user['full_name']}",
             parse_mode="HTML"
         )
-        await cb.answer("✅ Guruhga yuborildi!" if lang=="uz" else "✅ Отправлено в группу!", show_alert=True)
+        await cb.answer(T(lang, "excel_sent_group"), show_alert=True)
     except Exception as e:
         await cb.answer(f"❌ Xato: {e}", show_alert=True)
 
@@ -1752,7 +1721,7 @@ async def delete_meeting(cb: CallbackQuery):
         return
     meeting_id = int(cb.data.split(":")[2])
     await db.delete_meeting(meeting_id)
-    await cb.answer("✅ O'chirildi", show_alert=True)
+    await cb.answer(T(lang, "meeting_deleted"), show_alert=True)
     meetings = await db.get_meetings(15)
     rows = []
     for m in meetings[:10]:
@@ -1765,9 +1734,9 @@ async def delete_meeting(cb: CallbackQuery):
             text=f"📋 {m['title'][:25]} | {dl}",
             callback_data=f"meeting:view:{m['id']}"
         )])
-    rows.append([InlineKeyboardButton(text="➕ Yangi majlis", callback_data="meeting:new")])
+    rows.append([InlineKeyboardButton(text=T(lang,"new_meeting_btn"), callback_data="meeting:new")])
     rows.append([InlineKeyboardButton(text=T(lang,"back"), callback_data="go:admin")])
-    text = f"🗓 <b>Majlislar</b> — {len(meetings)} ta:"
+    text = T(lang, "meetings_title", n=len(meetings))
     try:
         await cb.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=rows), parse_mode="HTML")
     except Exception:

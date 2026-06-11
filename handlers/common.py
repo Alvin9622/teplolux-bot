@@ -86,7 +86,9 @@ async def go_help(cb: CallbackQuery):
 async def cmd_cancel(msg: Message, state: FSMContext):
     cur = await state.get_state()
     if cur is None:
-        await msg.answer("Hozir hech qanday jarayon yo'q.")
+        user = await db.get_user(msg.from_user.id)
+        lang = user["lang"] if user else "uz"
+        await msg.answer(T(lang, "no_active_process"))
         return
     data = await state.get_data()
     lang = data.get("lang", "uz")
