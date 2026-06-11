@@ -119,6 +119,18 @@ async def _handle_cal(cb, state, next_state_fn):
         return
     if action == "cancel":
         await state.clear()
+        if "edit_task_id" in data:
+            tid = data["edit_task_id"]
+            cb.data = f"task:edit:{tid}"
+            await cb.answer()
+            await task_edit_menu(cb)
+            return
+        if "edit_meeting_id" in data:
+            mid = data["edit_meeting_id"]
+            cb.data = f"meeting:edit:{mid}"
+            await cb.answer()
+            await meeting_edit(cb, state)
+            return
         await cb.message.edit_text(T(lang, "cancelled"))
         await cb.answer()
         return
