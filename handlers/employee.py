@@ -24,6 +24,48 @@ def is_admin(user):
     return user and (user["role"] == "admin" or user["telegram_id"] in ADMIN_IDS)
 
 
+@router.callback_query(F.data.startswith("task:confirm:"))
+async def confirm_task_cb(cb: CallbackQuery):
+    task_id = int(cb.data.split(":")[2])
+    user    = await db.get_user(cb.from_user.id)
+    if not user:
+        await cb.answer()
+        return
+    lang = user["lang"]
+    task = await db.get_task(task_id)
+    if not task:
+        await cb.answer("Vazifa topilmadi", show_alert=True)
+        return
+    if task["confirmed_at"]:
+        await cb.answer(
+            "✅ Allaqachon qabul qilingan" if lang=="uz" else "✅ Уже принято",
+            show_alert=True
+        )
+        return
+    await db.confirm_task(task_id, user["id"])
+    notif = (
+        f"✅ <b>Vazifa qabul qilindi</b>\n\n"
+        f"📋 {task['title']}\n"
+        f"👤 {user['full_name']}\n"
+        f"🆔 #{task_id}"
+    )
+    for aid in ADMIN_IDS:
+        try:
+            await cb.bot.send_message(aid, notif, parse_mode="HTML")
+        except Exception:
+            pass
+    if GROUP_ID:
+        try:
+            await cb.bot.send_message(GROUP_ID, notif, parse_mode="HTML")
+        except Exception:
+            pass
+    await cb.answer("✅ Qabul qilindi!" if lang=="uz" else "✅ Принято!", show_alert=True)
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+
 @router.message(Command("mytasks"))
 async def cmd_mytasks(msg: Message):
     user = await db.get_user(msg.from_user.id)
@@ -110,7 +152,7 @@ async def set_status(cb: CallbackQuery, state: FSMContext):
     await _notify_admins(cb.bot, task, new_status, user["full_name"])
     await cb.message.edit_text(
         T(lang, "status_updated", status=status_txt(lang, new_status)),
-        reply_markup=back_kb(lang, "mytasks"), parse_mode="HTML"
+        reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML"
     )
     await cb.answer("✅")
 
@@ -129,7 +171,7 @@ async def recv_cancel_reason(msg: Message, state: FSMContext):
     await _notify_admins(msg.bot, task, "cancelled", user["full_name"] if user else "?", reason)
     await msg.answer(
         T(lang, "status_updated", status=status_txt(lang, "cancelled")) + f"\n💬 {reason}",
-        reply_markup=back_kb(lang, "mytasks"), parse_mode="HTML"
+        reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML"
     )
 
 
@@ -188,7 +230,7 @@ async def recv_progress(msg: Message, state: FSMContext):
 
     await msg.answer(
         T(lang, "progress_updated", pct=pct) + f"\n{progress_bar(pct)}",
-        reply_markup=back_kb(lang, "mytasks"), parse_mode="HTML"
+        reply_markup=back_kb(lang, f"task_view_{data['task_id']}"), parse_mode="HTML"
     )
 
 
@@ -259,7 +301,7 @@ async def recv_file(msg: Message, state: FSMContext):
             pass
     await msg.answer(
         "✅ Fayl yuklandi!" if lang=="uz" else "✅ Файл загружен!",
-        reply_markup=back_kb(lang, "mytasks"), parse_mode="HTML"
+        reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML"
     )
 
 
@@ -270,6 +312,7 @@ async def view_files(cb: CallbackQuery):
     if not user:
         await cb.answer()
         return
+    lang  = user["lang"]
     files = await db.get_task_files(task_id)
     if not files:
         await cb.answer("📭 Fayl yo'q", show_alert=True)
@@ -288,6 +331,10 @@ async def view_files(cb: CallbackQuery):
             elif ft=="audio":  await cb.message.answer_audio(f["file_id"], caption=cap)
         except Exception:
             pass
+    await cb.message.answer(
+        f"📎 {len(files)} ta fayl" if lang=="uz" else f"📎 {len(files)} файл(ов)",
+        reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML"
+    )
 
 
 # ─── COMMENTS ────────────────────────────────────────────────────
