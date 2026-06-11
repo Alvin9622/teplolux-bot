@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -10,7 +11,8 @@ from database import init_db
 from handlers import admin, employee, common, confirm, group
 from utils.reminders import (
     send_reminders, send_daily_digest,
-    send_confirm_reminders, send_weekly_report
+    send_confirm_reminders, send_weekly_report,
+    send_monthly_reports
 )
 
 logging.basicConfig(
@@ -65,6 +67,13 @@ async def main():
     scheduler.add_job(send_confirm_reminders, "cron", minute=0,                args=[bot])
     # Haftalik hisobot — dushanba 09:00
     scheduler.add_job(send_weekly_report,     "cron", day_of_week="mon", hour=9, minute=0, args=[bot])
+    # Oylik hisobot — har oyning 1-kuni 10:00
+    async def _monthly_report():
+        now = datetime.datetime.now()
+        m   = now.month - 1 or 12
+        y   = now.year if now.month > 1 else now.year - 1
+        await send_monthly_reports(bot, m, y)
+    scheduler.add_job(_monthly_report, "cron", day=1, hour=10, minute=0)
     scheduler.start()
 
     logger.info("Bot ishga tushdi ✅")

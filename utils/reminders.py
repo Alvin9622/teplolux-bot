@@ -142,6 +142,9 @@ async def send_weekly_report(bot: Bot):
 async def send_monthly_reports(bot: Bot, month: int, year: int):
     from config import ADMIN_IDS, GROUP_ID
     from utils.formatters import employee_monthly_report, monthly_stats_text
+    from utils.excel_export import build_tasks_excel
+    from aiogram.types import BufferedInputFile
+    import database as _db
     users = await db.get_all_active_users()
     for user in users:
         lang  = user.get("lang") or "uz"
@@ -150,7 +153,24 @@ async def send_monthly_reports(bot: Bot, month: int, year: int):
         await safe_send(bot, user["telegram_id"], text)
     ss, us, plans = await db.get_monthly_stats(month, year)
     admin_text    = monthly_stats_text(ss, us, plans, month, year, "uz")
-    for aid in ADMIN_IDS:
-        await safe_send(bot, aid, admin_text)
+    # Excel fayl tayyorla
+    all_tasks = await db.get_all_tasks_for_export(month, year)
+    months_uz = ["Yanvar","Fevral","Mart","Aprel","May","Iyun",
+                 "Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"]
+    fname = f"teplolux_{months_uz[month-1].lower()}_{year}.xlsx"
+    targets = list(ADMIN_IDS)
     if GROUP_ID:
-        await safe_send(bot, GROUP_ID, admin_text)
+        targets.append(GROUP_ID)
+    for target in targets:
+        await safe_send(bot, target, admin_text)
+        if all_tasks:
+            try:
+                buf = build_tasks_excel(all_tasks, month, year)
+                doc = BufferedInputFile(buf.read(), filename=fname)
+                await bot.send_document(
+                    target, doc,
+                    caption=f"📊 Excel hisobot — {months_uz[month-1]} {year} | {len(all_tasks)} ta vazifa",
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.error("Monthly Excel send error %s: %s", target, e)

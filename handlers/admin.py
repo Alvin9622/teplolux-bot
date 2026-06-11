@@ -1663,8 +1663,8 @@ async def do_export(cb: CallbackQuery):
     await cb.answer("⏳ Tayyorlanmoqda..." if lang == "uz" else "⏳ Готовится...", show_alert=False)
 
     parts = cb.data.split(":")
-    month = int(parts[3])
-    year  = int(parts[4])
+    month = int(parts[2])
+    year  = int(parts[3])
 
     tasks = await db.get_all_tasks_for_export(month or None, year or None)
     if not tasks:
