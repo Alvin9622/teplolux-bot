@@ -1273,23 +1273,28 @@ async def edit_value_any(msg: Message, state: FSMContext):
 @router.callback_query(AdminStates.edit_deadline, F.data.startswith("cal:"))
 async def edit_deadline_any(cb: CallbackQuery, state: FSMContext):
     async def on_day(cb, state, selected, lang):
-        data = await state.get_data()
-        await state.clear()
-        dl_fmt = selected.strftime("%d.%m.%Y")
-        if "edit_task_id" in data:
-            await db.update_task(data["edit_task_id"], deadline=selected.isoformat())
-            await cb.message.edit_text(
-                f"✅ Muddat: <b>{dl_fmt}</b>",
-                reply_markup=back_kb(lang, f"task_view_{data['edit_task_id']}"),
-                parse_mode="HTML"
-            )
-        elif "edit_meeting_id" in data:
-            await db.update_meeting(data["edit_meeting_id"], meeting_date=selected.isoformat())
-            await cb.message.edit_text(
-                f"✅ Sana: <b>{dl_fmt}</b>",
-                reply_markup=back_kb(lang, f"meeting:view:{data['edit_meeting_id']}"),
-                parse_mode="HTML"
-            )
+        try:
+            data = await state.get_data()
+            await state.clear()
+            dl_fmt = selected.strftime("%d.%m.%Y")
+            if "edit_task_id" in data:
+                await db.update_task(int(data["edit_task_id"]), deadline=selected.isoformat())
+                await cb.message.edit_text(
+                    f"✅ Muddat: <b>{dl_fmt}</b>",
+                    reply_markup=back_kb(lang, f"task_view_{data['edit_task_id']}"),
+                    parse_mode="HTML"
+                )
+            elif "edit_meeting_id" in data:
+                await db.update_meeting(int(data["edit_meeting_id"]), meeting_date=selected.isoformat())
+                await cb.message.edit_text(
+                    f"✅ Sana: <b>{dl_fmt}</b>",
+                    reply_markup=back_kb(lang, f"meeting:view:{data['edit_meeting_id']}"),
+                    parse_mode="HTML"
+                )
+            else:
+                await cb.answer(f"⚠️ data yo'q: {list(data.keys())}", show_alert=True)
+        except Exception as e:
+            await cb.answer(f"❌ Xato: {e}", show_alert=True)
     await _handle_cal(cb, state, on_day)
 
 
