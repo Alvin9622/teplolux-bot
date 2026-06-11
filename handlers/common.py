@@ -162,11 +162,9 @@ async def go_lang(cb: CallbackQuery):
 
 @router.callback_query(F.data.startswith("go:"))
 async def universal_go(cb: CallbackQuery):
-    dest = cb.data[3:]  # "go:admin:users" -> "admin:users"
+    dest = cb.data[3:]  # "go:task_view_3" -> "task_view_3"
 
     if dest == "admin:users":
-        cb.data = "admin:users"
-        # forward to admin handler — just answer and let admin router handle
         from handlers.admin import users_menu
         await users_menu(cb)
         return
@@ -198,6 +196,18 @@ async def universal_go(cb: CallbackQuery):
             return
         await show_main(cb, user["lang"], user)
         await cb.answer()
+        return
+
+    if dest.startswith("task_view_"):
+        from handlers.employee import go_task_view
+        await go_task_view(cb)
+        return
+
+    if dest.startswith("admin:"):
+        # admin: prefixli noma'lum yo'nalish — admin menyuga qaytamiz
+        from handlers.admin import go_admin
+        cb.data = "go:admin"
+        await go_admin(cb)
         return
 
     await cb.answer()

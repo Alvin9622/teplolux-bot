@@ -119,20 +119,18 @@ async def _handle_cal(cb, state, next_state_fn):
         return
     if action == "cancel":
         await state.clear()
+        await cb.answer()
         if "edit_task_id" in data:
             tid = data["edit_task_id"]
             cb.data = f"task:edit:{tid}"
-            await cb.answer()
             await task_edit_menu(cb)
             return
         if "edit_meeting_id" in data:
             mid = data["edit_meeting_id"]
             cb.data = f"meeting:edit:{mid}"
-            await cb.answer()
             await meeting_edit(cb, state)
             return
         await cb.message.edit_text(T(lang, "cancelled"))
-        await cb.answer()
         return
     if action in ("prev", "next"):
         y, m = int(parts[2]), int(parts[3])
@@ -380,7 +378,10 @@ async def task_edit_menu(cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=task_edit_kb(lang, task_id), parse_mode="HTML")
     except Exception:
         await cb.message.answer(text, reply_markup=task_edit_kb(lang, task_id), parse_mode="HTML")
-    await cb.answer()
+    try:
+        await cb.answer()
+    except Exception:
+        pass
 
 
 @router.callback_query(F.data.startswith("edit:"))
