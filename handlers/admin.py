@@ -1668,7 +1668,10 @@ async def do_export(cb: CallbackQuery):
 
     tasks = await db.get_all_tasks_for_export(month or None, year or None)
     if not tasks:
-        await cb.message.answer("📭 Vazifa topilmadi." if lang == "uz" else "📭 Задачи не найдены.")
+        await cb.message.answer(
+            "📭 Vazifa topilmadi." if lang == "uz" else "📭 Задачи не найдены.",
+            reply_markup=back_kb(lang, "admin")
+        )
         return
 
     buf = build_tasks_excel(tasks, month or None, year or None)
@@ -1676,16 +1679,69 @@ async def do_export(cb: CallbackQuery):
     if month:
         months = TEXTS[lang]["months"]
         fname  = f"teplolux_{months[month-1].lower()}_{year}.xlsx"
+        period = f"{months[month-1]} {year}"
     else:
-        fname = f"teplolux_all_{now.strftime('%Y%m%d')}.xlsx"
+        fname  = f"teplolux_all_{now.strftime('%Y%m%d')}.xlsx"
+        period = now.strftime("%d.%m.%Y")
 
-    doc = BufferedInputFile(buf.read(), filename=fname)
     caption = (
-        f"📊 <b>Excel hisobot</b>\n📋 {len(tasks)} ta vazifa\n📅 {now.strftime('%d.%m.%Y %H:%M')}"
+        f"📊 <b>Excel hisobot</b>\n📋 {len(tasks)} ta vazifa\n📅 {period}"
         if lang == "uz" else
-        f"📊 <b>Excel отчёт</b>\n📋 {len(tasks)} задач\n📅 {now.strftime('%d.%m.%Y %H:%M')}"
+        f"📊 <b>Excel отчёт</b>\n📋 {len(tasks)} задач\n📅 {period}"
     )
-    await cb.message.answer_document(doc, caption=caption, parse_mode="HTML")
+    data_key = f"{month}:{year}"
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="📤 Guruhga yuborish" if lang=="uz" else "📤 Отправить в группу",
+            callback_data=f"admin:export_to_group:{data_key}"
+        )],
+        [InlineKeyboardButton(text=T(lang, "back"), callback_data="go:admin")],
+    ])
+    doc = BufferedInputFile(buf.read(), filename=fname)
+    await cb.message.answer_document(doc, caption=caption, parse_mode="HTML", reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("admin:export_to_group:"))
+async def export_to_group(cb: CallbackQuery):
+    from aiogram.types import BufferedInputFile
+    from utils.excel_export import build_tasks_excel
+    user, lang = await get_ul(cb.from_user.id)
+    if not is_admin(user):
+        await cb.answer()
+        return
+    if not GROUP_ID:
+        await cb.answer(
+            "❌ Guruh sozlanmagan!" if lang=="uz" else "❌ Группа не настроена!",
+            show_alert=True
+        )
+        return
+    parts = cb.data.split(":")
+    month = int(parts[2])
+    year  = int(parts[3])
+    tasks = await db.get_all_tasks_for_export(month or None, year or None)
+    if not tasks:
+        await cb.answer("📭 Vazifa topilmadi.", show_alert=True)
+        return
+    buf = build_tasks_excel(tasks, month or None, year or None)
+    now = datetime.datetime.now()
+    if month:
+        months_uz = ["Yanvar","Fevral","Mart","Aprel","May","Iyun",
+                     "Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"]
+        fname  = f"teplolux_{months_uz[month-1].lower()}_{year}.xlsx"
+        period = f"{months_uz[month-1]} {year}"
+    else:
+        fname  = f"teplolux_all_{now.strftime('%Y%m%d')}.xlsx"
+        period = now.strftime("%d.%m.%Y")
+    doc = BufferedInputFile(buf.read(), filename=fname)
+    try:
+        await cb.bot.send_document(
+            GROUP_ID, doc,
+            caption=f"📊 <b>Excel hisobot</b>\n📋 {len(tasks)} ta vazifa\n📅 {period}\n👤 {user['full_name']}",
+            parse_mode="HTML"
+        )
+        await cb.answer("✅ Guruhga yuborildi!" if lang=="uz" else "✅ Отправлено в группу!", show_alert=True)
+    except Exception as e:
+        await cb.answer(f"❌ Xato: {e}", show_alert=True)
 
 
 @router.callback_query(F.data.startswith("meeting:delete:"))
