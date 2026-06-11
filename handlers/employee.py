@@ -62,40 +62,7 @@ async def go_mytasks(cb: CallbackQuery):
 @router.callback_query(F.data.startswith("task:view:"))
 async def view_task(cb: CallbackQuery):
     task_id = int(cb.data.split(":")[2])
-    user    = await db.get_user(cb.from_user.id)
-    if not user:
-        await cb.answer(T("uz", "not_registered"), show_alert=True)
-        return
-    lang = user["lang"]
-    task = await db.get_task(task_id)
-    if not task:
-        await cb.answer(T(lang, "error"), show_alert=True)
-        return
-    admin = is_admin(user)
-    if task["assignee_id"] != user["id"] and not admin:
-        await cb.answer(T(lang, "no_permission"), show_alert=True)
-        return
-    assignee      = await db.get_user_by_id(task["assignee_id"])
-    aname         = assignee["full_name"] if assignee else "—"
-    files         = await db.get_task_files(task_id)
-    comments      = await db.get_comments(task_id)
-    text          = task_card(task, lang, aname, len(files), len(comments))
-    is_mine       = task["assignee_id"] == user["id"]
-    can_edit      = is_mine and task["status"] not in ("done","cancelled")
-    back_to       = "mytasks" if is_mine else "admin:by_emp"
-    try:
-        await cb.message.edit_text(
-            text,
-            reply_markup=task_actions_kb(lang, task_id, is_mine=can_edit, is_admin=admin, back_to=back_to),
-            parse_mode="HTML"
-        )
-    except Exception:
-        await cb.message.answer(
-            text,
-            reply_markup=task_actions_kb(lang, task_id, is_mine=can_edit, is_admin=admin, back_to=back_to),
-            parse_mode="HTML"
-        )
-    await cb.answer()
+    await _show_task(cb, task_id)
 
 
 @router.callback_query(F.data.startswith("task:status:"))
@@ -436,5 +403,41 @@ async def _notify_admins(bot, task, new_status, changer_name, cancel_reason=None
 @router.callback_query(F.data.startswith("go:task_view_"))
 async def go_task_view(cb: CallbackQuery):
     task_id = int(cb.data.split("_")[-1])
-    cb.data = f"task:view:{task_id}"
-    await view_task(cb)
+    await _show_task(cb, task_id)
+
+
+async def _show_task(cb: CallbackQuery, task_id: int):
+    user = await db.get_user(cb.from_user.id)
+    if not user:
+        await cb.answer(T("uz", "not_registered"), show_alert=True)
+        return
+    lang = user["lang"]
+    task = await db.get_task(task_id)
+    if not task:
+        await cb.answer(T(lang, "error"), show_alert=True)
+        return
+    admin = is_admin(user)
+    if task["assignee_id"] != user["id"] and not admin:
+        await cb.answer(T(lang, "no_permission"), show_alert=True)
+        return
+    assignee = await db.get_user_by_id(task["assignee_id"])
+    aname    = assignee["full_name"] if assignee else "—"
+    files    = await db.get_task_files(task_id)
+    comments = await db.get_comments(task_id)
+    text     = task_card(task, lang, aname, len(files), len(comments))
+    is_mine  = task["assignee_id"] == user["id"]
+    can_edit = is_mine and task["status"] not in ("done", "cancelled")
+    back_to  = "mytasks" if is_mine else "admin:by_emp"
+    try:
+        await cb.message.edit_text(
+            text,
+            reply_markup=task_actions_kb(lang, task_id, is_mine=can_edit, is_admin=admin, back_to=back_to),
+            parse_mode="HTML"
+        )
+    except Exception:
+        await cb.message.answer(
+            text,
+            reply_markup=task_actions_kb(lang, task_id, is_mine=can_edit, is_admin=admin, back_to=back_to),
+            parse_mode="HTML"
+        )
+    await cb.answer()
