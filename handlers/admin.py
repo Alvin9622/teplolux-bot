@@ -420,7 +420,7 @@ async def task_edit_field(cb: CallbackQuery, state: FSMContext):
         await state.set_state(AdminStates.edit_deadline)
         now = datetime.date.today()
         await cb.message.edit_text(
-            "📅 <b>Yangi muddatni tanlang:</b>",
+            f"📅 <b>Yangi muddatni tanlang:</b>\n<code>tid:{task_id}</code>",
             reply_markup=calendar_kb(now.year, now.month), parse_mode="HTML"
         )
     elif field == "priority":
@@ -1291,6 +1291,72 @@ async def edit_deadline_any(cb: CallbackQuery, state: FSMContext):
                 parse_mode="HTML"
             )
     await _handle_cal(cb, state, on_day)
+
+
+@router.callback_query(F.data.startswith("cal:"))
+async def cal_fallback(cb: CallbackQuery, state: FSMContext):
+    """State yo'qolgan hollarda (bot restart) calendar tugmalarini ushlaydi."""
+    cur = await state.get_state()
+    if cur is not None:
+        await cb.answer()
+        return
+
+    parts  = cb.data.split(":")
+    action = parts[1]
+
+    if action == "ignore":
+        await cb.answer()
+        return
+
+    if action in ("prev", "next"):
+        user, lang = await get_ul(cb.from_user.id)
+        y, m = int(parts[2]), int(parts[3])
+        if action == "prev":
+            m -= 1
+            if m < 1: m = 12; y -= 1
+        else:
+            m += 1
+            if m > 12: m = 1; y += 1
+        # Extract task_id from message text if present
+        import re as _re
+        txt = cb.message.text or cb.message.caption or ""
+        tid_match = _re.search(r'tid:(\d+)', txt)
+        new_text = f"📅 <b>Yangi muddatni tanlang:</b>\n<code>tid:{tid_match.group(1)}</code>" if tid_match else "📅 <b>Muddatni tanlang:</b>"
+        await cb.message.edit_text(new_text, reply_markup=calendar_kb(y, m), parse_mode="HTML")
+        await cb.answer()
+        return
+
+    if action == "day" and len(parts) == 5:
+        import re as _re
+        txt = cb.message.text or cb.message.caption or ""
+        tid_match = _re.search(r'tid:(\d+)', txt)
+        if tid_match:
+            user, lang = await get_ul(cb.from_user.id)
+            task_id = int(tid_match.group(1))
+            selected = datetime.date(int(parts[2]), int(parts[3]), int(parts[4]))
+            await db.update_task(task_id, deadline=selected.isoformat())
+            dl_fmt = selected.strftime("%d.%m.%Y")
+            await cb.message.edit_text(
+                f"✅ Muddat: <b>{dl_fmt}</b>",
+                reply_markup=back_kb(lang, f"task_view_{task_id}"),
+                parse_mode="HTML"
+            )
+            await cb.answer(dl_fmt)
+            return
+
+    if action == "cancel":
+        import re as _re
+        txt = cb.message.text or cb.message.caption or ""
+        tid_match = _re.search(r'tid:(\d+)', txt)
+        if tid_match:
+            user, lang = await get_ul(cb.from_user.id)
+            task_id = int(tid_match.group(1))
+            cb.data = f"task:edit:{task_id}"
+            await cb.answer()
+            await task_edit_menu(cb)
+            return
+
+    await cb.answer("⚠️ Sessiya tugagan. Vazifani qaytadan oching.", show_alert=True)
 
 
 @router.callback_query(F.data.startswith("meeting:tasks:"))
