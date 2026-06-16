@@ -223,6 +223,11 @@ async def universal_go(cb: CallbackQuery):
         await expenses_menu(cb)
         return
 
+    if dest == "dashboard":
+        from handlers.dashboard import dashboard
+        await dashboard(cb)
+        return
+
     if dest.startswith("admin:"):
         # admin: prefixli noma'lum yo'nalish — admin menyuga qaytamiz
         from handlers.admin import go_admin
