@@ -232,18 +232,16 @@ async def _save_expense(msg: Message, state: FSMContext):
     ], [
         InlineKeyboardButton(text="🔄 Kechiktirish", callback_data=f"exp:postpone:{expense_id}"),
     ]])
-    targets = list(ADMIN_IDS)
-    if GROUP_ID:
-        targets.append(GROUP_ID)
-    for target in targets:
+    # Faqat adminlarga yuboriladi — guruhga EMAS
+    for admin_id in ADMIN_IDS:
         try:
-            await msg.bot.send_message(target, admin_notif, reply_markup=approve_kb, parse_mode="HTML")
+            await msg.bot.send_message(admin_id, admin_notif, reply_markup=approve_kb, parse_mode="HTML")
             if exp.get("file_id"):
                 ft = exp.get("file_type", "document")
                 if ft == "photo":
-                    await msg.bot.send_photo(target, exp["file_id"])
+                    await msg.bot.send_photo(admin_id, exp["file_id"])
                 else:
-                    await msg.bot.send_document(target, exp["file_id"])
+                    await msg.bot.send_document(admin_id, exp["file_id"])
         except Exception:
             pass
 
