@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 import database as db
+import utils.sheets as sheets
 from config import ADMIN_IDS, GROUP_ID
 from keyboards.kb import tasks_list_kb, task_actions_kb, status_kb, back_kb
 from texts import T, status_txt
@@ -40,6 +41,11 @@ async def confirm_task_cb(cb: CallbackQuery):
         await cb.answer(T(lang, "confirm_already"), show_alert=True)
         return
     await db.confirm_task(task_id, user["id"])
+    task = await db.get_task(task_id)  # reload with confirmed_at
+    assignee = await db.get_user_by_id(task["assignee_id"]) if task else None
+    creator = await db.get_user_by_id(task["created_by"]) if task and task.get("created_by") else None
+    await sheets.sync_task(task, assignee, creator)
+    await sheets.log_activity("Qabul qilindi", task, user, "", "✅")
     notif = T("uz", "confirm_notif", title=task["title"], name=user["full_name"], id=task_id)
     for aid in ADMIN_IDS:
         try:
@@ -140,7 +146,14 @@ async def set_status(cb: CallbackQuery, state: FSMContext):
         )
         await cb.answer()
         return
-    await db.update_task_status(task_id, new_status, user_id=user["id"], old_status=task["status"])
+    old_status = task["status"]
+    await db.update_task_status(task_id, new_status, user_id=user["id"], old_status=old_status)
+    task = await db.get_task(task_id)
+    assignee = await db.get_user_by_id(task["assignee_id"]) if task else None
+    creator = await db.get_user_by_id(task["created_by"]) if task and task.get("created_by") else None
+    await sheets.sync_task(task, assignee, creator)
+    await sheets.log_activity("Holat o'zgardi", task, user,
+                              status_txt("uz", old_status), status_txt("uz", new_status))
     await _notify_admins(cb.bot, task, new_status, user["full_name"])
     await cb.message.edit_text(
         T(lang, "status_updated", status=status_txt(lang, new_status)),
@@ -160,6 +173,11 @@ async def recv_cancel_reason(msg: Message, state: FSMContext):
                                  user_id=data["user_db_id"], old_status=data["old_status"])
     task = await db.get_task(task_id)
     user = await db.get_user(msg.from_user.id)
+    assignee = await db.get_user_by_id(task["assignee_id"]) if task else None
+    creator = await db.get_user_by_id(task["created_by"]) if task and task.get("created_by") else None
+    await sheets.sync_task(task, assignee, creator)
+    await sheets.log_activity("Bekor qilindi", task, user or assignee,
+                              status_txt("uz", data["old_status"]), "❌ Bekor")
     await _notify_admins(msg.bot, task, "cancelled", user["full_name"] if user else "?", reason)
     await msg.answer(
         T(lang, "status_updated", status=status_txt(lang, "cancelled")) + f"\n💬 {reason}",
@@ -203,6 +221,12 @@ async def recv_progress(msg: Message, state: FSMContext):
 
     task = await db.get_task(data["task_id"])
     user = await db.get_user_by_id(data["user_db_id"])
+    if task:
+        assignee = await db.get_user_by_id(task["assignee_id"])
+        creator = await db.get_user_by_id(task["created_by"]) if task.get("created_by") else None
+        await sheets.sync_task(task, assignee, creator)
+        await sheets.log_activity("Foiz yangilandi", task, user or assignee,
+                                  "", f"{pct}%")
     if task and user:
         notif = (
             f"📊 <b>Foiz yangilandi</b>\n\n"
@@ -341,9 +365,11 @@ async def recv_comment(msg: Message, state: FSMContext):
     lang    = data["lang"]
     task_id = data["task_id"]
     user_id = data["user_db_id"]
-    await db.add_comment(task_id, user_id, msg.text.strip())
+    comment_text = msg.text.strip()
+    comment_id = await db.add_comment(task_id, user_id, comment_text)
     task = await db.get_task(task_id)
     user = await db.get_user_by_id(user_id)
+    await sheets.add_comment_to_sheet(comment_id or 0, task, user, comment_text)
     notif = f"💬 <b>Yangi izoh</b>\n\n📋 {task['title']}\n👤 {user['full_name'] if user else '?'}\n\n{msg.text}"
 
     targets = list(ADMIN_IDS)

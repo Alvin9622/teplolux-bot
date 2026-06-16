@@ -457,11 +457,12 @@ async def get_task_files(task_id):
 
 async def add_comment(task_id, user_id, text):
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
+        cur = await db.execute(
             "INSERT INTO task_comments (task_id,user_id,text) VALUES (?,?,?)",
             (task_id, user_id, text)
         )
         await db.commit()
+        return cur.lastrowid
 
 async def get_comments(task_id):
     async with aiosqlite.connect(DB_PATH) as db:

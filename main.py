@@ -47,6 +47,13 @@ async def set_commands(bot: Bot):
 async def main():
     await init_db()
 
+    # Google Sheets — startup sync (xato bo'lsa bot ishini davom ettiradi)
+    try:
+        from utils.sheets import full_sync_all_tasks
+        await full_sync_all_tasks()
+    except Exception as _se:
+        logger.warning("Sheets startup sync skipped: %s", _se)
+
     bot = Bot(token=BOT_TOKEN)
     dp  = Dispatcher(storage=MemoryStorage())
 

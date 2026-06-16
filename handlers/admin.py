@@ -21,6 +21,7 @@ from utils.formatters import (
     leaderboard_text, overdue_tasks_text
 )
 from utils.reminders import send_monthly_reports, safe_send
+import utils.sheets as sheets
 
 router = Router()
 
@@ -367,6 +368,13 @@ async def t_reminder(cb: CallbackQuery, state: FSMContext):
             await cb.bot.send_message(GROUP_ID, group_text, parse_mode="HTML")
         except Exception:
             pass
+
+    # Sheets sync
+    task = await db.get_task(task_id)
+    creator = await db.get_user_by_id(data["creator_id"])
+    await sheets.sync_task(task, assignee, creator)
+    await sheets.log_activity("Vazifa yaratildi", task, creator or assignee,
+                              "", data["title"])
 
     aname = assignee["full_name"] if assignee else "—"
     await cb.message.edit_text(
@@ -1276,6 +1284,10 @@ async def edit_value_any(msg: Message, state: FSMContext):
             await db.update_task(task_id, title=msg.text.strip())
         elif field == "desc":
             await db.update_task(task_id, description=msg.text.strip())
+        task = await db.get_task(task_id)
+        assignee = await db.get_user_by_id(task["assignee_id"]) if task else None
+        editor = await db.get_user(msg.from_user.id)
+        await sheets.sync_task(task, assignee, editor)
         await msg.answer(T(lang,"field_updated"), reply_markup=back_kb(lang, f"task_view_{task_id}"), parse_mode="HTML")
     elif "edit_meeting_id" in data:
         meeting_id = data["edit_meeting_id"]
