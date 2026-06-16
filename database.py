@@ -983,3 +983,103 @@ async def seed_roadmap_tasks():
                     (phase, title, now, now)
                 )
             await db.commit()
+
+
+# ─── ROADMAP CRUD ────────────────────────────────────────────────
+
+async def get_roadmap_tasks(phase=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        if phase:
+            async with db.execute(
+                "SELECT * FROM roadmap_tasks WHERE phase=? ORDER BY id", (phase,)
+            ) as c:
+                return [_row(r) for r in await c.fetchall()]
+        async with db.execute("SELECT * FROM roadmap_tasks ORDER BY phase, id") as c:
+            return [_row(r) for r in await c.fetchall()]
+
+
+async def get_roadmap_task(task_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM roadmap_tasks WHERE id=?", (task_id,)) as c:
+            r = await c.fetchone()
+            return _row(r) if r else None
+
+
+async def create_roadmap_task(phase, title, notes="", created_by=None):
+    now = datetime.datetime.now().isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            "INSERT INTO roadmap_tasks (phase, title, notes, status, created_by, created_at, updated_at) "
+            "VALUES (?, ?, ?, 'pending', ?, ?, ?)",
+            (phase, title, notes, created_by, now, now)
+        )
+        await db.commit()
+        return cur.lastrowid
+
+
+async def update_roadmap_task(task_id, **kwargs):
+    if not kwargs:
+        return
+    now = datetime.datetime.now().isoformat()
+    kwargs["updated_at"] = now
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [task_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE roadmap_tasks SET {sets} WHERE id=?", vals)
+        await db.commit()
+
+
+async def delete_roadmap_task(task_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM roadmap_tasks WHERE id=?", (task_id,))
+        await db.commit()
+
+
+# ─── EXPENSES CRUD ──────────────────────────────────────────────
+
+async def create_expense(name, amount, currency="USD", deadline="", note="",
+                         file_id="", file_type="", created_by=None):
+    now = datetime.datetime.now().isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            "INSERT INTO expenses (name, amount, currency, deadline, note, file_id, file_type, "
+            "status, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,'pending',?,?,?)",
+            (name, amount, currency, deadline, note, file_id, file_type, created_by, now, now)
+        )
+        await db.commit()
+        return cur.lastrowid
+
+
+async def get_expense(expense_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM expenses WHERE id=?", (expense_id,)) as c:
+            r = await c.fetchone()
+            return _row(r) if r else None
+
+
+async def get_expenses(status=None, created_by=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        wheres, params = [], []
+        if status:
+            wheres.append("status=?"); params.append(status)
+        if created_by:
+            wheres.append("created_by=?"); params.append(created_by)
+        where = ("WHERE " + " AND ".join(wheres)) if wheres else ""
+        async with db.execute(f"SELECT * FROM expenses {where} ORDER BY id DESC", params) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+
+async def update_expense(expense_id, **kwargs):
+    if not kwargs:
+        return
+    now = datetime.datetime.now().isoformat()
+    kwargs["updated_at"] = now
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [expense_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE expenses SET {sets} WHERE id=?", vals)
+        await db.commit()
