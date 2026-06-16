@@ -117,6 +117,37 @@ async def init_db():
             type     TEXT,
             sent_at  TEXT DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS roadmap_tasks (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            phase      TEXT NOT NULL,
+            title      TEXT NOT NULL,
+            notes      TEXT DEFAULT '',
+            status     TEXT DEFAULT 'pending',
+            created_by INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS expenses (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            name          TEXT NOT NULL,
+            amount        REAL NOT NULL,
+            currency      TEXT DEFAULT 'USD',
+            deadline      TEXT DEFAULT '',
+            note          TEXT DEFAULT '',
+            file_id       TEXT DEFAULT '',
+            file_type     TEXT DEFAULT '',
+            status        TEXT DEFAULT 'pending',
+            created_by    INTEGER,
+            approved_by   INTEGER,
+            reject_reason TEXT DEFAULT '',
+            postpone_date TEXT DEFAULT '',
+            created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by)  REFERENCES users(id),
+            FOREIGN KEY (approved_by) REFERENCES users(id)
+        );
         """)
         await db.commit()
 
@@ -678,4 +709,140 @@ async def check_reminder_sent(task_id, rtype):
 async def mark_reminder_sent(task_id, rtype):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("INSERT INTO reminders_sent (task_id,type) VALUES (?,?)", (task_id, rtype))
+        await db.commit()
+
+
+# ─── ROAD MAP ───────────────────────────────────────────────────
+
+ROADMAP_SEED = [
+    ("1-3",   "Sayt va CRM tizimini ishga tushirish"),
+    ("1-3",   "Instagram, Facebook, Telegram, YouTube'da muntazam kontent reja — brend imidjini yaratish"),
+    ("1-3",   "Birinchi reklama kampaniyalari (Google Ads search/KMS, Meta)"),
+    ("1-3",   "Hodim malakasini oshirish (hodim o'smasa biznes o'smaydi)"),
+    ("1-3",   "Marketing bo'limini tashkil qilish va sekin asta tizimlashtirish"),
+    ("1-3",   "Sotuv strategiyasini ishlab chiqish"),
+    ("1-3",   "CRM integratsiya (marketing kanallarini bog'lash)"),
+    ("1-3",   "Marketing strategiyasini ishlab chiqishni boshlash (busiz uzoqqa bormaymiz)"),
+    ("4-6",   "Influencer marketing, PR (Virusli video rolik, Mijozlar fikri, social proof)"),
+    ("4-6",   "Blogerlar bilan hamkorlik, offline masterclass (seminar, vebinar, aksiya, chegirmalar)"),
+    ("4-6",   "Call center sotuv operatori ishga qo'yiladi (leadlarni filtirlash, menejerlariga yetkazish)"),
+    ("4-6",   "TTL kampaniyalarini ham boshlash (maqsadli)"),
+    ("4-6",   "Brend mahsulotlari (katalog, merch) chiqarish (sohaga xos)"),
+    ("4-6",   "Hodim malakasini oshirish (hodim o'smasa biznes o'smaydi)"),
+    ("4-6",   "Networking (yirik loyihalar, tadbirkorlar klubiga kirish) — savdoni 60-70% shundan"),
+    ("4-6",   "Marketing bo'limini tizimlashtirish va kengaytirish"),
+    ("4-6",   "Sale outga ham etibor berish"),
+    ("7-9",   "Sodiqlik dasturi va servis sifatini kuchaytirish. Pod kluch xizmatlar. Sertifikatlangan xizmatlar"),
+    ("7-9",   "Eksklyuziv hamkorlikni rivojlantirish (mahalliy va xorijiy, yangi SKU larni olib kelish)"),
+    ("7-9",   "Hududiy bozorga chiqish (Samarqand, Navoiy, viloyatlar) — ishonchli kafolatlangan xizmat"),
+    ("7-9",   "Virusli video rolik ishlab chiqish (target uchun, experimentlar, emotsional)"),
+    ("7-9",   "TTL kampaniyalarini qimmat yo'nalishlariga chiqish (imidj uchun)"),
+    ("7-9",   "Hodim malakasini oshirish (hodim o'smasa biznes o'smaydi)"),
+    ("7-9",   "Networking (yirik loyihalar, tadbirkorlar klubiga kirish) — savdoni 60-70% shundan"),
+    ("7-9",   "Marketing bo'limini tizimlashtirish va kengaytirish"),
+    ("10-18", "Tizimlashtirish (ORG struktura)"),
+    ("10-18", "Mahsulot va servis sifatini nazorat qilish"),
+    ("10-18", "Biznes analitika qilib borish"),
+    ("10-18", "Brend imidjini ushlab turish uchun marketing kampaniyalarini to'xtatmaslik"),
+    ("10-18", "UTPni yangi yo'nalishlarini qo'shish va noyobligini oshirish"),
+    ("10-18", "Yangi maqsadlar — SMART HOUSE loyihasi, bozorni o'rganish"),
+    ("10-18", "Yevropa standartlari bo'yicha sertifikatlashni yo'lga qo'yish (Warm Lux)"),
+]
+
+async def seed_roadmap_tasks():
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT COUNT(*) FROM roadmap_tasks") as c:
+            count = (await c.fetchone())[0]
+        if count == 0:
+            await db.executemany(
+                "INSERT INTO roadmap_tasks (phase, title) VALUES (?,?)", ROADMAP_SEED
+            )
+            await db.commit()
+
+async def get_roadmap_tasks(phase=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        if phase:
+            async with db.execute(
+                "SELECT * FROM roadmap_tasks WHERE phase=? ORDER BY id", (phase,)
+            ) as c:
+                return [_row(r) for r in await c.fetchall()]
+        async with db.execute("SELECT * FROM roadmap_tasks ORDER BY phase, id") as c:
+            return [_row(r) for r in await c.fetchall()]
+
+async def get_roadmap_task(task_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM roadmap_tasks WHERE id=?", (task_id,)) as c:
+            return _row(await c.fetchone())
+
+async def create_roadmap_task(phase, title, notes="", created_by=None):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    async with aiosqlite.connect(DB_PATH) as db:
+        c = await db.execute(
+            "INSERT INTO roadmap_tasks (phase,title,notes,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?)",
+            (phase, title, notes, created_by, now, now)
+        )
+        await db.commit()
+        return c.lastrowid
+
+async def update_roadmap_task(task_id, **kwargs):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    kwargs["updated_at"] = now
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [task_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE roadmap_tasks SET {sets} WHERE id=?", vals)
+        await db.commit()
+
+async def delete_roadmap_task(task_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM roadmap_tasks WHERE id=?", (task_id,))
+        await db.commit()
+
+
+# ─── EXPENSES ───────────────────────────────────────────────────
+
+async def create_expense(name, amount, currency, deadline, note, file_id, file_type, created_by):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    async with aiosqlite.connect(DB_PATH) as db:
+        c = await db.execute(
+            "INSERT INTO expenses (name,amount,currency,deadline,note,file_id,file_type,created_by,created_at,updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (name, amount, currency, deadline, note, file_id, file_type, created_by, now, now)
+        )
+        await db.commit()
+        return c.lastrowid
+
+async def get_expense(expense_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM expenses WHERE id=?", (expense_id,)) as c:
+            return _row(await c.fetchone())
+
+async def get_expenses(status=None, created_by=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        if status and created_by:
+            q = "SELECT * FROM expenses WHERE status=? AND created_by=? ORDER BY created_at DESC"
+            p = (status, created_by)
+        elif status:
+            q = "SELECT * FROM expenses WHERE status=? ORDER BY created_at DESC"
+            p = (status,)
+        elif created_by:
+            q = "SELECT * FROM expenses WHERE created_by=? ORDER BY created_at DESC"
+            p = (created_by,)
+        else:
+            q = "SELECT * FROM expenses ORDER BY created_at DESC"
+            p = ()
+        async with db.execute(q, p) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+async def update_expense(expense_id, **kwargs):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    kwargs["updated_at"] = now
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [expense_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE expenses SET {sets} WHERE id=?", vals)
         await db.commit()

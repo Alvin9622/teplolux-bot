@@ -7,8 +7,8 @@ from aiogram.types import BotCommand, BotCommandScopeChat
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import BOT_TOKEN, ADMIN_IDS
-from database import init_db
-from handlers import admin, employee, common, confirm, group
+from database import init_db, seed_roadmap_tasks
+from handlers import admin, employee, common, confirm, group, roadmap, expenses
 from utils.reminders import (
     send_reminders, send_daily_digest,
     send_confirm_reminders, send_weekly_report,
@@ -46,6 +46,7 @@ async def set_commands(bot: Bot):
 
 async def main():
     await init_db()
+    await seed_roadmap_tasks()
 
     # Google Sheets — startup sync (xato bo'lsa bot ishini davom ettiradi)
     try:
@@ -62,6 +63,8 @@ async def main():
     dp.include_router(employee.router)
     dp.include_router(confirm.router)
     dp.include_router(group.router)
+    dp.include_router(roadmap.router)
+    dp.include_router(expenses.router)
 
     await set_commands(bot)
 

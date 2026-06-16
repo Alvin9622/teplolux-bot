@@ -205,6 +205,24 @@ async def universal_go(cb: CallbackQuery):
         await go_task_view(cb)
         return
 
+    if dest == "rm_menu" or dest == "rm:menu":
+        from handlers.roadmap import rm_menu
+        await rm_menu(cb)
+        return
+
+    if dest.startswith("rm_phase_"):
+        phase = dest[len("rm_phase_"):]
+        from handlers.roadmap import _show_phase
+        user = await db.get_user(cb.from_user.id)
+        lang = user["lang"] if user else "uz"
+        await _show_phase(cb, phase, lang)
+        return
+
+    if dest == "expenses":
+        from handlers.expenses import expenses_menu
+        await expenses_menu(cb)
+        return
+
     if dest.startswith("admin:"):
         # admin: prefixli noma'lum yo'nalish — admin menyuga qaytamiz
         from handlers.admin import go_admin

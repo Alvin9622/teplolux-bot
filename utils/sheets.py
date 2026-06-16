@@ -23,6 +23,8 @@ _sheet = None   # Spreadsheet object
 SHEET_TASKS    = "Vazifalar"
 SHEET_COMMENTS = "Izohlar"
 SHEET_ACTIVITY = "Faollik"
+SHEET_ROADMAP  = "Teplolux Road Map"
+SHEET_EXPENSES = "Marketing xarajatlari"
 
 STATUS_UZ  = {
     "new": "🆕 Yangi", "in_progress": "🔄 Jarayonda",
@@ -41,6 +43,13 @@ COMMENT_HEADERS = [
 ACTIVITY_HEADERS = [
     "Sana va vaqt", "Amal", "Vazifa ID", "Vazifa nomi",
     "Foydalanuvchi", "Eski qiymat", "Yangi qiymat"
+]
+ROADMAP_HEADERS = [
+    "ID", "Bosqich", "Vazifa", "Izoh", "Holat", "Yaratildi", "Yangilandi"
+]
+EXPENSE_HEADERS = [
+    "ID", "Nomi", "Summa", "Valyuta", "Muddat", "Izoh", "Holat",
+    "Yaratgan", "Tasdiqlagan", "Rad sababi", "Kechiktirish", "Yaratildi"
 ]
 
 
@@ -114,6 +123,8 @@ def _ensure_worksheets(ss):
         (SHEET_TASKS,    TASK_HEADERS),
         (SHEET_COMMENTS, COMMENT_HEADERS),
         (SHEET_ACTIVITY, ACTIVITY_HEADERS),
+        (SHEET_ROADMAP,  ROADMAP_HEADERS),
+        (SHEET_EXPENSES, EXPENSE_HEADERS),
     ]:
         if title not in existing:
             ws = ss.add_worksheet(title=title, rows=1000, cols=len(headers))
@@ -248,6 +259,84 @@ def _log_activity_sync(action, task, user, old_val, new_val):
         logger.error("log_activity error: %s", e, exc_info=True)
 
 
+async def sync_roadmap_task(task: dict):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: _sync_roadmap_sync(task))
+
+def _sync_roadmap_sync(task):
+    ss = _get_spreadsheet()
+    if not ss:
+        return
+    try:
+        ws = ss.worksheet(SHEET_ROADMAP)
+        row = [
+            task["id"], task["phase"], task.get("title") or "",
+            task.get("notes") or "", task.get("status") or "pending",
+            _fmt(task.get("created_at")), _fmt(task.get("updated_at")),
+        ]
+        col_a = ws.col_values(1)
+        for i, val in enumerate(col_a[1:], start=2):
+            if str(val) == str(task["id"]):
+                ws.update(f"A{i}:G{i}", [row], value_input_option="USER_ENTERED")
+                return
+        ws.append_row(row, value_input_option="USER_ENTERED")
+    except Exception as e:
+        logger.error("sync_roadmap_task error: %s", e, exc_info=True)
+
+
+async def delete_roadmap_from_sheet(task_id: int):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: _delete_roadmap_sync(task_id))
+
+def _delete_roadmap_sync(task_id):
+    ss = _get_spreadsheet()
+    if not ss:
+        return
+    try:
+        ws = ss.worksheet(SHEET_ROADMAP)
+        col_a = ws.col_values(1)
+        for i, val in enumerate(col_a[1:], start=2):
+            if str(val) == str(task_id):
+                ws.delete_rows(i)
+                return
+    except Exception as e:
+        logger.error("delete_roadmap error: %s", e, exc_info=True)
+
+
+async def sync_expense(expense: dict, creator: dict = None, approver: dict = None):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: _sync_expense_sync(expense, creator, approver))
+
+def _sync_expense_sync(expense, creator, approver):
+    ss = _get_spreadsheet()
+    if not ss:
+        return
+    try:
+        ws = ss.worksheet(SHEET_EXPENSES)
+        row = [
+            expense["id"],
+            expense.get("name") or "",
+            expense.get("amount") or 0,
+            expense.get("currency") or "USD",
+            expense.get("deadline") or "",
+            expense.get("note") or "",
+            expense.get("status") or "pending",
+            creator["full_name"] if creator else "—",
+            approver["full_name"] if approver else "—",
+            expense.get("reject_reason") or "",
+            expense.get("postpone_date") or "",
+            _fmt(expense.get("created_at")),
+        ]
+        col_a = ws.col_values(1)
+        for i, val in enumerate(col_a[1:], start=2):
+            if str(val) == str(expense["id"]):
+                ws.update(f"A{i}:L{i}", [row], value_input_option="USER_ENTERED")
+                return
+        ws.append_row(row, value_input_option="USER_ENTERED")
+    except Exception as e:
+        logger.error("sync_expense error: %s", e, exc_info=True)
+
+
 async def full_sync_all_tasks():
     """Barcha vazifalarni Sheets bilan sinxronlaydi (startup da)."""
     import database as db
@@ -257,6 +346,16 @@ async def full_sync_all_tasks():
     if not ss:
         logger.warning("full_sync_all_tasks: spreadsheet unavailable, skipping")
         return
+
+    # Sync roadmap tasks
+    try:
+        roadmap_tasks = await db.get_roadmap_tasks()
+        for rt in roadmap_tasks:
+            await sync_roadmap_task(rt)
+        logger.info("Roadmap sync done: %d tasks", len(roadmap_tasks))
+    except Exception as e:
+        logger.error("Roadmap sync error: %s", e)
+
     tasks = await db.get_all_tasks_with_assignee()
     for t in tasks:
         assignee = await db.get_user_by_id(t["assignee_id"]) if t.get("assignee_id") else None
