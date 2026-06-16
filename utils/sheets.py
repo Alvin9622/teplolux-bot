@@ -161,9 +161,8 @@ def sheets_safe(fn):
 
 async def sync_task(task: dict, assignee: dict = None, creator: dict = None):
     """Vazifani Sheets ga qo'shadi yoki yangilaydi."""
-    await asyncio.get_event_loop().run_in_executor(
-        None, lambda: _sync_task_sync(task, assignee, creator)
-    )
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: _sync_task_sync(task, assignee, creator))
 
 
 def _sync_task_sync(task, assignee, creator):
@@ -192,15 +191,15 @@ def _sync_task_sync(task, assignee, creator):
             ws.update(f"A{existing_row}:M{existing_row}", [row], value_input_option="USER_ENTERED")
         else:
             ws.append_row(row, value_input_option="USER_ENTERED")
+        logger.info("sync_task OK: #%s", task["id"])
     except Exception as e:
-        logger.error("sync_task error: %s", e)
+        logger.error("sync_task error: %s", e, exc_info=True)
 
 
 async def add_comment_to_sheet(comment_id: int, task: dict, author: dict, text: str):
     """Yangi izohni Sheets ga qo'shadi."""
-    await asyncio.get_event_loop().run_in_executor(
-        None, lambda: _add_comment_sync(comment_id, task, author, text)
-    )
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: _add_comment_sync(comment_id, task, author, text))
 
 
 def _add_comment_sync(comment_id, task, author, text):
@@ -217,16 +216,16 @@ def _add_comment_sync(comment_id, task, author, text):
             text,
             _now(),
         ], value_input_option="USER_ENTERED")
+        logger.info("add_comment OK: task #%s", task["id"])
     except Exception as e:
-        logger.error("add_comment_to_sheet error: %s", e)
+        logger.error("add_comment_to_sheet error: %s", e, exc_info=True)
 
 
 async def log_activity(action: str, task: dict, user: dict,
                        old_val: str = "", new_val: str = ""):
     """Faollikni (holat, foiz, tasdiqlash) Sheets ga yozadi."""
-    await asyncio.get_event_loop().run_in_executor(
-        None, lambda: _log_activity_sync(action, task, user, old_val, new_val)
-    )
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: _log_activity_sync(action, task, user, old_val, new_val))
 
 
 def _log_activity_sync(action, task, user, old_val, new_val):
@@ -244,15 +243,20 @@ def _log_activity_sync(action, task, user, old_val, new_val):
             old_val,
             new_val,
         ], value_input_option="USER_ENTERED")
+        logger.info("log_activity OK: %s task #%s", action, task["id"])
     except Exception as e:
-        logger.error("log_activity error: %s", e)
+        logger.error("log_activity error: %s", e, exc_info=True)
 
 
 async def full_sync_all_tasks():
     """Barcha vazifalarni Sheets bilan sinxronlaydi (startup da)."""
     import database as db
+    loop = asyncio.get_running_loop()
     # Varoqlarni yaratish (vazifa bo'lmasa ham)
-    await asyncio.get_event_loop().run_in_executor(None, _get_spreadsheet)
+    ss = await loop.run_in_executor(None, _get_spreadsheet)
+    if not ss:
+        logger.warning("full_sync_all_tasks: spreadsheet unavailable, skipping")
+        return
     tasks = await db.get_all_tasks_with_assignee()
     for t in tasks:
         assignee = await db.get_user_by_id(t["assignee_id"]) if t.get("assignee_id") else None
