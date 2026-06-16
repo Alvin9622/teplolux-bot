@@ -220,6 +220,20 @@ async def _save_expense(msg: Message, state: FSMContext):
     except Exception:
         pass
 
+    # Activity log
+    try:
+        await db.log_activity_db("expense", expense_id, "created",
+                                 data["user_db_id"], "", data["exp_name"])
+    except Exception:
+        pass
+
+    # Budget alert check
+    try:
+        from handlers.budget import check_budget_alert
+        await check_budget_alert(msg.bot, exp, lang)
+    except Exception:
+        pass
+
     # Notify admins
     admin_notif = T("uz", "expense_notif_admin",
                     name=exp["name"], amount=exp["amount"], currency=exp["currency"],
@@ -362,6 +376,11 @@ async def exp_approve(cb: CallbackQuery):
         await sheets.sync_expense(exp, creator, user)
     except Exception:
         pass
+    try:
+        await db.log_activity_db("expense", exp_id, "approved",
+                                 user["id"], "pending", "approved")
+    except Exception:
+        pass
     await _notify_creator(cb.bot, exp, "expense_approved_msg",
                           amount=exp["amount"], currency=exp["currency"])
     await cb.answer("✅ Tasdiqlandi!", show_alert=True)
@@ -402,6 +421,11 @@ async def exp_reject_reason(msg: Message, state: FSMContext):
         await sheets.sync_expense(exp, creator, approver)
     except Exception:
         pass
+    try:
+        await db.log_activity_db("expense", exp_id, "rejected",
+                                 data["approver_id"], "pending", f"rejected: {reason}")
+    except Exception:
+        pass
     await _notify_creator(msg.bot, exp, "expense_rejected_msg", reason=reason)
     await msg.answer(T(lang, "saved"), parse_mode="HTML")
 
@@ -437,6 +461,11 @@ async def exp_postpone_date(msg: Message, state: FSMContext):
         await sheets.sync_expense(exp, creator, approver)
     except Exception:
         pass
+    try:
+        await db.log_activity_db("expense", exp_id, "postponed",
+                                 data["approver_id"], "pending", f"postponed to {new_date}")
+    except Exception:
+        pass
     await _notify_creator(msg.bot, exp, "expense_postponed_msg", date=new_date)
     await msg.answer(T(lang, "saved"), parse_mode="HTML")
 
@@ -457,8 +486,79 @@ async def exp_paid(cb: CallbackQuery):
         await sheets.sync_expense(exp, creator, user)
     except Exception:
         pass
+    try:
+        await db.log_activity_db("expense", exp_id, "paid",
+                                 user["id"], "approved", "paid")
+    except Exception:
+        pass
     await cb.answer(T(lang, "exp_status_paid"), show_alert=True)
     try:
         await cb.message.edit_reply_markup(reply_markup=None)
     except Exception:
         pass
+
+
+# ─── EXPENSE STATS ───────────────────────────────────────────────
+
+@router.callback_query(F.data == "exp:stats")
+async def exp_stats(cb: CallbackQuery):
+    user, lang = await _get_ul(cb.from_user.id)
+    if not is_admin(user):
+        await cb.answer(T(lang, "no_permission"), show_alert=True)
+        return
+    now = datetime.datetime.now()
+    month, year = now.month, now.year
+    stats = await db.get_expense_stats(month, year)
+
+    months_uz = ["Yanvar","Fevral","Mart","Aprel","May","Iyun",
+                 "Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"]
+    months_ru = ["Январь","Февраль","Март","Апрель","Май","Июнь",
+                 "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"]
+    month_name = months_uz[month-1] if lang == "uz" else months_ru[month-1]
+    prev_month_name = (months_uz if lang == "uz" else months_ru)[stats["prev_month"]-1]
+
+    sc = stats["status_counts"]
+    ct = stats["currency_totals"]
+    pt = stats["prev_totals"]
+
+    lines = [T(lang, "exp_stats_title"), f"📅 {month_name} {year}\n"]
+
+    if lang == "uz":
+        lines.append("📊 <b>Holat bo'yicha:</b>")
+        lines.append(f"  ⏳ Kutilmoqda: {sc.get('pending', 0)}")
+        lines.append(f"  ✅ Tasdiqlangan: {sc.get('approved', 0)}")
+        lines.append(f"  ❌ Rad etilgan: {sc.get('rejected', 0)}")
+        lines.append(f"  🔄 Kechiktirilgan: {sc.get('postponed', 0)}")
+        lines.append(f"  💳 To'langan: {sc.get('paid', 0)}")
+        lines.append("\n💰 <b>Tasdiqlangan + To'langan summa:</b>")
+    else:
+        lines.append("📊 <b>По статусам:</b>")
+        lines.append(f"  ⏳ Ожидает: {sc.get('pending', 0)}")
+        lines.append(f"  ✅ Подтверждено: {sc.get('approved', 0)}")
+        lines.append(f"  ❌ Отклонено: {sc.get('rejected', 0)}")
+        lines.append(f"  🔄 Отложено: {sc.get('postponed', 0)}")
+        lines.append(f"  💳 Оплачено: {sc.get('paid', 0)}")
+        lines.append("\n💰 <b>Подтверждено + Оплачено:</b>")
+
+    for currency in ("USD", "UZS", "RUB"):
+        cur_total = ct.get(currency, 0)
+        prev_total = pt.get(currency, 0)
+        diff = cur_total - prev_total
+        diff_str = f"+{diff:,.0f}" if diff >= 0 else f"{diff:,.0f}"
+        lines.append(f"  {currency}: {cur_total:,.0f} ({diff_str} vs {prev_month_name})")
+
+    if stats["top3"]:
+        top_label = "🏆 <b>Top 3 xarajat:</b>" if lang == "uz" else "🏆 <b>Топ 3 расходов:</b>"
+        lines.append(f"\n{top_label}")
+        for i, item in enumerate(stats["top3"], 1):
+            lines.append(f"  {i}. {item['name'][:30]} — {item['total']:,.0f}")
+
+    text = "\n".join(lines)
+    from keyboards.kb import back_kb as bk
+    try:
+        await cb.message.edit_text(text, reply_markup=bk(lang, "expenses"), parse_mode="HTML")
+    except Exception:
+        await cb.message.answer(text, reply_markup=bk(lang, "expenses"), parse_mode="HTML")
+    await cb.answer()
+
+

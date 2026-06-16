@@ -119,37 +119,69 @@ async def init_db():
         );
 
         CREATE TABLE IF NOT EXISTS roadmap_tasks (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            phase      TEXT NOT NULL,
-            title      TEXT NOT NULL,
-            notes      TEXT DEFAULT '',
-            status     TEXT DEFAULT 'pending',
-            created_by INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            phase         TEXT NOT NULL,
+            title         TEXT NOT NULL,
+            notes         TEXT DEFAULT '',
+            status        TEXT DEFAULT 'pending',
+            deadline      TEXT DEFAULT '',
+            assignee_name TEXT DEFAULT '',
+            created_at    TEXT,
+            updated_at    TEXT
         );
 
         CREATE TABLE IF NOT EXISTS expenses (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            name          TEXT NOT NULL,
-            amount        REAL NOT NULL,
-            currency      TEXT DEFAULT 'USD',
-            deadline      TEXT DEFAULT '',
-            note          TEXT DEFAULT '',
-            file_id       TEXT DEFAULT '',
-            file_type     TEXT DEFAULT '',
-            status        TEXT DEFAULT 'pending',
-            created_by    INTEGER,
-            approved_by   INTEGER,
-            reject_reason TEXT DEFAULT '',
-            postpone_date TEXT DEFAULT '',
-            created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT NOT NULL,
+            amount      REAL NOT NULL,
+            currency    TEXT DEFAULT 'USD',
+            category    TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            status      TEXT DEFAULT 'pending',
+            created_by  INTEGER,
+            approved_by INTEGER,
+            created_at  TEXT,
+            updated_at  TEXT,
             FOREIGN KEY (created_by)  REFERENCES users(id),
             FOREIGN KEY (approved_by) REFERENCES users(id)
         );
+
+        CREATE TABLE IF NOT EXISTS budget_settings (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            month      INTEGER NOT NULL,
+            year       INTEGER NOT NULL,
+            limit_usd  REAL DEFAULT 0,
+            limit_uzs  REAL DEFAULT 0,
+            limit_rub  REAL DEFAULT 0,
+            created_at TEXT,
+            updated_at TEXT,
+            UNIQUE(month, year)
+        );
+
+        CREATE TABLE IF NOT EXISTS activity_log (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            entity_type TEXT NOT NULL,
+            entity_id   INTEGER NOT NULL,
+            action      TEXT NOT NULL,
+            actor_id    INTEGER,
+            old_value   TEXT DEFAULT '',
+            new_value   TEXT DEFAULT '',
+            created_at  TEXT
+        );
         """)
         await db.commit()
+
+    # ALTER TABLE migrations — safe (ignore if column already exists)
+    async with aiosqlite.connect(DB_PATH) as db:
+        for stmt in [
+            "ALTER TABLE roadmap_tasks ADD COLUMN deadline TEXT DEFAULT ''",
+            "ALTER TABLE roadmap_tasks ADD COLUMN assignee_name TEXT DEFAULT ''",
+        ]:
+            try:
+                await db.execute(stmt)
+                await db.commit()
+            except Exception:
+                pass
 
 
 def _row(r):
@@ -712,137 +744,192 @@ async def mark_reminder_sent(task_id, rtype):
         await db.commit()
 
 
-# ─── ROAD MAP ───────────────────────────────────────────────────
+# ─── BUDGET ─────────────────────────────────────────────────────
 
-ROADMAP_SEED = [
-    ("1-3",   "Sayt va CRM tizimini ishga tushirish"),
-    ("1-3",   "Instagram, Facebook, Telegram, YouTube'da muntazam kontent reja — brend imidjini yaratish"),
-    ("1-3",   "Birinchi reklama kampaniyalari (Google Ads search/KMS, Meta)"),
-    ("1-3",   "Hodim malakasini oshirish (hodim o'smasa biznes o'smaydi)"),
-    ("1-3",   "Marketing bo'limini tashkil qilish va sekin asta tizimlashtirish"),
-    ("1-3",   "Sotuv strategiyasini ishlab chiqish"),
-    ("1-3",   "CRM integratsiya (marketing kanallarini bog'lash)"),
-    ("1-3",   "Marketing strategiyasini ishlab chiqishni boshlash (busiz uzoqqa bormaymiz)"),
-    ("4-6",   "Influencer marketing, PR (Virusli video rolik, Mijozlar fikri, social proof)"),
-    ("4-6",   "Blogerlar bilan hamkorlik, offline masterclass (seminar, vebinar, aksiya, chegirmalar)"),
-    ("4-6",   "Call center sotuv operatori ishga qo'yiladi (leadlarni filtirlash, menejerlariga yetkazish)"),
-    ("4-6",   "TTL kampaniyalarini ham boshlash (maqsadli)"),
-    ("4-6",   "Brend mahsulotlari (katalog, merch) chiqarish (sohaga xos)"),
-    ("4-6",   "Hodim malakasini oshirish (hodim o'smasa biznes o'smaydi)"),
-    ("4-6",   "Networking (yirik loyihalar, tadbirkorlar klubiga kirish) — savdoni 60-70% shundan"),
-    ("4-6",   "Marketing bo'limini tizimlashtirish va kengaytirish"),
-    ("4-6",   "Sale outga ham etibor berish"),
-    ("7-9",   "Sodiqlik dasturi va servis sifatini kuchaytirish. Pod kluch xizmatlar. Sertifikatlangan xizmatlar"),
-    ("7-9",   "Eksklyuziv hamkorlikni rivojlantirish (mahalliy va xorijiy, yangi SKU larni olib kelish)"),
-    ("7-9",   "Hududiy bozorga chiqish (Samarqand, Navoiy, viloyatlar) — ishonchli kafolatlangan xizmat"),
-    ("7-9",   "Virusli video rolik ishlab chiqish (target uchun, experimentlar, emotsional)"),
-    ("7-9",   "TTL kampaniyalarini qimmat yo'nalishlariga chiqish (imidj uchun)"),
-    ("7-9",   "Hodim malakasini oshirish (hodim o'smasa biznes o'smaydi)"),
-    ("7-9",   "Networking (yirik loyihalar, tadbirkorlar klubiga kirish) — savdoni 60-70% shundan"),
-    ("7-9",   "Marketing bo'limini tizimlashtirish va kengaytirish"),
-    ("10-18", "Tizimlashtirish (ORG struktura)"),
-    ("10-18", "Mahsulot va servis sifatini nazorat qilish"),
-    ("10-18", "Biznes analitika qilib borish"),
-    ("10-18", "Brend imidjini ushlab turish uchun marketing kampaniyalarini to'xtatmaslik"),
-    ("10-18", "UTPni yangi yo'nalishlarini qo'shish va noyobligini oshirish"),
-    ("10-18", "Yangi maqsadlar — SMART HOUSE loyihasi, bozorni o'rganish"),
-    ("10-18", "Yevropa standartlari bo'yicha sertifikatlashni yo'lga qo'yish (Warm Lux)"),
-]
-
-async def seed_roadmap_tasks():
-    async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute("SELECT COUNT(*) FROM roadmap_tasks") as c:
-            count = (await c.fetchone())[0]
-        if count == 0:
-            await db.executemany(
-                "INSERT INTO roadmap_tasks (phase, title) VALUES (?,?)", ROADMAP_SEED
-            )
-            await db.commit()
-
-async def get_roadmap_tasks(phase=None):
+async def get_budget(month, year):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
-        if phase:
+        async with db.execute(
+            "SELECT * FROM budget_settings WHERE month=? AND year=?", (month, year)
+        ) as c:
+            return _row(await c.fetchone())
+
+async def set_budget(month, year, limit_usd, limit_uzs, limit_rub):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO budget_settings (month,year,limit_usd,limit_uzs,limit_rub,created_at,updated_at) "
+            "VALUES (?,?,?,?,?,?,?) "
+            "ON CONFLICT(month,year) DO UPDATE SET "
+            "limit_usd=excluded.limit_usd, limit_uzs=excluded.limit_uzs, "
+            "limit_rub=excluded.limit_rub, updated_at=excluded.updated_at",
+            (month, year, limit_usd, limit_uzs, limit_rub, now, now)
+        )
+        await db.commit()
+
+async def get_monthly_expense_total(month, year, currency):
+    async with aiosqlite.connect(DB_PATH) as db:
+        mm, yy = f"{month:02d}", str(year)
+        async with db.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM expenses "
+            "WHERE currency=? AND status IN ('approved','paid') "
+            "AND strftime('%m',created_at)=? AND strftime('%Y',created_at)=?",
+            (currency, mm, yy)
+        ) as c:
+            row = await c.fetchone()
+            return float(row[0]) if row else 0.0
+
+async def get_expense_stats(month, year):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        mm, yy = f"{month:02d}", str(year)
+        async with db.execute(
+            "SELECT status, COUNT(*) as cnt FROM expenses "
+            "WHERE strftime('%m',created_at)=? AND strftime('%Y',created_at)=? GROUP BY status",
+            (mm, yy)
+        ) as c:
+            status_counts = {r["status"]: r["cnt"] for r in await c.fetchall()}
+        currency_totals = {}
+        for cur in ("USD", "UZS", "RUB"):
             async with db.execute(
-                "SELECT * FROM roadmap_tasks WHERE phase=? ORDER BY id", (phase,)
+                "SELECT COALESCE(SUM(amount),0) FROM expenses "
+                "WHERE currency=? AND status IN ('approved','paid') "
+                "AND strftime('%m',created_at)=? AND strftime('%Y',created_at)=?",
+                (cur, mm, yy)
             ) as c:
-                return [_row(r) for r in await c.fetchall()]
-        async with db.execute("SELECT * FROM roadmap_tasks ORDER BY phase, id") as c:
-            return [_row(r) for r in await c.fetchall()]
+                row = await c.fetchone()
+                currency_totals[cur] = float(row[0]) if row else 0.0
+        async with db.execute(
+            "SELECT name, SUM(amount) as total FROM expenses "
+            "WHERE status IN ('approved','paid') "
+            "AND strftime('%m',created_at)=? AND strftime('%Y',created_at)=? "
+            "GROUP BY name ORDER BY total DESC LIMIT 3",
+            (mm, yy)
+        ) as c:
+            top3 = [_row(r) for r in await c.fetchall()]
+        prev_month = month - 1 if month > 1 else 12
+        prev_year  = year if month > 1 else year - 1
+        pmm, pyy = f"{prev_month:02d}", str(prev_year)
+        prev_totals = {}
+        for cur in ("USD", "UZS", "RUB"):
+            async with db.execute(
+                "SELECT COALESCE(SUM(amount),0) FROM expenses "
+                "WHERE currency=? AND status IN ('approved','paid') "
+                "AND strftime('%m',created_at)=? AND strftime('%Y',created_at)=?",
+                (cur, pmm, pyy)
+            ) as c:
+                row = await c.fetchone()
+                prev_totals[cur] = float(row[0]) if row else 0.0
+        return {
+            "status_counts": status_counts,
+            "currency_totals": currency_totals,
+            "top3": top3,
+            "prev_totals": prev_totals,
+            "prev_month": prev_month,
+            "prev_year": prev_year,
+        }
 
-async def get_roadmap_task(task_id):
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT * FROM roadmap_tasks WHERE id=?", (task_id,)) as c:
-            return _row(await c.fetchone())
 
-async def create_roadmap_task(phase, title, notes="", created_by=None):
+# ─── ACTIVITY LOG ───────────────────────────────────────────────
+
+async def log_activity_db(entity_type, entity_id, action, actor_id,
+                          old_value='', new_value=''):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     async with aiosqlite.connect(DB_PATH) as db:
-        c = await db.execute(
-            "INSERT INTO roadmap_tasks (phase,title,notes,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?)",
-            (phase, title, notes, created_by, now, now)
+        await db.execute(
+            "INSERT INTO activity_log (entity_type,entity_id,action,actor_id,old_value,new_value,created_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (entity_type, entity_id, action, actor_id, old_value or '', new_value or '', now)
         )
         await db.commit()
-        return c.lastrowid
 
-async def update_roadmap_task(task_id, **kwargs):
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    kwargs["updated_at"] = now
-    sets = ", ".join(f"{k}=?" for k in kwargs)
-    vals = list(kwargs.values()) + [task_id]
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(f"UPDATE roadmap_tasks SET {sets} WHERE id=?", vals)
-        await db.commit()
-
-async def delete_roadmap_task(task_id):
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("DELETE FROM roadmap_tasks WHERE id=?", (task_id,))
-        await db.commit()
-
-
-# ─── EXPENSES ───────────────────────────────────────────────────
-
-async def create_expense(name, amount, currency, deadline, note, file_id, file_type, created_by):
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    async with aiosqlite.connect(DB_PATH) as db:
-        c = await db.execute(
-            "INSERT INTO expenses (name,amount,currency,deadline,note,file_id,file_type,created_by,created_at,updated_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (name, amount, currency, deadline, note, file_id, file_type, created_by, now, now)
-        )
-        await db.commit()
-        return c.lastrowid
-
-async def get_expense(expense_id):
+async def get_activity_log(entity_type=None, entity_id=None, limit=50, offset=0):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT * FROM expenses WHERE id=?", (expense_id,)) as c:
-            return _row(await c.fetchone())
-
-async def get_expenses(status=None, created_by=None):
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        if status and created_by:
-            q = "SELECT * FROM expenses WHERE status=? AND created_by=? ORDER BY created_at DESC"
-            p = (status, created_by)
-        elif status:
-            q = "SELECT * FROM expenses WHERE status=? ORDER BY created_at DESC"
-            p = (status,)
-        elif created_by:
-            q = "SELECT * FROM expenses WHERE created_by=? ORDER BY created_at DESC"
-            p = (created_by,)
-        else:
-            q = "SELECT * FROM expenses ORDER BY created_at DESC"
-            p = ()
-        async with db.execute(q, p) as c:
+        where = []
+        params = []
+        if entity_type:
+            where.append("al.entity_type=?")
+            params.append(entity_type)
+        if entity_id is not None:
+            where.append("al.entity_id=?")
+            params.append(entity_id)
+        w = ("WHERE " + " AND ".join(where)) if where else ""
+        params += [limit, offset]
+        async with db.execute(
+            f"SELECT al.*, u.full_name as actor_name, u.username as actor_username "
+            f"FROM activity_log al LEFT JOIN users u ON al.actor_id=u.id "
+            f"{w} ORDER BY al.created_at DESC LIMIT ? OFFSET ?",
+            params
+        ) as c:
             return [_row(r) for r in await c.fetchall()]
 
-async def update_expense(expense_id, **kwargs):
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    kwargs["updated_at"] = now
-    sets = ", ".join(f"{k}=?" for k in kwargs)
-    vals = list(kwargs.values()) + [expense_id]
+
+# ─── DASHBOARD ──────────────────────────────────────────────────
+
+async def get_dashboard_data_admin():
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(f"UPDATE expenses SET {sets} WHERE id=?", vals)
-        await db.commit()
+        db.row_factory = aiosqlite.Row
+        today = datetime.date.today().isoformat()
+        now   = datetime.datetime.now()
+
+        async with db.execute(
+            "SELECT COUNT(*) FROM roadmap_tasks WHERE status='pending'"
+        ) as c:
+            pending_tasks = (await c.fetchone())[0]
+
+        async with db.execute(
+            "SELECT COUNT(*) FROM roadmap_tasks WHERE deadline!='' AND deadline IS NOT NULL "
+            "AND deadline < ? AND status!='done'", (today,)
+        ) as c:
+            overdue_tasks = (await c.fetchone())[0]
+
+        async with db.execute(
+            "SELECT COUNT(*) FROM expenses WHERE status='pending'"
+        ) as c:
+            pending_expenses = (await c.fetchone())[0]
+
+        phase_progress = {}
+        for phase in ("1-3", "4-6", "7-9", "10-18"):
+            async with db.execute(
+                "SELECT COUNT(*) as total, SUM(CASE WHEN status='done' THEN 1 ELSE 0 END) as done "
+                "FROM roadmap_tasks WHERE phase=?", (phase,)
+            ) as c:
+                r = _row(await c.fetchone())
+                phase_progress[phase] = {"total": r["total"] or 0, "done": r["done"] or 0}
+
+        return {
+            "pending_tasks": pending_tasks,
+            "overdue_tasks": overdue_tasks,
+            "pending_expenses": pending_expenses,
+            "phase_progress": phase_progress,
+        }
+
+async def get_dashboard_data_employee(user_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT status, COUNT(*) as cnt FROM tasks WHERE assignee_id=? GROUP BY status",
+            (user_id,)
+        ) as c:
+            task_counts = {r["status"]: r["cnt"] for r in await c.fetchall()}
+
+        async with db.execute(
+            "SELECT status, COUNT(*) as cnt FROM expenses WHERE created_by=? GROUP BY status",
+            (user_id,)
+        ) as c:
+            exp_counts = {r["status"]: r["cnt"] for r in await c.fetchall()}
+
+        return {"task_counts": task_counts, "exp_counts": exp_counts}
+
+
+async def get_overdue_roadmap_tasks():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        today = datetime.date.today().isoformat()
+        async with db.execute(
+            "SELECT * FROM roadmap_tasks WHERE deadline!='' AND deadline IS NOT NULL "
+            "AND deadline < ? AND status!='done' ORDER BY deadline",
+            (today,)
+        ) as c:
+            return [_row(r) for r in await c.fetchall()]

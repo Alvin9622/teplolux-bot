@@ -9,10 +9,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import BOT_TOKEN, ADMIN_IDS
 from database import init_db, seed_roadmap_tasks
 from handlers import admin, employee, common, confirm, group, roadmap, expenses
+from handlers import budget, activity, dashboard, inline as inline_handler
 from utils.reminders import (
     send_reminders, send_daily_digest,
     send_confirm_reminders, send_weekly_report,
-    send_monthly_reports
+    send_monthly_reports, send_roadmap_reminders
 )
 
 logging.basicConfig(
@@ -65,6 +66,10 @@ async def main():
     dp.include_router(group.router)
     dp.include_router(roadmap.router)
     dp.include_router(expenses.router)
+    dp.include_router(budget.router)
+    dp.include_router(activity.router)
+    dp.include_router(dashboard.router)
+    dp.include_router(inline_handler.router)
 
     await set_commands(bot)
 
@@ -77,6 +82,8 @@ async def main():
     scheduler.add_job(send_confirm_reminders, "cron", minute=0,                args=[bot])
     # Haftalik hisobot — dushanba 09:00
     scheduler.add_job(send_weekly_report,     "cron", day_of_week="mon", hour=9, minute=0, args=[bot])
+    # Yo'l xarita kechikkan vazifalar — har kuni 09:00
+    scheduler.add_job(send_roadmap_reminders, "cron", hour=9,       minute=0,  args=[bot])
     # Oylik hisobot — har oyning 1-kuni 10:00
     async def _monthly_report():
         now = datetime.datetime.now()

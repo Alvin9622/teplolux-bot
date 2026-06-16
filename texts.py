@@ -378,6 +378,33 @@ TEXTS = {
             "Yaratish, vazifa biriktirish, hisobot"
         ),
 
+        # Budget
+        "btn_budget":       "💰 Byudjet nazorati",
+        "budget_menu":      "📊 <b>Oylik byudjet holati</b>",
+        "budget_set":       "💾 Limit belgilash",
+        "budget_ask_usd":   "💵 USD limiti kiriting (0 = cheksiz):",
+        "budget_ask_uzs":   "🇺🇿 UZS limiti kiriting (0 = cheksiz):",
+        "budget_ask_rub":   "🇷🇺 RUB limiti kiriting (0 = cheksiz):",
+        "budget_saved":     "✅ Byudjet limiti saqlandi!",
+        "budget_alert_80":  "⚠️ <b>Byudjet ogohlantirishI!</b>\n{currency} byudjeti 80% dan oshdi: {spent} / {limit}",
+        "budget_alert_100": "🚨 <b>Byudjet limiti oshdi!</b>\n{currency}: {spent} / {limit}",
+        # Dashboard
+        "btn_dashboard":    "📊 Dashboard",
+        "dashboard_title":  "📊 <b>Dashboard</b>",
+        "dashboard_refresh":"🔄 Yangilash",
+        # Activity log
+        "btn_activity":     "📋 Faoliyat logi",
+        "activity_log_title":"📋 <b>Faoliyat logi</b>",
+        "activity_empty":   "Hech qanday faoliyat yo'q.",
+        # Roadmap deadline/assignee
+        "roadmap_ask_deadline":"📅 Muddat kiriting (KK.OO.YYYY) yoki /skip:",
+        "roadmap_ask_assignee":"👤 Mas'ul hodim ismini kiriting yoki /skip:",
+        "roadmap_edit_deadline":"📅 Muddat o'zgartirish",
+        "roadmap_edit_assignee":"👤 Mas'ul o'zgartirish",
+        # Expense stats
+        "exp_stats_title":  "📈 <b>Xarajat statistikasi</b>",
+        "btn_exp_stats":    "📈 Statistika",
+
         "categories": [
             "📱 SMM va Kontent",
             "🔍 SEO va Sayt",
@@ -766,6 +793,33 @@ TEXTS = {
             "🗓 <b>Совещания</b>\n"
             "Создать, прикрепить задачи, отчёт"
         ),
+
+        # Budget
+        "btn_budget":       "💰 Контроль бюджета",
+        "budget_menu":      "📊 <b>Состояние месячного бюджета</b>",
+        "budget_set":       "💾 Установить лимит",
+        "budget_ask_usd":   "💵 Введите лимит USD (0 = без лимита):",
+        "budget_ask_uzs":   "🇺🇿 Введите лимит UZS (0 = без лимита):",
+        "budget_ask_rub":   "🇷🇺 Введите лимит RUB (0 = без лимита):",
+        "budget_saved":     "✅ Лимит бюджета сохранён!",
+        "budget_alert_80":  "⚠️ <b>Внимание по бюджету!</b>\n{currency} бюджет превысил 80%: {spent} / {limit}",
+        "budget_alert_100": "🚨 <b>Лимит бюджета превышен!</b>\n{currency}: {spent} / {limit}",
+        # Dashboard
+        "btn_dashboard":    "📊 Дашборд",
+        "dashboard_title":  "📊 <b>Дашборд</b>",
+        "dashboard_refresh":"🔄 Обновить",
+        # Activity log
+        "btn_activity":     "📋 Журнал активности",
+        "activity_log_title":"📋 <b>Журнал активности</b>",
+        "activity_empty":   "Активности нет.",
+        # Roadmap deadline/assignee
+        "roadmap_ask_deadline":"📅 Введите дедлайн (ДД.ММ.ГГГГ) или /skip:",
+        "roadmap_ask_assignee":"👤 Введите имя ответственного или /skip:",
+        "roadmap_edit_deadline":"📅 Изменить дедлайн",
+        "roadmap_edit_assignee":"👤 Изменить ответственного",
+        # Expense stats
+        "exp_stats_title":  "📈 <b>Статистика расходов</b>",
+        "btn_exp_stats":    "📈 Статистика",
 
         "categories": [
             "📱 SMM и Контент",

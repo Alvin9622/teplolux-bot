@@ -20,6 +20,7 @@ def main_kb(lang, is_admin=False):
         rows.append([btn(T(lang, "btn_admin"), "go:admin")])
     rows.append([btn(T(lang, "btn_my_tasks"), "go:mytasks")])
     rows.append([btn(T(lang, "btn_my_stats"), "go:mystats")])
+    rows.append([btn(T(lang, "btn_dashboard"), "go:dashboard")])
     rows.append([btn("📖 Yo'riqnoma" if lang == "uz" else "📖 Руководство", "go:help"),
                  btn(T(lang, "btn_lang"), "go:lang")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -41,6 +42,8 @@ def admin_kb(lang):
         [btn("🗓 Majlislar",               "admin:meetings")],
         [btn(T(lang, "btn_roadmap"),       "rm:menu")],
         [btn(T(lang, "btn_expenses"),      "admin:expenses")],
+        [btn(T(lang, "btn_budget"),        "budget:menu"),
+         btn(T(lang, "btn_activity"),      "activity:log:0")],
         [back_btn(lang, "main")],
     )
 
@@ -211,8 +214,62 @@ def report_months_kb(lang):
 def back_kb(lang, to="main"):
     return ik([back_btn(lang, to)])
 
+def new_user_role_kb(lang):
+    return ik(
+        [btn("👤 Oddiy hodim" if lang=="uz" else "👤 Сотрудник", "newrole:employee")],
+        [btn("👑 Admin", "newrole:admin")],
+    )
 
-# ─── ROAD MAP ────────────────────────────────────────────────────
+def new_user_lang_kb():
+    return ik(
+        [btn("🇺🇿 O'zbek", "newlang:uz"),
+         btn("🇷🇺 Русский", "newlang:ru")],
+    )
+
+def plan_list_kb(lang, plans):
+    rows = []
+    for p in plans:
+        pct = round(p["done_count"]/p["target_count"]*100) if p["target_count"] else 0
+        rows.append([btn(f"📌 {p['title'][:25]} ({pct}%)", f"plan:edit:{p['id']}")])
+    rows.append([back_btn(lang, "admin")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+# ─── EXPENSES ────────────────────────────────────────────────────
+
+def expense_menu_kb(lang, is_admin=False):
+    rows = [
+        [btn(T(lang, "expense_add"), "exp:add")],
+        [btn(T(lang, "expense_my"),  "exp:my")],
+    ]
+    if is_admin:
+        rows.append([btn(T(lang, "expense_pending_list"), "exp:pending")])
+        rows.append([btn(T(lang, "expense_all"),          "exp:all")])
+        rows.append([btn(T(lang, "btn_exp_stats"),        "exp:stats")])
+    rows.append([back_btn(lang, "main")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def expense_view_kb(lang, expense_id, status, is_admin=False):
+    rows = []
+    if is_admin and status == "pending":
+        rows.append([
+            btn(T(lang, "btn_approve"),  f"exp:approve:{expense_id}"),
+            btn(T(lang, "btn_reject"),   f"exp:reject:{expense_id}"),
+        ])
+        rows.append([btn(T(lang, "btn_postpone"), f"exp:postpone:{expense_id}")])
+    if is_admin and status == "approved":
+        rows.append([btn(T(lang, "btn_mark_paid"), f"exp:paid:{expense_id}")])
+    rows.append([back_btn(lang, "expenses")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def currency_kb():
+    return ik(
+        [btn("💵 USD", "expcur:USD"), btn("🇺🇿 UZS", "expcur:UZS")],
+        [btn("🇷🇺 RUB", "expcur:RUB")],
+    )
+
+
+# ─── ROAD MAP keyboards ───────────────────────────────────────────
 
 def roadmap_menu_kb(lang):
     return ik(
@@ -255,55 +312,51 @@ def roadmap_phase_select_kb(lang):
     )
 
 
-# ─── EXPENSES ────────────────────────────────────────────────────
+# ─── ROAD MAP (extended) ─────────────────────────────────────────
 
-def expense_menu_kb(lang, is_admin=False):
-    rows = [
-        [btn(T(lang, "expense_add"), "exp:add")],
-        [btn(T(lang, "expense_my"),  "exp:my")],
-    ]
-    if is_admin:
-        rows.append([btn(T(lang, "expense_pending_list"), "exp:pending")])
-        rows.append([btn(T(lang, "expense_all"),          "exp:all")])
-    rows.append([back_btn(lang, "main")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
+def roadmap_task_ext_kb(lang, task):
+    tid   = task["id"]
+    phase = task["phase"]
+    toggle = T(lang, "roadmap_mark_pending") if task["status"] == "done" else T(lang, "roadmap_mark_done")
+    return ik(
+        [btn(toggle,                               f"rm:done:{tid}")],
+        [btn(T(lang, "roadmap_edit_title"),        f"rm:edit:title:{tid}"),
+         btn(T(lang, "roadmap_edit_notes"),        f"rm:edit:notes:{tid}")],
+        [btn(T(lang, "roadmap_edit_deadline"),     f"rm:edit:deadline:{tid}"),
+         btn(T(lang, "roadmap_edit_assignee"),     f"rm:edit:assignee:{tid}")],
+        [btn(T(lang, "roadmap_yes_del"),           f"rm:del:{tid}")],
+        [back_btn(lang, f"rm_phase_{phase}")],
+    )
 
-def expense_view_kb(lang, expense_id, status, is_admin=False):
+
+# ─── BUDGET ──────────────────────────────────────────────────────
+
+def budget_menu_kb(lang):
+    return ik(
+        [btn(T(lang, "budget_set"), "budget:set")],
+        [back_btn(lang, "admin")],
+    )
+
+
+# ─── ACTIVITY LOG ────────────────────────────────────────────────
+
+def activity_log_kb(lang, offset, has_more):
     rows = []
-    if is_admin and status == "pending":
-        rows.append([
-            btn(T(lang, "btn_approve"),  f"exp:approve:{expense_id}"),
-            btn(T(lang, "btn_reject"),   f"exp:reject:{expense_id}"),
-        ])
-        rows.append([btn(T(lang, "btn_postpone"), f"exp:postpone:{expense_id}")])
-    if is_admin and status == "approved":
-        rows.append([btn(T(lang, "btn_mark_paid"), f"exp:paid:{expense_id}")])
-    rows.append([back_btn(lang, "expenses")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
-
-def currency_kb():
-    return ik(
-        [btn("💵 USD", "expcur:USD"), btn("🇺🇿 UZS", "expcur:UZS")],
-        [btn("🇷🇺 RUB", "expcur:RUB")],
-    )
-
-
-def new_user_role_kb(lang):
-    return ik(
-        [btn("👤 Oddiy hodim" if lang=="uz" else "👤 Сотрудник", "newrole:employee")],
-        [btn("👑 Admin", "newrole:admin")],
-    )
-
-def new_user_lang_kb():
-    return ik(
-        [btn("🇺🇿 O'zbek", "newlang:uz"),
-         btn("🇷🇺 Русский", "newlang:ru")],
-    )
-
-def plan_list_kb(lang, plans):
-    rows = []
-    for p in plans:
-        pct = round(p["done_count"]/p["target_count"]*100) if p["target_count"] else 0
-        rows.append([btn(f"📌 {p['title'][:25]} ({pct}%)", f"plan:edit:{p['id']}")])
+    nav = []
+    if offset > 0:
+        nav.append(btn("◀️", f"activity:log:{max(0, offset-20)}"))
+    if has_more:
+        nav.append(btn("▶️", f"activity:log:{offset+20}"))
+    if nav:
+        rows.append(nav)
     rows.append([back_btn(lang, "admin")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+# ─── DASHBOARD ───────────────────────────────────────────────────
+
+def dashboard_kb(lang):
+    return ik(
+        [btn(T(lang, "dashboard_refresh"), "dashboard:refresh")],
+        [back_btn(lang, "main")],
+    )
