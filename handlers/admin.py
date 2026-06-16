@@ -83,6 +83,46 @@ async def cmd_cancel(msg: Message, state: FSMContext):
     await _cancel(msg, state, data.get("lang", "uz"))
 
 
+@router.message(Command("resendtasks"))
+async def cmd_resend_tasks(msg: Message):
+    user, lang = await get_ul(msg.from_user.id)
+    if not is_admin(user):
+        await msg.answer(T(lang, "no_permission"))
+        return
+    if not GROUP_ID:
+        await msg.answer("❌ GROUP_ID sozlanmagan")
+        return
+    tasks = await db.get_all_tasks_with_assignee()
+    active = [t for t in tasks if t["status"] not in ("done", "cancelled")]
+    if not active:
+        await msg.answer("📭 Faol vazifalar topilmadi")
+        return
+    sent = 0
+    for t in active:
+        status_icons = {
+            "new": "🆕 Yangi",
+            "in_progress": "🔄 Jarayonda",
+            "review": "👀 Tekshiruvda",
+        }
+        status_label = status_icons.get(t["status"], t["status"])
+        assignee = t.get("assignee_name") or "—"
+        deadline = t.get("deadline") or "—"
+        progress = t.get("progress_pct") or 0
+        text = (
+            f"📌 <b>{t['title']}</b>\n"
+            f"👤 Mas'ul: {assignee}\n"
+            f"📅 Muddat: {deadline}\n"
+            f"📊 {progress}% | {status_label}\n"
+            f"🆔 #{t['id']}"
+        )
+        try:
+            await msg.bot.send_message(GROUP_ID, text, parse_mode="HTML")
+            sent += 1
+        except Exception:
+            pass
+    await msg.answer(f"✅ {sent} ta vazifa guruhga yuborildi")
+
+
 @router.message(Command("admin"))
 async def cmd_admin(msg: Message):
     user, lang = await get_ul(msg.from_user.id)
