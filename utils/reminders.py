@@ -125,14 +125,59 @@ async def send_daily_digest(bot: Bot):
         await safe_send(bot, user["telegram_id"], text)
 
 
+async def send_roadmap_reminders(bot: Bot):
+    """Send alerts for overdue roadmap tasks (deadline passed, not done)."""
+    from config import ADMIN_IDS
+    overdue = await db.get_overdue_roadmap_tasks()
+    if not overdue:
+        return
+    lines = ["🔴 <b>Kechikkan yo'l xarita vazifalari:</b>\n"]
+    for t in overdue:
+        dl = fmt_date(t.get("deadline") or "")
+        assignee = f" | 👤 {t['assignee_name']}" if t.get("assignee_name") else ""
+        lines.append(f"• <b>{t['title']}</b>\n  📅 {dl}{assignee}")
+    text = "\n".join(lines)
+    for aid in ADMIN_IDS:
+        await safe_send(bot, aid, text)
+
+
 async def send_weekly_report(bot: Bot):
     from config import ADMIN_IDS, GROUP_ID
     from utils.formatters import weekly_stats_text
+    import database as _db
     today     = datetime.date.today()
     from_date = (today - datetime.timedelta(days=7)).isoformat()
     to_date   = today.isoformat()
     user_stats = await db.get_weekly_stats(from_date, to_date)
     text       = weekly_stats_text(user_stats, from_date, to_date, "uz")
+
+    # Roadmap summary this week
+    try:
+        all_rm = await _db.get_roadmap_tasks()
+        done_this_week = [
+            t for t in all_rm
+            if t.get("status") == "done" and t.get("updated_at", "") >= from_date
+        ]
+        if done_this_week:
+            text += f"\n\n🗺 <b>Yo'l xarita — bu hafta bajarildi ({len(done_this_week)} ta):</b>\n"
+            for t in done_this_week[:5]:
+                text += f"  ✅ {t['title'][:40]}\n"
+    except Exception:
+        pass
+
+    # Expense summary this week
+    try:
+        exps = await _db.get_expenses()
+        week_exps = [e for e in exps if (e.get("created_at") or "") >= from_date]
+        submitted = len(week_exps)
+        approved  = sum(1 for e in week_exps if e.get("status") in ("approved", "paid"))
+        if submitted:
+            text += f"\n\n💰 <b>Xarajatlar bu hafta:</b>\n"
+            text += f"  📋 Yuborildi: {submitted}\n"
+            text += f"  ✅ Tasdiqlandi: {approved}\n"
+    except Exception:
+        pass
+
     for aid in ADMIN_IDS:
         await safe_send(bot, aid, text)
     if GROUP_ID:
@@ -146,6 +191,8 @@ async def send_monthly_reports(bot: Bot, month: int, year: int):
     from aiogram.types import BufferedInputFile
     import database as _db
     users = await db.get_all_active_users()
+    months_uz = ["Yanvar","Fevral","Mart","Aprel","May","Iyun",
+                 "Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"]
     for user in users:
         lang  = user.get("lang") or "uz"
         tasks = await db.get_employee_monthly_report(user["id"], month, year)
@@ -153,10 +200,35 @@ async def send_monthly_reports(bot: Bot, month: int, year: int):
         await safe_send(bot, user["telegram_id"], text)
     ss, us, plans = await db.get_monthly_stats(month, year)
     admin_text    = monthly_stats_text(ss, us, plans, month, year, "uz")
-    # Excel fayl tayyorla
+
+    # Expense report summary
+    try:
+        exp_stats = await _db.get_expense_stats(month, year)
+        sc = exp_stats["status_counts"]
+        ct = exp_stats["currency_totals"]
+        admin_text += f"\n\n💰 <b>Xarajatlar hisoboti — {months_uz[month-1]} {year}:</b>\n"
+        total_exp = sum(sc.values())
+        admin_text += f"  Jami: {total_exp} ta\n"
+        for currency in ("USD", "UZS", "RUB"):
+            if ct.get(currency, 0) > 0:
+                admin_text += f"  {currency}: {ct[currency]:,.0f}\n"
+    except Exception:
+        pass
+
+    # Road map phase completion
+    try:
+        all_rm = await _db.get_roadmap_tasks()
+        admin_text += "\n🗺 <b>Yo'l xarita holati:</b>\n"
+        for phase in ("1-3", "4-6", "7-9", "10-18"):
+            pts = [t for t in all_rm if t["phase"] == phase]
+            d = sum(1 for t in pts if t["status"] == "done")
+            total = len(pts)
+            pct = round(d/total*100) if total else 0
+            admin_text += f"  Bosqich {phase}: {d}/{total} ({pct}%)\n"
+    except Exception:
+        pass
+
     all_tasks = await db.get_all_tasks_for_export(month, year)
-    months_uz = ["Yanvar","Fevral","Mart","Aprel","May","Iyun",
-                 "Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"]
     fname = f"teplolux_{months_uz[month-1].lower()}_{year}.xlsx"
     targets = list(ADMIN_IDS)
     if GROUP_ID:

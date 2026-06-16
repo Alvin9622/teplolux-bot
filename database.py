@@ -117,8 +117,71 @@ async def init_db():
             type     TEXT,
             sent_at  TEXT DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS roadmap_tasks (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            phase         TEXT NOT NULL,
+            title         TEXT NOT NULL,
+            notes         TEXT DEFAULT '',
+            status        TEXT DEFAULT 'pending',
+            deadline      TEXT DEFAULT '',
+            assignee_name TEXT DEFAULT '',
+            created_at    TEXT,
+            updated_at    TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS expenses (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT NOT NULL,
+            amount      REAL NOT NULL,
+            currency    TEXT DEFAULT 'USD',
+            category    TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            status      TEXT DEFAULT 'pending',
+            created_by  INTEGER,
+            approved_by INTEGER,
+            created_at  TEXT,
+            updated_at  TEXT,
+            FOREIGN KEY (created_by)  REFERENCES users(id),
+            FOREIGN KEY (approved_by) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS budget_settings (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            month      INTEGER NOT NULL,
+            year       INTEGER NOT NULL,
+            limit_usd  REAL DEFAULT 0,
+            limit_uzs  REAL DEFAULT 0,
+            limit_rub  REAL DEFAULT 0,
+            created_at TEXT,
+            updated_at TEXT,
+            UNIQUE(month, year)
+        );
+
+        CREATE TABLE IF NOT EXISTS activity_log (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            entity_type TEXT NOT NULL,
+            entity_id   INTEGER NOT NULL,
+            action      TEXT NOT NULL,
+            actor_id    INTEGER,
+            old_value   TEXT DEFAULT '',
+            new_value   TEXT DEFAULT '',
+            created_at  TEXT
+        );
         """)
         await db.commit()
+
+    # ALTER TABLE migrations — safe (ignore if column already exists)
+    async with aiosqlite.connect(DB_PATH) as db:
+        for stmt in [
+            "ALTER TABLE roadmap_tasks ADD COLUMN deadline TEXT DEFAULT ''",
+            "ALTER TABLE roadmap_tasks ADD COLUMN assignee_name TEXT DEFAULT ''",
+        ]:
+            try:
+                await db.execute(stmt)
+                await db.commit()
+            except Exception:
+                pass
 
 
 def _row(r):
@@ -679,3 +742,194 @@ async def mark_reminder_sent(task_id, rtype):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("INSERT INTO reminders_sent (task_id,type) VALUES (?,?)", (task_id, rtype))
         await db.commit()
+
+
+# ─── BUDGET ─────────────────────────────────────────────────────
+
+async def get_budget(month, year):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM budget_settings WHERE month=? AND year=?", (month, year)
+        ) as c:
+            return _row(await c.fetchone())
+
+async def set_budget(month, year, limit_usd, limit_uzs, limit_rub):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO budget_settings (month,year,limit_usd,limit_uzs,limit_rub,created_at,updated_at) "
+            "VALUES (?,?,?,?,?,?,?) "
+            "ON CONFLICT(month,year) DO UPDATE SET "
+            "limit_usd=excluded.limit_usd, limit_uzs=excluded.limit_uzs, "
+            "limit_rub=excluded.limit_rub, updated_at=excluded.updated_at",
+            (month, year, limit_usd, limit_uzs, limit_rub, now, now)
+        )
+        await db.commit()
+
+async def get_monthly_expense_total(month, year, currency):
+    async with aiosqlite.connect(DB_PATH) as db:
+        mm, yy = f"{month:02d}", str(year)
+        async with db.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM expenses "
+            "WHERE currency=? AND status IN ('approved','paid') "
+            "AND strftime('%m',created_at)=? AND strftime('%Y',created_at)=?",
+            (currency, mm, yy)
+        ) as c:
+            row = await c.fetchone()
+            return float(row[0]) if row else 0.0
+
+async def get_expense_stats(month, year):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        mm, yy = f"{month:02d}", str(year)
+        async with db.execute(
+            "SELECT status, COUNT(*) as cnt FROM expenses "
+            "WHERE strftime('%m',created_at)=? AND strftime('%Y',created_at)=? GROUP BY status",
+            (mm, yy)
+        ) as c:
+            status_counts = {r["status"]: r["cnt"] for r in await c.fetchall()}
+        currency_totals = {}
+        for cur in ("USD", "UZS", "RUB"):
+            async with db.execute(
+                "SELECT COALESCE(SUM(amount),0) FROM expenses "
+                "WHERE currency=? AND status IN ('approved','paid') "
+                "AND strftime('%m',created_at)=? AND strftime('%Y',created_at)=?",
+                (cur, mm, yy)
+            ) as c:
+                row = await c.fetchone()
+                currency_totals[cur] = float(row[0]) if row else 0.0
+        async with db.execute(
+            "SELECT name, SUM(amount) as total FROM expenses "
+            "WHERE status IN ('approved','paid') "
+            "AND strftime('%m',created_at)=? AND strftime('%Y',created_at)=? "
+            "GROUP BY name ORDER BY total DESC LIMIT 3",
+            (mm, yy)
+        ) as c:
+            top3 = [_row(r) for r in await c.fetchall()]
+        prev_month = month - 1 if month > 1 else 12
+        prev_year  = year if month > 1 else year - 1
+        pmm, pyy = f"{prev_month:02d}", str(prev_year)
+        prev_totals = {}
+        for cur in ("USD", "UZS", "RUB"):
+            async with db.execute(
+                "SELECT COALESCE(SUM(amount),0) FROM expenses "
+                "WHERE currency=? AND status IN ('approved','paid') "
+                "AND strftime('%m',created_at)=? AND strftime('%Y',created_at)=?",
+                (cur, pmm, pyy)
+            ) as c:
+                row = await c.fetchone()
+                prev_totals[cur] = float(row[0]) if row else 0.0
+        return {
+            "status_counts": status_counts,
+            "currency_totals": currency_totals,
+            "top3": top3,
+            "prev_totals": prev_totals,
+            "prev_month": prev_month,
+            "prev_year": prev_year,
+        }
+
+
+# ─── ACTIVITY LOG ───────────────────────────────────────────────
+
+async def log_activity_db(entity_type, entity_id, action, actor_id,
+                          old_value='', new_value=''):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO activity_log (entity_type,entity_id,action,actor_id,old_value,new_value,created_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (entity_type, entity_id, action, actor_id, old_value or '', new_value or '', now)
+        )
+        await db.commit()
+
+async def get_activity_log(entity_type=None, entity_id=None, limit=50, offset=0):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        where = []
+        params = []
+        if entity_type:
+            where.append("al.entity_type=?")
+            params.append(entity_type)
+        if entity_id is not None:
+            where.append("al.entity_id=?")
+            params.append(entity_id)
+        w = ("WHERE " + " AND ".join(where)) if where else ""
+        params += [limit, offset]
+        async with db.execute(
+            f"SELECT al.*, u.full_name as actor_name, u.username as actor_username "
+            f"FROM activity_log al LEFT JOIN users u ON al.actor_id=u.id "
+            f"{w} ORDER BY al.created_at DESC LIMIT ? OFFSET ?",
+            params
+        ) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+
+# ─── DASHBOARD ──────────────────────────────────────────────────
+
+async def get_dashboard_data_admin():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        today = datetime.date.today().isoformat()
+        now   = datetime.datetime.now()
+
+        async with db.execute(
+            "SELECT COUNT(*) FROM roadmap_tasks WHERE status='pending'"
+        ) as c:
+            pending_tasks = (await c.fetchone())[0]
+
+        async with db.execute(
+            "SELECT COUNT(*) FROM roadmap_tasks WHERE deadline!='' AND deadline IS NOT NULL "
+            "AND deadline < ? AND status!='done'", (today,)
+        ) as c:
+            overdue_tasks = (await c.fetchone())[0]
+
+        async with db.execute(
+            "SELECT COUNT(*) FROM expenses WHERE status='pending'"
+        ) as c:
+            pending_expenses = (await c.fetchone())[0]
+
+        phase_progress = {}
+        for phase in ("1-3", "4-6", "7-9", "10-18"):
+            async with db.execute(
+                "SELECT COUNT(*) as total, SUM(CASE WHEN status='done' THEN 1 ELSE 0 END) as done "
+                "FROM roadmap_tasks WHERE phase=?", (phase,)
+            ) as c:
+                r = _row(await c.fetchone())
+                phase_progress[phase] = {"total": r["total"] or 0, "done": r["done"] or 0}
+
+        return {
+            "pending_tasks": pending_tasks,
+            "overdue_tasks": overdue_tasks,
+            "pending_expenses": pending_expenses,
+            "phase_progress": phase_progress,
+        }
+
+async def get_dashboard_data_employee(user_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT status, COUNT(*) as cnt FROM tasks WHERE assignee_id=? GROUP BY status",
+            (user_id,)
+        ) as c:
+            task_counts = {r["status"]: r["cnt"] for r in await c.fetchall()}
+
+        async with db.execute(
+            "SELECT status, COUNT(*) as cnt FROM expenses WHERE created_by=? GROUP BY status",
+            (user_id,)
+        ) as c:
+            exp_counts = {r["status"]: r["cnt"] for r in await c.fetchall()}
+
+        return {"task_counts": task_counts, "exp_counts": exp_counts}
+
+
+async def get_overdue_roadmap_tasks():
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        today = datetime.date.today().isoformat()
+        async with db.execute(
+            "SELECT * FROM roadmap_tasks WHERE deadline!='' AND deadline IS NOT NULL "
+            "AND deadline < ? AND status!='done' ORDER BY deadline",
+            (today,)
+        ) as c:
+            return [_row(r) for r in await c.fetchall()]
