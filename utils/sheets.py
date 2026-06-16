@@ -251,6 +251,8 @@ def _log_activity_sync(action, task, user, old_val, new_val):
 async def full_sync_all_tasks():
     """Barcha vazifalarni Sheets bilan sinxronlaydi (startup da)."""
     import database as db
+    # Varoqlarni yaratish (vazifa bo'lmasa ham)
+    await asyncio.get_event_loop().run_in_executor(None, _get_spreadsheet)
     tasks = await db.get_all_tasks_with_assignee()
     for t in tasks:
         assignee = await db.get_user_by_id(t["assignee_id"]) if t.get("assignee_id") else None
