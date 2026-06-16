@@ -131,17 +131,21 @@ async def init_db():
         );
 
         CREATE TABLE IF NOT EXISTS expenses (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            name        TEXT NOT NULL,
-            amount      REAL NOT NULL,
-            currency    TEXT DEFAULT 'USD',
-            category    TEXT DEFAULT '',
-            description TEXT DEFAULT '',
-            status      TEXT DEFAULT 'pending',
-            created_by  INTEGER,
-            approved_by INTEGER,
-            created_at  TEXT,
-            updated_at  TEXT,
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            name          TEXT NOT NULL,
+            amount        REAL NOT NULL,
+            currency      TEXT DEFAULT 'USD',
+            deadline      TEXT DEFAULT '',
+            note          TEXT DEFAULT '',
+            file_id       TEXT DEFAULT '',
+            file_type     TEXT DEFAULT '',
+            status        TEXT DEFAULT 'pending',
+            created_by    INTEGER,
+            approved_by   INTEGER,
+            reject_reason TEXT DEFAULT '',
+            postpone_date TEXT DEFAULT '',
+            created_at    TEXT,
+            updated_at    TEXT,
             FOREIGN KEY (created_by)  REFERENCES users(id),
             FOREIGN KEY (approved_by) REFERENCES users(id)
         );
@@ -176,6 +180,12 @@ async def init_db():
         for stmt in [
             "ALTER TABLE roadmap_tasks ADD COLUMN deadline TEXT DEFAULT ''",
             "ALTER TABLE roadmap_tasks ADD COLUMN assignee_name TEXT DEFAULT ''",
+            "ALTER TABLE expenses ADD COLUMN deadline TEXT DEFAULT ''",
+            "ALTER TABLE expenses ADD COLUMN note TEXT DEFAULT ''",
+            "ALTER TABLE expenses ADD COLUMN file_id TEXT DEFAULT ''",
+            "ALTER TABLE expenses ADD COLUMN file_type TEXT DEFAULT ''",
+            "ALTER TABLE expenses ADD COLUMN reject_reason TEXT DEFAULT ''",
+            "ALTER TABLE expenses ADD COLUMN postpone_date TEXT DEFAULT ''",
         ]:
             try:
                 await db.execute(stmt)
