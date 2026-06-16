@@ -933,3 +933,53 @@ async def get_overdue_roadmap_tasks():
             (today,)
         ) as c:
             return [_row(r) for r in await c.fetchall()]
+
+
+ROADMAP_SEED = [
+    ("1-3", "Brend strategiyasini ishlab chiqish"),
+    ("1-3", "Korporativ uslub (logo, ranglar, shriftlar)"),
+    ("1-3", "Veb-sayt yaratish va optimizatsiya"),
+    ("1-3", "Ijtimoiy tarmoqlar sahifalarini sozlash"),
+    ("1-3", "Asosiy raqobatchilar tahlili"),
+    ("1-3", "Maqsadli auditoriyani aniqlash"),
+    ("1-3", "Content strategiyasini ishlab chiqish"),
+    ("1-3", "Birinchi reklama kampaniyasini ishga tushirish"),
+    ("4-6", "SEO optimizatsiyasi"),
+    ("4-6", "Email marketing bazasini yaratish"),
+    ("4-6", "Hamkorlik va affiliate dasturlarini boshlash"),
+    ("4-6", "Mahsulot katalogini yangilash"),
+    ("4-6", "Mijozlar fikrlari (reviews) to'plash"),
+    ("4-6", "Telegram kanal va bot orqali marketing"),
+    ("4-6", "Oylik hisobot va tahlil tizimini joriy etish"),
+    ("4-6", "B2B segment uchun alohida strategiya"),
+    ("7-9", "Influencer marketing kampaniyasi"),
+    ("7-9", "Video kontent ishlab chiqarish"),
+    ("7-9", "Loyalty dasturini ishga tushirish"),
+    ("7-9", "CRM tizimini joriy etish"),
+    ("7-9", "Raqobatchi monitoring avtomatizatsiyasi"),
+    ("7-9", "Mavsumiy aksiyalar kalendari"),
+    ("7-9", "PR kampaniyasi va media coverage"),
+    ("7-9", "Xalqaro bozorga chiqish tadqiqoti"),
+    ("10-18", "Xalqaro bozorga kengayish"),
+    ("10-18", "Yangi mahsulot liniyasini launchqilish"),
+    ("10-18", "Yirik hamkorlik shartnomalarini tuzish"),
+    ("10-18", "Brendni kengaytirish strategiyasi"),
+    ("10-18", "Avtomatlashtirilgan marketing tizimi"),
+    ("10-18", "Yillik hisobot va strategiyani qayta ko'rib chiqish"),
+    ("10-18", "Bozor ulushini kengaytirish maqsadi"),
+    ("10-18", "Kelajakdagi 3 yillik strategiyani ishlab chiqish"),
+]
+
+async def seed_roadmap_tasks():
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT COUNT(*) FROM roadmap_tasks") as c:
+            count = (await c.fetchone())[0]
+        if count == 0:
+            now = datetime.datetime.now().isoformat()
+            for phase, title in ROADMAP_SEED:
+                await db.execute(
+                    "INSERT INTO roadmap_tasks (phase, title, notes, status, created_at, updated_at) "
+                    "VALUES (?, ?, '', 'pending', ?, ?)",
+                    (phase, title, now, now)
+                )
+            await db.commit()
