@@ -378,7 +378,9 @@ def ideas_menu_kb(lang, is_admin=False):
         [btn(T(lang, "idea_type_idea"),    "idea:add:idea")],
         [btn(T(lang, "idea_type_problem"), "idea:add:problem")],
         [btn(T(lang, "idea_type_future"),  "idea:add:future")],
-        [btn(T(lang, "ideas_my_title") if not is_admin else T(lang, "ideas_list_title"), "idea:list")],
+        [btn("💡 Mening g'oyalarim" if (lang == "uz" and not is_admin) else
+             "💡 Идеи и предложения (мои)" if (lang == "ru" and not is_admin) else
+             "📋 Barcha g'oyalar" if lang == "uz" else "📋 Все идеи", "idea:list")],
     ]
     if is_admin:
         rows.append([btn("🆕 Yangilar" if lang == "uz" else "🆕 Новые", "idea:filter:new")])

@@ -246,6 +246,14 @@ async def universal_go(cb: CallbackQuery):
         await ideas_menu(cb)
         return
 
+    if dest == "help":
+        await go_help(cb)
+        return
+
+    if dest == "lang":
+        await go_lang(cb)
+        return
+
     if dest.startswith("admin:"):
         # admin: prefixli noma'lum yo'nalish — admin menyuga qaytamiz
         from handlers.admin import go_admin
