@@ -302,39 +302,48 @@ TEXTS = {
             "📖 <b>FOYDALANISH YO'RIQNOMASI</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-            "🚀 <b>Boshlash</b>\n"
+            "🚀 <b>Buyruqlar</b>\n"
             "/start — asosiy menyu\n"
-            "/mytasks — vazifalarim\n"
-            "/bekor — jarayonni bekor qilish\n\n"
+            "/mytasks — vazifalarim ro'yxati\n"
+            "/bekor — joriy amalni bekor qilish\n\n"
 
-            "📋 <b>Vazifa holatlari</b>\n"
-            "🆕 Yangi — hali boshlanmagan\n"
-            "🔄 Jarayonda — bajarilmoqda\n"
-            "👀 Tekshiruvda — ko'rib chiqilmoqda\n"
-            "✅ Bajarildi — tugallangan\n"
-            "❌ Bekor — bajarilib bo'lmaydi\n\n"
+            "📋 <b>Mening vazifalarim</b>\n"
+            "Sizga biriktirilgan barcha vazifalar ko'rinadi.\n"
+            "Holat ikonlari: 🆕 Yangi · 🔄 Jarayonda · 👀 Tekshiruvda · ✅ Bajarildi · ❌ Bekor\n\n"
 
-            "✅ <b>Vazifani tasdiqlash</b>\n"
-            "Yangi vazifa kelganda «Qabul qildim» tugmasini bosing.\n"
+            "✅ <b>Yangi vazifani tasdiqlash</b>\n"
+            "Vazifa kelganda «✅ Qabul qildim» tugmasini bosing.\n"
             "Tasdiqlamasangiz har soatda eslatma keladi!\n\n"
 
             "🔄 <b>Holatni yangilash</b>\n"
-            "Vazifa → «Holatni yangilash» → holatni tanlang\n\n"
+            "Vazifa → Holatni yangilash → kerakli holatni tanlang\n\n"
 
-            "📊 <b>Foizni yangilash</b>\n"
-            "Vazifa → «Foizni yangilash» → 0-100 kiriting\n\n"
+            "📊 <b>Bajarilish foizini yangilash</b>\n"
+            "Vazifa → Foizni yangilash → 0–100 orasida raqam kiriting\n\n"
 
             "📎 <b>Fayl yuborish</b>\n"
-            "Vazifa → «Fayl yuborish» → rasm/video/hujjat yuboring\n\n"
+            "Vazifa → Fayl yuborish → rasm/video/hujjat yuboring\n\n"
 
             "💬 <b>Izoh qoldirish</b>\n"
-            "Vazifa → «Izoh qoldirish» → xabar yuboring\n\n"
+            "Vazifa → Izoh qoldirish → xabar yuboring\n\n"
+
+            "📊 <b>Dashboard</b>\n"
+            "Umumiy ko'rinish: bajarilgan/jarayon/kechikkan vazifalar soni\n\n"
+
+            "💡 <b>G'oyalar va takliflar</b>\n"
+            "G'oya, muammo yoki kelajak rejangizni yozing.\n"
+            "3 tur: 💡 G'oya · ⚠️ Muammo · 🚀 Kelajak rejasi\n"
+            "Admin ko'rib chiqadi va sizga javob beradi.\n\n"
+
+            "🌐 <b>Mini App</b>\n"
+            "«Mini App» tugmasini bosing — brauzerda to'liq dashboard:\n"
+            "vazifalar, yo'l xarita, xarajatlar, statistika grafiklari.\n\n"
 
             "🔔 <b>Avtomatik eslatmalar</b>\n"
-            "🌅 09:00 — kunlik vazifalar ro'yhati\n"
-            "⚠️ Muddatga 3 kun qolganda\n"
-            "🚨 Muddatga 1 kun qolganda\n"
-            "🔴 Muddat o'tib ketganda\n\n"
+            "🌅 09:00 — kunlik vazifalar ro'yxati\n"
+            "⚠️ Muddatga 3 kun qolganda ogohlantirish\n"
+            "🚨 Muddatga 1 kun qolganda ogohlantirish\n"
+            "🔴 Muddat o'tib ketganda xabar\n\n"
 
             "❓ <b>Muammo bo'lsa</b>\n"
             "/bekor yuboring va qaytadan boshlang\n"
@@ -345,38 +354,80 @@ TEXTS = {
             "📖 <b>ADMIN YO'RIQNOMASI</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-            "⚙️ <b>Admin paneli</b> — /admin\n\n"
+            "⚙️ <b>Admin paneli</b> — /admin yoki «Admin panel» tugmasi\n\n"
 
             "➕ <b>Vazifa qo'shish</b>\n"
+            "Admin panel → Vazifa qo'shish\n"
             "Nom → Tavsif → Kategoriya → Hodim → Muddat → Ustuvorlik → Eslatma\n\n"
 
-            "📋 <b>Vazifalar ko'rish</b>\n"
-            "Barcha vazifalar — filter bilan\n"
-            "Hodimlar bo'yicha — har bir hodim alohida\n\n"
+            "📋 <b>Barcha vazifalar</b>\n"
+            "Filter: Barchasi / Yangi / Jarayonda / Tekshiruvda / Bajarildi / Bekor\n"
+            "Hodimlar bo'yicha — har bir hodim alohida ko'rinadi\n\n"
 
-            "🏆 <b>Reyting</b>\n"
-            "Barcha vaqt uchun hodimlar reytingi\n\n"
+            "🏆 <b>Reyting (Leaderboard)</b>\n"
+            "Barcha vaqt uchun hodimlar reytingi: bajarilgan/umumiy/kechikkan\n\n"
 
-            "🔴 <b>Kechikkanlar</b>\n"
-            "Muddati o'tgan vazifalar ro'yhati\n\n"
+            "🔴 <b>Kechikkan vazifalar</b>\n"
+            "Muddati o'tgan barcha vazifalar ro'yxati\n\n"
 
             "⏳ <b>Tasdiqlanmaganlar</b>\n"
-            "Tasdiqlash kutayotgan vazifalar + eslatma yuborish\n\n"
+            "Hodim «Qabul qildim» bosamasdan turgan vazifalar + eslatma yuborish\n\n"
 
             "📥 <b>Excel eksport</b>\n"
-            "Oyni tanlang → .xlsx fayl yuklab olinadi\n\n"
+            "Oy tanlang → .xlsx fayl yuklab olinadi (barcha vazifalar bilan)\n\n"
 
             "📊 <b>Oylik statistika</b>\n"
-            "Oy tanlang → batafsil hisobot\n\n"
+            "Oy tanlang → batafsil hisobot: holat, hodim, kategoriya bo'yicha\n\n"
 
             "📨 <b>Hisobot yuborish</b>\n"
-            "Barcha hodimga oylik hisobot yuborish\n\n"
+            "Barcha hodimga oylik natijalar hisobotini yuborish\n\n"
 
-            "👥 <b>Hodimlar</b>\n"
-            "Qo'shish, bloklash, admin qilish\n\n"
+            "👥 <b>Hodimlar boshqaruvi</b>\n"
+            "Yangi hodim qo'shish · Bloklash · Admin tayinlash / olib tashlash\n\n"
 
             "🗓 <b>Majlislar</b>\n"
-            "Yaratish, vazifa biriktirish, hisobot"
+            "Majlis yaratish, vazifalar biriktirish, hisobot ko'rish\n\n"
+
+            "🗺 <b>Yo'l xarita (Road Map)</b>\n"
+            "4 bosqich: 1-3, 4-6, 7-9, 10-18 oy\n"
+            "Har bir vazifaga muddat va mas'ul belgilash mumkin\n"
+            "Kechikkan vazifalar haqida 09:00 da avtomatik eslatma\n\n"
+
+            "💰 <b>Marketing xarajatlari</b>\n"
+            "Hodim xarajat so'rovi yuboradi → admin tasdiqlaydi/rad etadi/kechiktiradi\n"
+            "Tasdiqlangan xarajat to'langanda «To'landi» belgilanadi\n"
+            "Xarajat ma'lumotlari faqat admin DM ga boradi (guruhga chiqmaydi!)\n\n"
+
+            "💰 <b>Byudjet nazorati</b>\n"
+            "Har oy uchun USD/UZS/RUB limitlarini belgilang\n"
+            "80% va 100% da avtomatik ogohlantirish keladi\n\n"
+
+            "📋 <b>Faoliyat logi</b>\n"
+            "Admin paneli → Faoliyat logi — barcha o'zgarishlar tarixi\n\n"
+
+            "💡 <b>G'oyalar va takliflar</b>\n"
+            "Hodimlar yozgan g'oyalar, muammolar, kelajak rejalar\n"
+            "Holat o'zgartirish: Ko'rib chiqilmoqda → Qabul qilindi / Rad etildi\n"
+            "Izoh qoldirish — muallif xabardor bo'ladi\n\n"
+
+            "📊 <b>Dashboard</b>\n"
+            "Umumiy ko'rinish: vazifalar, yo'l xarita bosqichlari, byudjet holati\n\n"
+
+            "🌐 <b>Mini App</b>\n"
+            "«Mini App» tugmasi — to'liq veb-dashboard:\n"
+            "Grafik statistika · Byudjet tarixi · Leaderboard · Xarajat tahlili\n\n"
+
+            "📊 <b>Google Sheets avtomatik sinxron</b>\n"
+            "Barcha vazifalar, izohlar, faollik, yo'l xarita,\n"
+            "xarajatlar va g'oyalar Google Sheetsga real vaqtda yoziladi.\n\n"
+
+            "🔔 <b>Rejali eslatmalar</b>\n"
+            "🌅 09:00 — kunlik digest (barcha hodimga)\n"
+            "⚠️ 09:30 / 15:30 — muddatga yaqin vazifalar\n"
+            "🗺 09:00 — kechikkan yo'l xarita vazifalari\n"
+            "💰 10:00 — 3+ kun kutayotgan xarajat so'rovlari\n"
+            "📅 1-kuni 10:00 — o'tgan oylik hisobot\n"
+            "📆 Dushanba 09:00 — haftalik hisobot"
         ),
 
         # Budget
@@ -752,39 +803,48 @@ TEXTS = {
             "📖 <b>РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-            "🚀 <b>Начало работы</b>\n"
+            "🚀 <b>Команды</b>\n"
             "/start — главное меню\n"
-            "/mytasks — мои задачи\n"
-            "/bekor — отменить действие\n\n"
+            "/mytasks — список моих задач\n"
+            "/bekor — отменить текущее действие\n\n"
 
-            "📋 <b>Статусы задач</b>\n"
-            "🆕 Новая — ещё не начата\n"
-            "🔄 В процессе — выполняется\n"
-            "👀 На проверке — ожидает проверки\n"
-            "✅ Выполнена — завершена\n"
-            "❌ Отменена — не может быть выполнена\n\n"
+            "📋 <b>Мои задачи</b>\n"
+            "Отображаются все задачи, назначенные вам.\n"
+            "Иконки статусов: 🆕 Новая · 🔄 В процессе · 👀 На проверке · ✅ Выполнена · ❌ Отменена\n\n"
 
             "✅ <b>Подтверждение задачи</b>\n"
-            "При получении новой задачи нажмите «Принял».\n"
-            "Без подтверждения каждый час будет напоминание!\n\n"
+            "При получении новой задачи нажмите «✅ Принял».\n"
+            "Без подтверждения будет напоминание каждый час!\n\n"
 
             "🔄 <b>Обновить статус</b>\n"
-            "Задача → «Обновить статус» → выберите статус\n\n"
+            "Задача → Обновить статус → выберите нужный статус\n\n"
 
-            "📊 <b>Обновить процент</b>\n"
-            "Задача → «Обновить процент» → введите 0-100\n\n"
+            "📊 <b>Обновить процент выполнения</b>\n"
+            "Задача → Обновить процент → введите число от 0 до 100\n\n"
 
             "📎 <b>Прикрепить файл</b>\n"
-            "Задача → «Загрузить файл» → отправьте фото/видео/документ\n\n"
+            "Задача → Загрузить файл → отправьте фото/видео/документ\n\n"
 
             "💬 <b>Оставить комментарий</b>\n"
-            "Задача → «Комментарий» → отправьте сообщение\n\n"
+            "Задача → Комментарий → отправьте сообщение\n\n"
+
+            "📊 <b>Дашборд</b>\n"
+            "Общий обзор: выполненные/в процессе/просроченные задачи\n\n"
+
+            "💡 <b>Идеи и предложения</b>\n"
+            "Напишите идею, проблему или план на будущее.\n"
+            "3 типа: 💡 Идея · ⚠️ Проблема · 🚀 Будущий план\n"
+            "Админ рассмотрит и ответит вам.\n\n"
+
+            "🌐 <b>Mini App</b>\n"
+            "Кнопка «Mini App» — полный дашборд в браузере:\n"
+            "задачи, дорожная карта, расходы, графики статистики.\n\n"
 
             "🔔 <b>Автоматические напоминания</b>\n"
             "🌅 09:00 — дневной список задач\n"
-            "⚠️ За 3 дня до срока\n"
-            "🚨 За 1 день до срока\n"
-            "🔴 При просрочке\n\n"
+            "⚠️ За 3 дня до срока — предупреждение\n"
+            "🚨 За 1 день до срока — предупреждение\n"
+            "🔴 При просрочке — уведомление\n\n"
 
             "❓ <b>Проблемы?</b>\n"
             "Отправьте /bekor и начните заново\n"
@@ -795,38 +855,80 @@ TEXTS = {
             "📖 <b>РУКОВОДСТВО АДМИНИСТРАТОРА</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-            "⚙️ <b>Панель админа</b> — /admin\n\n"
+            "⚙️ <b>Панель администратора</b> — /admin или кнопка «Панель админа»\n\n"
 
             "➕ <b>Создать задачу</b>\n"
+            "Панель → Создать задачу\n"
             "Название → Описание → Категория → Сотрудник → Срок → Приоритет → Напоминание\n\n"
 
-            "📋 <b>Просмотр задач</b>\n"
-            "Все задачи — с фильтрацией\n"
+            "📋 <b>Все задачи</b>\n"
+            "Фильтр: Все / Новые / В процессе / На проверке / Выполнены / Отменены\n"
             "По сотрудникам — каждый отдельно\n\n"
 
-            "🏆 <b>Рейтинг</b>\n"
-            "Рейтинг сотрудников за всё время\n\n"
+            "🏆 <b>Рейтинг (Leaderboard)</b>\n"
+            "Рейтинг сотрудников за всё время: выполнено/всего/просрочено\n\n"
 
-            "🔴 <b>Просроченные</b>\n"
-            "Список задач с истёкшим сроком\n\n"
+            "🔴 <b>Просроченные задачи</b>\n"
+            "Список всех задач с истёкшим сроком\n\n"
 
             "⏳ <b>Неподтверждённые</b>\n"
-            "Задачи ожидающие подтверждения + напоминание\n\n"
+            "Задачи, где сотрудник не нажал «Принял» + отправить напоминание\n\n"
 
             "📥 <b>Экспорт Excel</b>\n"
-            "Выберите месяц → скачать .xlsx файл\n\n"
+            "Выберите месяц → скачать .xlsx (все задачи с деталями)\n\n"
 
-            "📊 <b>Статистика</b>\n"
-            "Выберите месяц → подробный отчёт\n\n"
+            "📊 <b>Статистика по месяцам</b>\n"
+            "Выберите месяц → подробный отчёт: по статусам, сотрудникам, категориям\n\n"
 
             "📨 <b>Отправить отчёт</b>\n"
-            "Отправить месячный отчёт всем сотрудникам\n\n"
+            "Отправить итоги месяца всем сотрудникам\n\n"
 
-            "👥 <b>Сотрудники</b>\n"
-            "Добавить, заблокировать, назначить админом\n\n"
+            "👥 <b>Управление сотрудниками</b>\n"
+            "Добавить · Заблокировать · Назначить/снять админа\n\n"
 
             "🗓 <b>Совещания</b>\n"
-            "Создать, прикрепить задачи, отчёт"
+            "Создать совещание, прикрепить задачи, просмотреть отчёт\n\n"
+
+            "🗺 <b>Дорожная карта (Road Map)</b>\n"
+            "4 этапа: 1-3, 4-6, 7-9, 10-18 месяцев\n"
+            "Для каждой задачи: срок и ответственный\n"
+            "Автоматическое напоминание о просроченных задачах в 09:00\n\n"
+
+            "💰 <b>Маркетинговые расходы</b>\n"
+            "Сотрудник отправляет запрос → админ одобряет/отклоняет/откладывает\n"
+            "После оплаты — отмечается «Оплачено»\n"
+            "Данные о расходах идут только в DM админа (не в группу!)\n\n"
+
+            "💰 <b>Контроль бюджета</b>\n"
+            "Установите лимиты USD/UZS/RUB на каждый месяц\n"
+            "Автоматическое предупреждение при 80% и 100% использовании\n\n"
+
+            "📋 <b>Журнал активности</b>\n"
+            "Панель → Журнал активности — полная история всех изменений\n\n"
+
+            "💡 <b>Идеи и предложения</b>\n"
+            "Идеи, проблемы и будущие планы от сотрудников\n"
+            "Смена статуса: На рассмотрении → Принята / Отклонена\n"
+            "Оставить комментарий — автор получит уведомление\n\n"
+
+            "📊 <b>Дашборд</b>\n"
+            "Общий обзор: задачи, этапы дорожной карты, состояние бюджета\n\n"
+
+            "🌐 <b>Mini App</b>\n"
+            "Кнопка «Mini App» — полный веб-дашборд:\n"
+            "Графики · История бюджета · Leaderboard · Анализ расходов\n\n"
+
+            "📊 <b>Автосинхронизация с Google Sheets</b>\n"
+            "Задачи, комментарии, активность, дорожная карта,\n"
+            "расходы и идеи — записываются в Google Sheets в реальном времени.\n\n"
+
+            "🔔 <b>Плановые уведомления</b>\n"
+            "🌅 09:00 — дневной дайджест (всем сотрудникам)\n"
+            "⚠️ 09:30 / 15:30 — задачи с приближающимся сроком\n"
+            "🗺 09:00 — просроченные задачи дорожной карты\n"
+            "💰 10:00 — запросы расходов, ожидающие 3+ дня\n"
+            "📅 1-го числа 10:00 — отчёт за прошлый месяц\n"
+            "📆 Понедельник 09:00 — еженедельный отчёт"
         ),
 
         # Budget
