@@ -21,6 +21,7 @@ def main_kb(lang, is_admin=False):
     rows.append([btn(T(lang, "btn_my_tasks"), "go:mytasks")])
     rows.append([btn(T(lang, "btn_my_stats"), "go:mystats")])
     rows.append([btn(T(lang, "btn_dashboard"), "go:dashboard")])
+    rows.append([btn(T(lang, "btn_miniapp"), "miniapp:info")])
     rows.append([btn("📖 Yo'riqnoma" if lang == "uz" else "📖 Руководство", "go:help"),
                  btn(T(lang, "btn_lang"), "go:lang")])
     return InlineKeyboardMarkup(inline_keyboard=rows)

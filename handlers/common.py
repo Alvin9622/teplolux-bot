@@ -143,6 +143,19 @@ async def reg_position(msg: Message, state: FSMContext):
 
 # ─── Navigation ──────────────────────────────────────────────────
 
+@router.callback_query(F.data == "miniapp:info")
+async def miniapp_info(cb: CallbackQuery):
+    user = await db.get_user(cb.from_user.id)
+    lang = user["lang"] if user else "uz"
+    try:
+        await cb.message.edit_text(T(lang, "miniapp_info"), parse_mode="HTML",
+                                   reply_markup=back_kb(lang, "main"))
+    except Exception:
+        await cb.message.answer(T(lang, "miniapp_info"), parse_mode="HTML",
+                                reply_markup=back_kb(lang, "main"))
+    await cb.answer()
+
+
 @router.callback_query(F.data == "go:main")
 async def go_main(cb: CallbackQuery):
     user = await db.get_user(cb.from_user.id)

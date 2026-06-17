@@ -246,3 +246,29 @@ async def send_monthly_reports(bot: Bot, month: int, year: int):
                 )
             except Exception as e:
                 logger.error("Monthly Excel send error %s: %s", target, e)
+
+
+async def send_pending_expense_reminders(bot: Bot):
+    """3 kundan ortiq 'pending' turgan xarajatlar haqida adminlarga eslatma."""
+    try:
+        expenses = await db.get_expenses(status="pending")
+        now = datetime.datetime.now()
+        old_expenses = []
+        for exp in expenses:
+            try:
+                created = datetime.datetime.fromisoformat(exp["created_at"])
+                days_old = (now - created).days
+                if days_old >= 3:
+                    old_expenses.append((exp, days_old))
+            except Exception:
+                pass
+        if not old_expenses:
+            return
+        lines = ["⏳ <b>Tasdiqlanmagan xarajatlar:</b>\n"]
+        for exp, days in old_expenses:
+            lines.append(f"• {exp['name']} — {exp['amount']} {exp['currency']} ({days} kun kutmoqda)")
+        text = "\n".join(lines)
+        for admin_id in ADMIN_IDS:
+            await safe_send(bot, admin_id, text)
+    except Exception as e:
+        logger.error("send_pending_expense_reminders error: %s", e)

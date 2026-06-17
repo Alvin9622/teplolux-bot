@@ -13,7 +13,8 @@ from handlers import budget, activity, dashboard, inline as inline_handler
 from utils.reminders import (
     send_reminders, send_daily_digest,
     send_confirm_reminders, send_weekly_report,
-    send_monthly_reports, send_roadmap_reminders
+    send_monthly_reports, send_roadmap_reminders,
+    send_pending_expense_reminders
 )
 
 logging.basicConfig(
@@ -83,7 +84,9 @@ async def main():
     # Haftalik hisobot — dushanba 09:00
     scheduler.add_job(send_weekly_report,     "cron", day_of_week="mon", hour=9, minute=0, args=[bot])
     # Yo'l xarita kechikkan vazifalar — har kuni 09:00
-    scheduler.add_job(send_roadmap_reminders, "cron", hour=9,       minute=0,  args=[bot])
+    scheduler.add_job(send_roadmap_reminders,          "cron", hour=9,  minute=0,  args=[bot])
+    # Kutilayotgan xarajatlar eslatmasi — har kuni 10:00
+    scheduler.add_job(send_pending_expense_reminders,  "cron", hour=10, minute=0,  args=[bot])
     # Oylik hisobot — har oyning 1-kuni 10:00
     async def _monthly_report():
         now = datetime.datetime.now()

@@ -5,7 +5,8 @@ TEXTS = {
             "🏢 <b>Teplolux</b> — Marketing Monitoring Tizimi\n\n"
             "Tilni tanlang:"
         ),
-        "lang_set": "✅ Til belgilandi.",
+        "lang_set":    "✅ Til belgilandi.",
+        "choose_lang": "🌐 Tilni tanlang:",
         "enter_position": (
             "💼 <b>Lavozimingizni kiriting:</b>\n\n"
             "Masalan: Marketing menejer, SMM mutaxassis, Dizayner..."
@@ -392,6 +393,16 @@ TEXTS = {
         "btn_dashboard":    "📊 Dashboard",
         "dashboard_title":  "📊 <b>Dashboard</b>",
         "dashboard_refresh":"🔄 Yangilash",
+        "btn_miniapp":      "🌐 Mini App",
+        "miniapp_info": (
+            "🌐 <b>Telegram Mini App</b>\n\n"
+            "Bu funksiya tez orada ishga tushadi!\n\n"
+            "Mini App orqali siz:\n"
+            "• Barcha vazifalarni vizual jadvalda ko'rasiz\n"
+            "• Xarajatlar statistikasini grafikda ko'rasiz\n"
+            "• Yo'l xaritasini interaktiv tarzda boshqarasiz\n\n"
+            "⏳ Ishlab chiqilmoqda..."
+        ),
         # Activity log
         "btn_activity":     "📋 Faoliyat logi",
         "activity_log_title":"📋 <b>Faoliyat logi</b>",
@@ -431,7 +442,8 @@ TEXTS = {
             "🏢 <b>Teplolux</b> — Система мониторинга\n\n"
             "Выберите язык:"
         ),
-        "lang_set": "✅ Язык установлен.",
+        "lang_set":    "✅ Язык установлен.",
+        "choose_lang": "🌐 Выберите язык:",
         "enter_position": (
             "💼 <b>Введите вашу должность:</b>\n\n"
             "Например: Маркетолог, SMM-специалист, Дизайнер..."
@@ -808,6 +820,16 @@ TEXTS = {
         "btn_dashboard":    "📊 Дашборд",
         "dashboard_title":  "📊 <b>Дашборд</b>",
         "dashboard_refresh":"🔄 Обновить",
+        "btn_miniapp":      "🌐 Mini App",
+        "miniapp_info": (
+            "🌐 <b>Telegram Mini App</b>\n\n"
+            "Эта функция скоро будет запущена!\n\n"
+            "Через Mini App вы сможете:\n"
+            "• Просматривать все задачи в визуальной таблице\n"
+            "• Видеть статистику расходов в графиках\n"
+            "• Управлять дорожной картой интерактивно\n\n"
+            "⏳ В разработке..."
+        ),
         # Activity log
         "btn_activity":     "📋 Журнал активности",
         "activity_log_title":"📋 <b>Журнал активности</b>",

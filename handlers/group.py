@@ -99,6 +99,7 @@ async def _create_and_notify(bot, title, assignee, creator_id, dl_str):
 # ═══════════════════════════════════════════════════════════════
 
 @router.message(Command("vazifa"), F.chat.type.in_({"group", "supergroup"}))
+@router.message(Command("task"), F.chat.type.in_({"group", "supergroup"}))
 async def cmd_group_vazifa(msg: Message):
     if not _is_admin(msg.from_user.id):
         return
