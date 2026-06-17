@@ -2,495 +2,729 @@
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Teplolux Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Teplolux</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg:      var(--tg-theme-bg-color, #0d1117);
-    --bg2:     var(--tg-theme-secondary-bg-color, #161b22);
-    --text:    var(--tg-theme-text-color, #e6edf3);
-    --hint:    var(--tg-theme-hint-color, #8b949e);
-    --link:    var(--tg-theme-link-color, #58a6ff);
-    --btn:     var(--tg-theme-button-color, #1f6feb);
-    --btn-txt: var(--tg-theme-button-text-color, #ffffff);
-    --accent:  #3fb950;
-    --yellow:  #f0b429;
-    --red:     #f85149;
-    --purple:  #bc8cff;
-  }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-  }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;
+  --border:#21262d;--text:#e6edf3;--hint:#8b949e;
+  --link:#58a6ff;--btn:#1f6feb;--btn-txt:#fff;
+  --green:#3fb950;--yellow:#f0b429;--red:#f85149;--purple:#bc8cff;--orange:#e3843a;
+  --r:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:14px;min-height:100vh;overflow-x:hidden;}
 
-  /* NAV TABS */
-  .tabs {
-    display: flex;
-    background: var(--bg2);
-    border-bottom: 1px solid #21262d;
-    position: sticky; top: 0; z-index: 10;
-  }
-  .tab {
-    flex: 1; padding: 12px 4px; text-align: center;
-    cursor: pointer; color: var(--hint); font-size: 12px;
-    border-bottom: 2px solid transparent; transition: all .2s;
-  }
-  .tab.active { color: var(--link); border-bottom-color: var(--link); }
-  .tab-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+/* ── NAV ── */
+.nav{
+  display:flex;background:var(--bg2);border-bottom:1px solid var(--border);
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:10px 4px 8px;cursor:pointer;color:var(--hint);
+  font-size:10px;gap:3px;transition:color .2s;border:none;background:none;
+}
+.nav-item.active{color:var(--link);}
+.nav-icon{font-size:22px;line-height:1;}
 
-  /* PAGES */
-  .page { display: none; padding: 16px; }
-  .page.active { display: block; }
+/* ── PAGES ── */
+.page{display:none;padding:16px 16px 80px;min-height:100vh;}
+.page.active{display:block;}
 
-  /* CARDS */
-  .card {
-    background: var(--bg2); border-radius: 12px;
-    padding: 16px; margin-bottom: 12px;
-    border: 1px solid #21262d;
-  }
-  .card-title {
-    font-size: 11px; text-transform: uppercase;
-    letter-spacing: .8px; color: var(--hint); margin-bottom: 12px;
-  }
+/* ── HEADER ── */
+.page-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;
+}
+.page-title{font-size:20px;font-weight:700;}
+.refresh-btn{
+  width:34px;height:34px;border-radius:50%;background:var(--bg3);
+  border:1px solid var(--border);display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-size:16px;color:var(--hint);
+  transition:all .2s;
+}
+.refresh-btn:active{background:var(--border);}
+.spin{animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  /* STAT GRID */
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .stat-box {
-    background: var(--bg2); border-radius: 10px; padding: 14px;
-    border: 1px solid #21262d; text-align: center;
-  }
-  .stat-num  { font-size: 28px; font-weight: 700; color: var(--text); }
-  .stat-label{ font-size: 11px; color: var(--hint); margin-top: 4px; }
+/* ── CARDS ── */
+.card{
+  background:var(--bg2);border-radius:var(--r);
+  border:1px solid var(--border);margin-bottom:12px;overflow:hidden;
+}
+.card-head{
+  padding:14px 16px 10px;display:flex;align-items:center;
+  justify-content:space-between;
+}
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--hint);font-weight:600;}
+.card-body{padding:0 16px 16px;}
 
-  /* PROGRESS BAR */
-  .prog-row  { margin-bottom: 10px; }
-  .prog-label{ display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-  .prog-bar  { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; }
-  .prog-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.stat-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 14px;display:flex;flex-direction:column;gap:4px;
+}
+.stat-num{font-size:30px;font-weight:700;line-height:1;}
+.stat-lbl{font-size:11px;color:var(--hint);}
+.stat-box.accent{border-color:rgba(88,166,255,.3);background:rgba(88,166,255,.05);}
 
-  /* TASK / EXPENSE LIST */
-  .list-item {
-    display: flex; align-items: flex-start; gap: 10px;
-    padding: 12px 0; border-bottom: 1px solid #21262d;
-  }
-  .list-item:last-child { border-bottom: none; }
-  .item-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-  .item-body { flex: 1; min-width: 0; }
-  .item-title{
-    font-size: 14px; font-weight: 500; margin-bottom: 3px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .item-meta { font-size: 11px; color: var(--hint); }
-  .badge {
-    display: inline-block; padding: 2px 7px; border-radius: 10px;
-    font-size: 10px; font-weight: 600; margin-left: 6px;
-  }
-  .badge-green  { background: #1a3d1f; color: var(--accent); }
-  .badge-yellow { background: #2d2010; color: var(--yellow); }
-  .badge-red    { background: #2d1010; color: var(--red);    }
-  .badge-blue   { background: #0d2040; color: var(--link);   }
-  .badge-purple { background: #1e1040; color: var(--purple); }
-  .badge-gray   { background: #1c2128; color: var(--hint);   }
+/* ── PROGRESS ── */
+.prog-wrap{margin-bottom:10px;}
+.prog-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+.prog-lbl{font-weight:500;}
+.prog-pct{color:var(--hint);}
+.prog-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.4,0,.2,1);}
 
-  /* PHASE SECTION */
-  .phase-title {
-    font-size: 13px; font-weight: 600; margin: 16px 0 8px;
-    color: var(--link);
-  }
+/* ── LIST ITEMS ── */
+.list-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:13px 16px;border-bottom:1px solid var(--border);
+}
+.list-item:last-child{border:none;}
+.item-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.item-body{flex:1;min-width:0;}
+.item-title{
+  font-size:14px;font-weight:500;margin-bottom:4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.item-meta{font-size:11px;color:var(--hint);display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
 
-  /* SEARCH */
-  .search-wrap { position: relative; margin-bottom: 12px; }
-  .search-input {
-    width: 100%; padding: 10px 14px 10px 36px;
-    background: var(--bg2); border: 1px solid #21262d;
-    border-radius: 10px; color: var(--text); font-size: 14px;
-    outline: none;
-  }
-  .search-input:focus { border-color: var(--link); }
-  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--hint); }
+/* ── BADGES ── */
+.badge{
+  display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;
+  font-size:10px;font-weight:600;letter-spacing:.3px;white-space:nowrap;
+}
+.b-green {background:rgba(63,185,80,.15);color:var(--green);}
+.b-yellow{background:rgba(240,180,41,.15);color:var(--yellow);}
+.b-red   {background:rgba(248,81,73,.15); color:var(--red);}
+.b-blue  {background:rgba(88,166,255,.15);color:var(--link);}
+.b-purple{background:rgba(188,140,255,.15);color:var(--purple);}
+.b-gray  {background:var(--bg3);color:var(--hint);}
 
-  /* EMPTY STATE */
-  .empty { text-align: center; padding: 40px 20px; color: var(--hint); }
-  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+/* ── SEARCH ── */
+.search-box{
+  position:relative;margin-bottom:12px;
+}
+.search-input{
+  width:100%;padding:11px 14px 11px 40px;background:var(--bg2);
+  border:1px solid var(--border);border-radius:10px;color:var(--text);
+  font-size:14px;outline:none;transition:border .2s;
+}
+.search-input:focus{border-color:var(--link);}
+.search-ico{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  color:var(--hint);font-size:16px;pointer-events:none;
+}
 
-  /* LOADING */
-  .loading { text-align: center; padding: 60px 20px; color: var(--hint); }
-  .spinner {
-    width: 32px; height: 32px; margin: 0 auto 12px;
-    border: 3px solid #21262d; border-top-color: var(--link);
-    border-radius: 50%; animation: spin .8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ── CHIPS ── */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{
+  flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid var(--border);
+  background:var(--bg2);color:var(--hint);cursor:pointer;font-size:12px;
+  white-space:nowrap;transition:all .2s;
+}
+.chip.active{background:var(--btn);color:var(--btn-txt);border-color:var(--btn);}
 
-  /* PHASE PROGRESS (roadmap) */
-  .phase-block { margin-bottom: 20px; }
-  .phase-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .phase-name { font-weight: 600; font-size: 13px; }
-  .phase-pct  { font-size: 12px; color: var(--hint); }
+/* ── CHART CONTAINER ── */
+.chart-wrap{padding:0 16px 16px;position:relative;}
+.chart-canvas{width:100%!important;}
 
-  /* FILTER CHIPS */
-  .filter-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; }
-  .chip {
-    flex-shrink: 0; padding: 5px 12px; border-radius: 20px;
-    border: 1px solid #21262d; background: var(--bg2);
-    color: var(--hint); cursor: pointer; font-size: 12px; white-space: nowrap;
-  }
-  .chip.active { background: var(--btn); color: var(--btn-txt); border-color: var(--btn); }
+/* ── EMPTY / LOADING ── */
+.empty,.loading{
+  text-align:center;padding:50px 20px;color:var(--hint);
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.empty-ico{font-size:44px;}
+.skeleton{
+  background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;
+  border-radius:6px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── BUDGET CIRCLE ── */
+.budget-circle{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;position:relative;
+}
+.budget-donut{position:relative;width:160px;height:160px;margin:0 auto 16px;}
+.donut-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.donut-pct{font-size:28px;font-weight:700;}
+.donut-lbl{font-size:11px;color:var(--hint);}
+
+/* ── LEADERBOARD ── */
+.leader-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;border-bottom:1px solid var(--border);
+}
+.leader-item:last-child{border:none;}
+.leader-rank{
+  width:28px;height:28px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-weight:700;font-size:13px;
+  flex-shrink:0;
+}
+.rank-1{background:rgba(240,180,41,.2);color:var(--yellow);}
+.rank-2{background:rgba(88,166,255,.15);color:var(--link);}
+.rank-3{background:rgba(188,140,255,.15);color:var(--purple);}
+.rank-n{background:var(--bg3);color:var(--hint);}
+.leader-name{flex:1;font-weight:500;}
+.leader-done{font-size:13px;font-weight:600;color:var(--green);}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:4px 0;}
+
+/* ── SECTION LABEL ── */
+.section-lbl{
+  font-size:11px;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--hint);font-weight:600;padding:16px 0 8px;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#333;color:#fff;padding:10px 20px;border-radius:20px;
+  font-size:13px;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
 
-<!-- TABS -->
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('dashboard')">
-    <span class="tab-icon">📊</span>Dashboard
-  </div>
-  <div class="tab" onclick="switchTab('tasks')">
-    <span class="tab-icon">📋</span>Vazifalar
-  </div>
-  <div class="tab" onclick="switchTab('roadmap')">
-    <span class="tab-icon">🗺</span>Yo'l xarita
-  </div>
-  <div class="tab" onclick="switchTab('expenses')">
-    <span class="tab-icon">💰</span>Xarajatlar
-  </div>
-</div>
+<!-- PAGES -->
+<div id="pg-home"     class="page active"></div>
+<div id="pg-tasks"    class="page"></div>
+<div id="pg-roadmap"  class="page"></div>
+<div id="pg-expenses" class="page"></div>
+<div id="pg-stats"    class="page"></div>
 
-<!-- DASHBOARD PAGE -->
-<div id="page-dashboard" class="page active">
-  <div id="dash-content" class="loading">
-    <div class="spinner"></div>
-    <div>Yuklanmoqda...</div>
-  </div>
-</div>
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-item active" onclick="go('home')"    >
+    <span class="nav-icon">🏠</span>Bosh sahifa
+  </button>
+  <button class="nav-item" onclick="go('tasks')"   >
+    <span class="nav-icon">📋</span>Vazifalar
+  </button>
+  <button class="nav-item" onclick="go('roadmap')" >
+    <span class="nav-icon">🗺</span>Yo'l xarita
+  </button>
+  <button class="nav-item" onclick="go('expenses')">
+    <span class="nav-icon">💰</span>Xarajatlar
+  </button>
+  <button class="nav-item" onclick="go('stats')"   >
+    <span class="nav-icon">📈</span>Statistika
+  </button>
+</nav>
 
-<!-- TASKS PAGE -->
-<div id="page-tasks" class="page">
-  <div class="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input class="search-input" id="task-search" placeholder="Qidiruv..." oninput="filterTasks()">
-  </div>
-  <div class="filter-chips" id="task-filters">
-    <div class="chip active" data-status="all" onclick="setTaskFilter('all', this)">Barchasi</div>
-    <div class="chip" data-status="new" onclick="setTaskFilter('new', this)">🆕 Yangi</div>
-    <div class="chip" data-status="in_progress" onclick="setTaskFilter('in_progress', this)">🔄 Jarayonda</div>
-    <div class="chip" data-status="review" onclick="setTaskFilter('review', this)">👀 Tekshiruvda</div>
-    <div class="chip" data-status="done" onclick="setTaskFilter('done', this)">✅ Bajarildi</div>
-  </div>
-  <div id="tasks-content" class="loading">
-    <div class="spinner"></div><div>Yuklanmoqda...</div>
-  </div>
-</div>
-
-<!-- ROADMAP PAGE -->
-<div id="page-roadmap" class="page">
-  <div id="roadmap-content" class="loading">
-    <div class="spinner"></div><div>Yuklanmoqda...</div>
-  </div>
-</div>
-
-<!-- EXPENSES PAGE -->
-<div id="page-expenses" class="page">
-  <div class="filter-chips" id="exp-filters">
-    <div class="chip active" data-status="all" onclick="setExpFilter('all', this)">Barchasi</div>
-    <div class="chip" data-status="pending" onclick="setExpFilter('pending', this)">⏳ Kutilmoqda</div>
-    <div class="chip" data-status="approved" onclick="setExpFilter('approved', this)">✅ Tasdiqlangan</div>
-    <div class="chip" data-status="paid" onclick="setExpFilter('paid', this)">💳 To'langan</div>
-    <div class="chip" data-status="rejected" onclick="setExpFilter('rejected', this)">❌ Rad etilgan</div>
-  </div>
-  <div id="expenses-content" class="loading">
-    <div class="spinner"></div><div>Yuklanmoqda...</div>
-  </div>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
 const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
+tg.ready(); tg.expand();
+if (tg.themeParams.bg_color) {
+  document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color);
+  document.documentElement.style.setProperty('--bg2', tg.themeParams.secondary_bg_color || '#161b22');
+  document.documentElement.style.setProperty('--text', tg.themeParams.text_color || '#e6edf3');
+  document.documentElement.style.setProperty('--hint', tg.themeParams.hint_color || '#8b949e');
+  document.documentElement.style.setProperty('--link', tg.themeParams.link_color || '#58a6ff');
+  document.documentElement.style.setProperty('--btn', tg.themeParams.button_color || '#1f6feb');
+}
+const INIT = tg.initData || '';
+const CHARTS = {};
+let allTasks=[], allExps=[], taskFilter='all', expFilter='all';
 
-// Colors for dark/light theme
-document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color || '#0d1117');
+/* ── API ── */
+async function api(path) {
+  const r = await fetch(path, {headers:{'X-Init-Data':INIT}});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
 
-const INIT_DATA = tg.initData || '';
-let allTasks = [], allExpenses = [], taskFilter = 'all', expFilter = 'all';
-
-const STATUS_ICONS = {
-  new: '🆕', in_progress: '🔄', done: '✅', cancelled: '❌', review: '👀',
-  pending: '⏳', approved: '✅', rejected: '❌', postponed: '🔄', paid: '💳'
+/* ── HELPERS ── */
+const STATUS_ICON = {
+  new:'🆕',in_progress:'🔄',done:'✅',cancelled:'❌',review:'👀',
+  pending:'⏳',approved:'✅',rejected:'❌',postponed:'🔄',paid:'💳'
 };
 const STATUS_BADGE = {
-  new: 'badge-blue', in_progress: 'badge-yellow', done: 'badge-green',
-  cancelled: 'badge-red', review: 'badge-purple',
-  pending: 'badge-yellow', approved: 'badge-green',
-  rejected: 'badge-red', postponed: 'badge-purple', paid: 'badge-green'
+  new:'b-blue',in_progress:'b-yellow',done:'b-green',cancelled:'b-red',review:'b-purple',
+  pending:'b-yellow',approved:'b-green',rejected:'b-red',postponed:'b-purple',paid:'b-green'
 };
-const STATUS_LABELS = {
-  new: 'Yangi', in_progress: 'Jarayonda', done: 'Bajarildi',
-  cancelled: 'Bekor', review: 'Tekshiruvda',
-  pending: 'Kutilmoqda', approved: 'Tasdiqlangan',
-  rejected: 'Rad etilgan', postponed: 'Kechiktirilgan', paid: "To'langan"
+const STATUS_NAME = {
+  new:"Yangi",in_progress:"Jarayonda",done:"Bajarildi",cancelled:"Bekor",review:"Tekshiruvda",
+  pending:"Kutilmoqda",approved:"Tasdiqlangan",rejected:"Rad etilgan",postponed:"Kechiktirilgan",paid:"To'langan"
 };
+const PRI_COLOR = {high:'var(--red)',medium:'var(--yellow)',low:'var(--green)'};
+const MONTHS = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+const PHASE_COLORS = {'1-3':'var(--green)','4-6':'var(--yellow)','7-9':'var(--link)','10-18':'var(--purple)'};
 
-async function apiFetch(path) {
-  const res = await fetch(path, {
-    headers: { 'X-Init-Data': INIT_DATA }
-  });
-  if (!res.ok) throw new Error('API error: ' + res.status);
-  return res.json();
+function badge(status) {
+  return `<span class="badge ${STATUS_BADGE[status]||'b-gray'}">${STATUS_NAME[status]||status}</span>`;
+}
+function progBar(done,total,color='var(--link)') {
+  const pct = total ? Math.round(done/total*100) : 0;
+  return `<div class="prog-wrap">
+    <div class="prog-head"><span class="prog-lbl">${done}/${total}</span><span class="prog-pct">${pct}%</span></div>
+    <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${color}"></div></div>
+  </div>`;
+}
+function loading(id) {
+  document.getElementById(id).innerHTML = `
+    <div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div><div>Yuklanmoqda...</div></div>`;
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
 }
 
-function progBar(done, total, color = '#58a6ff') {
-  const pct = total ? Math.round(done / total * 100) : 0;
-  return `
-    <div class="prog-row">
-      <div class="prog-label"><span>${done}/${total}</span><span>${pct}%</span></div>
-      <div class="prog-bar">
-        <div class="prog-fill" style="width:${pct}%;background:${color}"></div>
-      </div>
-    </div>`;
+/* ══════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════ */
+const loaded = {};
+function go(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`pg-${name}`));
+  document.querySelectorAll('.nav-item').forEach((b,i)=>
+    b.classList.toggle('active',['home','tasks','roadmap','expenses','stats'][i]===name));
+  if (!loaded[name]) { loaded[name]=true; pages[name](); }
 }
+const pages = {
+  home:     loadHome,
+  tasks:    loadTasks,
+  roadmap:  loadRoadmap,
+  expenses: loadExpenses,
+  stats:    loadStats,
+};
 
-// ─── DASHBOARD ───────────────────────────────────────────────────
-async function loadDashboard() {
+/* ══════════════════════════════════════════════════════
+   HOME
+══════════════════════════════════════════════════════ */
+async function loadHome() {
+  const el = document.getElementById('pg-home');
+  el.innerHTML = `<div class="page-header">
+    <span class="page-title">Dashboard</span>
+    <button class="refresh-btn" onclick="reloadHome()" title="Yangilash">⟳</button>
+  </div><div id="home-body"><div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div></div></div>`;
+  await renderHome();
+}
+async function reloadHome() {
+  const btn = document.querySelector('#pg-home .refresh-btn');
+  if(btn) btn.querySelector(':scope').classList?.add('spin') || (btn.style.animation='spin .7s linear infinite');
+  document.getElementById('home-body').innerHTML = '<div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div></div>';
+  await renderHome();
+  if(btn) btn.style.animation='';
+}
+async function renderHome() {
   try {
-    const d = await apiFetch('/api/dashboard');
+    const d = await api('/api/dashboard');
     let html = '';
     if (d.role === 'admin') {
       html += `<div class="stat-grid">
-        <div class="stat-box">
-          <div class="stat-num" style="color:#f0b429">${d.pending_tasks}</div>
-          <div class="stat-label">Kutilayotgan<br>vazifalar</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-num" style="color:#f85149">${d.overdue_tasks}</div>
-          <div class="stat-label">Muddati<br>o'tgan</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-num" style="color:#58a6ff">${d.pending_expenses}</div>
-          <div class="stat-label">Tasdiqlash<br>kutayotgan</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-num" style="color:#3fb950">${Object.values(d.phase_progress).reduce((s,p)=>s+p.done,0)}</div>
-          <div class="stat-label">Bajarilgan<br>yo'l xarita</div>
-        </div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--yellow)">${d.pending_tasks}</div><div class="stat-lbl">Kutilayotgan vazifalar</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--red)">${d.overdue_tasks}</div><div class="stat-lbl">Muddati o'tgan</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--link)">${d.pending_expenses}</div><div class="stat-lbl">Tasdiq kutayotgan</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--green)">${Object.values(d.phase_progress).reduce((s,p)=>s+p.done,0)}</div><div class="stat-lbl">Bajarilgan (xarita)</div></div>
       </div>`;
-      html += `<div class="card"><div class="card-title">Yo'l xarita jarayoni</div>`;
-      const phaseColors = {'1-3':'#3fb950','4-6':'#f0b429','7-9':'#58a6ff','10-18':'#bc8cff'};
-      const phaseNames  = {'1-3':'1–3 oy','4-6':'4–6 oy','7-9':'7–9 oy','10-18':'10–18 oy'};
-      let totalDone = 0, totalAll = 0;
-      for (const [phase, pp] of Object.entries(d.phase_progress)) {
-        totalDone += pp.done; totalAll += pp.total;
-        html += `<div style="margin-bottom:8px">
-          <div class="prog-label"><span style="color:${phaseColors[phase]}">${phaseNames[phase]}</span><span>${pp.done}/${pp.total}</span></div>
-          <div class="prog-bar"><div class="prog-fill" style="width:${pp.total?Math.round(pp.done/pp.total*100):0}%;background:${phaseColors[phase]}"></div></div>
+      html += `<div class="card"><div class="card-head"><span class="card-title">Yo'l xarita jarayoni</span></div><div class="card-body">`;
+      let td=0,tt=0;
+      for(const[ph,pp] of Object.entries(d.phase_progress)){
+        td+=pp.done;tt+=pp.total;
+        const labels={'1-3':'1–3 oy','4-6':'4–6 oy','7-9':'7–9 oy','10-18':'10–18 oy'};
+        html+=`<div class="prog-wrap">
+          <div class="prog-head"><span class="prog-lbl" style="color:${PHASE_COLORS[ph]}">${labels[ph]}</span><span class="prog-pct">${pp.done}/${pp.total}</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:${pp.total?Math.round(pp.done/pp.total*100):0}%;background:${PHASE_COLORS[ph]}"></div></div>
         </div>`;
       }
-      const totalPct = totalAll ? Math.round(totalDone/totalAll*100) : 0;
-      html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid #21262d">
-        <div class="prog-label"><strong>Umumiy</strong><span>${totalDone}/${totalAll} (${totalPct}%)</span></div>
-        <div class="prog-bar"><div class="prog-fill" style="width:${totalPct}%;background:linear-gradient(90deg,#3fb950,#58a6ff)"></div></div>
-      </div></div>`;
+      const gp=tt?Math.round(td/tt*100):0;
+      html+=`<div style="padding-top:10px;border-top:1px solid var(--border);margin-top:4px">
+        <div class="prog-head"><strong>Umumiy progress</strong><span class="prog-pct">${td}/${tt} (${gp}%)</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:${gp}%;background:linear-gradient(90deg,var(--green),var(--purple))"></div></div>
+      </div></div></div>`;
+      // Donut chart for task status
+      html+=`<div class="card"><div class="card-head"><span class="card-title">Yo'l xarita holati</span></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="ch-donut" class="chart-canvas"></canvas></div></div>`;
     } else {
-      const tc = d.task_counts || {};
-      const ec = d.exp_counts  || {};
-      html += `<div class="card"><div class="card-title">Mening vazifalarim</div>
-        <div class="stat-grid">
-          <div class="stat-box"><div class="stat-num" style="color:#58a6ff">${tc.new||0}</div><div class="stat-label">Yangi</div></div>
-          <div class="stat-box"><div class="stat-num" style="color:#f0b429">${tc.in_progress||0}</div><div class="stat-label">Jarayonda</div></div>
-          <div class="stat-box"><div class="stat-num" style="color:#bc8cff">${tc.review||0}</div><div class="stat-label">Tekshiruvda</div></div>
-          <div class="stat-box"><div class="stat-num" style="color:#3fb950">${tc.done||0}</div><div class="stat-label">Bajarildi</div></div>
-        </div></div>`;
-      html += `<div class="card"><div class="card-title">Mening xarajatlarim</div>
-        <div class="stat-grid">
-          <div class="stat-box"><div class="stat-num" style="color:#f0b429">${ec.pending||0}</div><div class="stat-label">Kutilmoqda</div></div>
-          <div class="stat-box"><div class="stat-num" style="color:#3fb950">${ec.approved||0}</div><div class="stat-label">Tasdiqlangan</div></div>
-          <div class="stat-box"><div class="stat-num" style="color:#3fb950">${ec.paid||0}</div><div class="stat-label">To'langan</div></div>
-          <div class="stat-box"><div class="stat-num" style="color:#f85149">${ec.rejected||0}</div><div class="stat-label">Rad etilgan</div></div>
-        </div></div>`;
+      const tc=d.task_counts||{},ec=d.exp_counts||{};
+      html+=`<div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" style="color:var(--link)">${tc.new||0}</div><div class="stat-lbl">Yangi vazifalar</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--yellow)">${tc.in_progress||0}</div><div class="stat-lbl">Jarayonda</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--purple)">${tc.review||0}</div><div class="stat-lbl">Tekshiruvda</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--green)">${tc.done||0}</div><div class="stat-lbl">Bajarildi</div></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" style="color:var(--yellow)">${ec.pending||0}</div><div class="stat-lbl">Kutilayotgan xarajatlar</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--green)">${(ec.approved||0)+(ec.paid||0)}</div><div class="stat-lbl">Tasdiqlangan</div></div>
+      </div>`;
     }
-    document.getElementById('dash-content').innerHTML = html;
+    document.getElementById('home-body').innerHTML = html;
+    if(d.role==='admin' && d.phase_progress) {
+      const pp=d.phase_progress;
+      const total=Object.values(pp).reduce((s,p)=>s+p.total,0);
+      const done=Object.values(pp).reduce((s,p)=>s+p.done,0);
+      const pending=total-done;
+      renderDonut('ch-donut',[done,pending],['Bajarildi','Qoldi'],['#3fb950','#21262d']);
+    }
   } catch(e) {
-    document.getElementById('dash-content').innerHTML =
-      `<div class="empty"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+    document.getElementById('home-body').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${e.message}</div></div>`;
   }
 }
 
-// ─── TASKS ───────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════
+   TASKS
+══════════════════════════════════════════════════════ */
+function buildTasksPage() {
+  document.getElementById('pg-tasks').innerHTML = `
+    <div class="page-header">
+      <span class="page-title">Vazifalar</span>
+      <button class="refresh-btn" onclick="reloadTasks()">⟳</button>
+    </div>
+    <div class="search-box"><span class="search-ico">🔍</span>
+      <input class="search-input" id="task-q" placeholder="Qidiruv..." oninput="renderTaskList()">
+    </div>
+    <div class="chips" id="task-chips">
+      <div class="chip active" onclick="setTaskF('all',this)">Barchasi</div>
+      <div class="chip" onclick="setTaskF('new',this)">🆕 Yangi</div>
+      <div class="chip" onclick="setTaskF('in_progress',this)">🔄 Jarayonda</div>
+      <div class="chip" onclick="setTaskF('review',this)">👀 Tekshiruvda</div>
+      <div class="chip" onclick="setTaskF('done',this)">✅ Bajarildi</div>
+      <div class="chip" onclick="setTaskF('cancelled',this)">❌ Bekor</div>
+    </div>
+    <div id="task-list" class="card"></div>`;
+}
 async function loadTasks() {
+  buildTasksPage();
+  await fetchTasks();
+}
+async function fetchTasks() {
+  document.getElementById('task-list').innerHTML='<div class="loading"><div style="font-size:28px;animation:spin .8s linear infinite">⟳</div></div>';
   try {
-    const d = await apiFetch('/api/tasks');
-    allTasks = d.tasks || [];
-    renderTasks();
+    const d=await api('/api/tasks');
+    allTasks=d.tasks||[];
+    renderTaskList();
   } catch(e) {
-    document.getElementById('tasks-content').innerHTML =
-      `<div class="empty"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+    document.getElementById('task-list').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${e.message}</div></div>`;
   }
 }
-
-function setTaskFilter(status, el) {
-  taskFilter = status;
-  document.querySelectorAll('#task-filters .chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  renderTasks();
+async function reloadTasks(){await fetchTasks();showToast('Yangilandi ✓');}
+function setTaskF(s,el){
+  taskFilter=s;
+  document.querySelectorAll('#task-chips .chip').forEach(c=>c.classList.toggle('active',c===el));
+  renderTaskList();
 }
-
-function filterTasks() { renderTasks(); }
-
-function renderTasks() {
-  const q = (document.getElementById('task-search').value || '').toLowerCase();
-  let tasks = allTasks;
-  if (taskFilter !== 'all') tasks = tasks.filter(t => t.status === taskFilter);
-  if (q) tasks = tasks.filter(t => t.title.toLowerCase().includes(q) || (t.assignee||'').toLowerCase().includes(q));
-  if (!tasks.length) {
-    document.getElementById('tasks-content').innerHTML =
-      '<div class="empty"><div class="empty-icon">📋</div><div>Vazifalar yo\'q</div></div>';
+function renderTaskList() {
+  const q=(document.getElementById('task-q')?.value||'').toLowerCase();
+  let t=allTasks;
+  if(taskFilter!=='all') t=t.filter(x=>x.status===taskFilter);
+  if(q) t=t.filter(x=>x.title.toLowerCase().includes(q)||(x.assignee||'').toLowerCase().includes(q));
+  if(!t.length){
+    document.getElementById('task-list').innerHTML='<div class="empty"><div class="empty-ico">📋</div><div>Vazifalar topilmadi</div></div>';
     return;
   }
-  const priorityColor = {high:'#f85149', medium:'#f0b429', low:'#3fb950'};
-  document.getElementById('tasks-content').innerHTML = tasks.map(t => {
-    const badge = `<span class="badge ${STATUS_BADGE[t.status]||'badge-gray'}">${STATUS_LABELS[t.status]||t.status}</span>`;
-    const dl    = t.deadline ? `📅 ${t.deadline.slice(5).replace('-','.')}` : '';
-    const prio  = `<span style="color:${priorityColor[t.priority]||'#8b949e'};font-size:10px">● ${t.priority}</span>`;
-    const progW = t.progress > 0 ? `<div class="prog-bar" style="margin-top:5px"><div class="prog-fill" style="width:${t.progress}%;background:#58a6ff"></div></div>` : '';
+  document.getElementById('task-list').innerHTML = t.map(x=>{
+    const dl=x.deadline?`📅 ${x.deadline.slice(5).replace('-','.')}`:'';
+    const prog=x.progress>0?`<div class="prog-track" style="margin-top:6px"><div class="prog-fill" style="width:${x.progress}%;background:var(--link)"></div></div>`:'';
     return `<div class="list-item">
-      <div class="item-icon">${STATUS_ICONS[t.status]||'📌'}</div>
+      <div class="item-icon">${STATUS_ICON[x.status]||'📌'}</div>
       <div class="item-body">
-        <div class="item-title">${t.title}${badge}</div>
-        <div class="item-meta">${[t.assignee,dl,t.category].filter(Boolean).join(' · ')} ${prio}</div>
-        ${progW}
+        <div class="item-title">${x.title}</div>
+        <div class="item-meta">
+          ${badge(x.status)}
+          ${x.assignee?`<span>👤 ${x.assignee}</span>`:''}
+          ${dl?`<span>${dl}</span>`:''}
+          ${x.category?`<span style="color:var(--hint)">${x.category}</span>`:''}
+          <span style="color:${PRI_COLOR[x.priority]||'var(--hint)'}">● ${x.priority}</span>
+        </div>${prog}
       </div>
     </div>`;
   }).join('');
 }
 
-// ─── ROADMAP ─────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════
+   ROADMAP
+══════════════════════════════════════════════════════ */
 async function loadRoadmap() {
-  try {
-    const d = await apiFetch('/api/roadmap');
-    const phases = d.phases || {};
-    const phaseOrder = ['1-3','4-6','7-9','10-18'];
-    const phaseNames = {'1-3':'Bosqich 1–3 oy','4-6':'Bosqich 4–6 oy','7-9':'Bosqich 7–9 oy','10-18':'Bosqich 10–18 oy'};
-    const phaseColors= {'1-3':'#3fb950','4-6':'#f0b429','7-9':'#58a6ff','10-18':'#bc8cff'};
-    let html = '';
-    let grandDone = 0, grandTotal = 0;
-    for (const ph of phaseOrder) {
-      const tasks = phases[ph] || [];
-      const done  = tasks.filter(t=>t.status==='done').length;
-      const total = tasks.length;
-      grandDone += done; grandTotal += total;
-      const pct = total ? Math.round(done/total*100) : 0;
-      html += `<div class="phase-block">
-        <div class="phase-header">
-          <span class="phase-name" style="color:${phaseColors[ph]}">${phaseNames[ph]}</span>
-          <span class="phase-pct">${done}/${total} (${pct}%)</span>
+  const el=document.getElementById('pg-roadmap');
+  el.innerHTML=`<div class="page-header"><span class="page-title">Yo'l xarita</span>
+    <button class="refresh-btn" onclick="reloadRoadmap()">⟳</button></div>
+    <div id="rm-body"><div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div></div></div>`;
+  await renderRoadmap();
+}
+async function reloadRoadmap(){
+  document.getElementById('rm-body').innerHTML='<div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div></div>';
+  await renderRoadmap();showToast('Yangilandi ✓');
+}
+async function renderRoadmap() {
+  try{
+    const d=await api('/api/roadmap');
+    const phases=d.phases||{};
+    const order=['1-3','4-6','7-9','10-18'];
+    const names={'1-3':'Bosqich 1–3 oy','4-6':'Bosqich 4–6 oy','7-9':'Bosqich 7–9 oy','10-18':'Bosqich 10–18 oy'};
+    let gd=0,gt=0,html='';
+    for(const ph of order){
+      const tasks=phases[ph]||[];
+      const done=tasks.filter(t=>t.status==='done').length;
+      const tot=tasks.length;
+      gd+=done;gt+=tot;
+      const pct=tot?Math.round(done/tot*100):0;
+      html+=`<div class="card">
+        <div class="card-head">
+          <span class="card-title" style="color:${PHASE_COLORS[ph]}">${names[ph]}</span>
+          <span style="font-size:12px;color:var(--hint)">${done}/${tot} · ${pct}%</span>
         </div>
-        <div class="prog-bar" style="margin-bottom:10px">
-          <div class="prog-fill" style="width:${pct}%;background:${phaseColors[ph]}"></div>
+        <div style="padding:0 16px 8px">
+          <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${PHASE_COLORS[ph]}"></div></div>
         </div>`;
-      html += tasks.map(t => {
-        const icon = t.status==='done' ? '✅' : '⬜';
-        const extra = [t.deadline?`📅 ${t.deadline}`:'', t.assignee_name?`👤 ${t.assignee_name}`:''].filter(Boolean).join(' ');
+      html+=tasks.map(t=>{
+        const done_=t.status==='done';
+        const meta=[t.deadline?`📅 ${t.deadline}`:'',t.assignee_name?`👤 ${t.assignee_name}`:''].filter(Boolean).join(' · ');
         return `<div class="list-item">
-          <div class="item-icon" style="font-size:16px">${icon}</div>
+          <div class="item-icon" style="font-size:16px">${done_?'✅':'⬜'}</div>
           <div class="item-body">
-            <div class="item-title" style="font-size:13px;${t.status==='done'?'text-decoration:line-through;opacity:.6':''}">${t.title}</div>
-            ${extra ? `<div class="item-meta">${extra}</div>` : ''}
+            <div class="item-title" style="${done_?'opacity:.5;text-decoration:line-through':''}">${t.title}</div>
+            ${meta?`<div class="item-meta">${meta}</div>`:''}
           </div>
         </div>`;
       }).join('');
-      html += '</div>';
+      html+=`</div>`;
     }
-    const grandPct = grandTotal ? Math.round(grandDone/grandTotal*100) : 0;
-    document.getElementById('roadmap-content').innerHTML =
-      `<div class="card"><div class="card-title">Umumiy progress</div>
-        <div class="prog-label"><span>${grandDone}/${grandTotal} vazifa</span><span>${grandPct}%</span></div>
-        <div class="prog-bar"><div class="prog-fill" style="width:${grandPct}%;background:linear-gradient(90deg,#3fb950,#bc8cff)"></div></div>
-      </div>` + html;
-  } catch(e) {
-    document.getElementById('roadmap-content').innerHTML =
-      `<div class="empty"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+    const gp=gt?Math.round(gd/gt*100):0;
+    document.getElementById('rm-body').innerHTML=
+      `<div class="card" style="background:linear-gradient(135deg,rgba(63,185,80,.1),rgba(88,166,255,.1))">
+        <div class="card-head"><span class="card-title">Umumiy progress</span></div>
+        <div class="card-body">
+          <div class="prog-head"><span style="font-size:22px;font-weight:700">${gp}%</span><span class="prog-pct">${gd}/${gt} vazifa</span></div>
+          <div class="prog-track" style="height:10px;margin-top:8px">
+            <div class="prog-fill" style="width:${gp}%;background:linear-gradient(90deg,var(--green),var(--purple))"></div>
+          </div>
+        </div>
+      </div>`+html;
+  }catch(e){
+    document.getElementById('rm-body').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${e.message}</div></div>`;
   }
 }
 
-// ─── EXPENSES ────────────────────────────────────────────────────
-async function loadExpenses() {
-  try {
-    const d = await apiFetch('/api/expenses');
-    allExpenses = d.expenses || [];
-    renderExpenses();
-  } catch(e) {
-    document.getElementById('expenses-content').innerHTML =
-      `<div class="empty"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+/* ══════════════════════════════════════════════════════
+   EXPENSES
+══════════════════════════════════════════════════════ */
+function buildExpPage(){
+  document.getElementById('pg-expenses').innerHTML=`
+    <div class="page-header"><span class="page-title">Xarajatlar</span>
+      <button class="refresh-btn" onclick="reloadExp()">⟳</button></div>
+    <div class="chips" id="exp-chips">
+      <div class="chip active" onclick="setExpF('all',this)">Barchasi</div>
+      <div class="chip" onclick="setExpF('pending',this)">⏳ Kutilmoqda</div>
+      <div class="chip" onclick="setExpF('approved',this)">✅ Tasdiqlangan</div>
+      <div class="chip" onclick="setExpF('paid',this)">💳 To'langan</div>
+      <div class="chip" onclick="setExpF('rejected',this)">❌ Rad etilgan</div>
+    </div>
+    <div id="exp-summary"></div>
+    <div id="exp-list" class="card"></div>`;
+}
+async function loadExpenses(){buildExpPage();await fetchExp();}
+async function fetchExp(){
+  document.getElementById('exp-list').innerHTML='<div class="loading"><div style="font-size:28px;animation:spin .8s linear infinite">⟳</div></div>';
+  try{
+    const d=await api('/api/expenses');
+    allExps=d.expenses||[];
+    renderExp();
+  }catch(e){
+    document.getElementById('exp-list').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${e.message}</div></div>`;
   }
 }
-
-function setExpFilter(status, el) {
-  expFilter = status;
-  document.querySelectorAll('#exp-filters .chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  renderExpenses();
+async function reloadExp(){await fetchExp();showToast('Yangilandi ✓');}
+function setExpF(s,el){
+  expFilter=s;
+  document.querySelectorAll('#exp-chips .chip').forEach(c=>c.classList.toggle('active',c===el));
+  renderExp();
 }
-
-function renderExpenses() {
-  let exps = allExpenses;
-  if (expFilter !== 'all') exps = exps.filter(e=>e.status===expFilter);
-  if (!exps.length) {
-    document.getElementById('expenses-content').innerHTML =
-      '<div class="empty"><div class="empty-icon">💰</div><div>Xarajatlar yo\'q</div></div>';
+function renderExp(){
+  let exps=allExps;
+  if(expFilter!=='all') exps=exps.filter(e=>e.status===expFilter);
+  // Summary totals for approved+paid
+  const totals={};
+  allExps.filter(e=>['approved','paid'].includes(e.status)).forEach(e=>{
+    totals[e.currency]=(totals[e.currency]||0)+e.amount;
+  });
+  const keys=Object.keys(totals).filter(c=>totals[c]>0);
+  document.getElementById('exp-summary').innerHTML = keys.length?
+    `<div class="card" style="margin-bottom:12px">
+      <div class="card-head"><span class="card-title">Tasdiqlangan jami</span></div>
+      <div class="card-body">
+        ${keys.map(c=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--hint)">${c}</span>
+          <strong style="color:var(--green)">${totals[c].toLocaleString()} ${c}</strong>
+        </div>`).join('')}
+      </div>
+    </div>`:'' ;
+  if(!exps.length){
+    document.getElementById('exp-list').innerHTML='<div class="empty"><div class="empty-ico">💰</div><div>Xarajatlar topilmadi</div></div>';
     return;
   }
-  // Group by currency totals
-  const totals = {};
-  exps.filter(e=>['approved','paid'].includes(e.status)).forEach(e=>{
-    totals[e.currency] = (totals[e.currency]||0) + e.amount;
-  });
-  let totalsHtml = '';
-  if (Object.keys(totals).length) {
-    totalsHtml = `<div class="card" style="margin-bottom:12px"><div class="card-title">Jami (tasdiqlangan)</div>
-      ${Object.entries(totals).map(([c,a])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #21262d">
-        <span>${c}</span><strong>${a.toLocaleString()} ${c}</strong>
-      </div>`).join('')}</div>`;
-  }
-  document.getElementById('expenses-content').innerHTML = totalsHtml + exps.map(e=>{
-    const badge = `<span class="badge ${STATUS_BADGE[e.status]||'badge-gray'}">${STATUS_LABELS[e.status]||e.status}</span>`;
-    const meta  = [e.created_at, e.deadline?`📅 ${e.deadline}`:''].filter(Boolean).join(' · ');
+  document.getElementById('exp-list').innerHTML=exps.map(e=>{
+    const dl=e.deadline?`📅 ${e.deadline}`:'';
     return `<div class="list-item">
-      <div class="item-icon">${STATUS_ICONS[e.status]||'💰'}</div>
+      <div class="item-icon">${STATUS_ICON[e.status]||'💰'}</div>
       <div class="item-body">
-        <div class="item-title">${e.name}${badge}</div>
-        <div class="item-meta"><strong>${e.amount.toLocaleString()} ${e.currency}</strong> · ${meta}</div>
-        ${e.note ? `<div class="item-meta" style="margin-top:2px;font-style:italic">${e.note}</div>` : ''}
+        <div class="item-title">${e.name}</div>
+        <div class="item-meta">
+          ${badge(e.status)}
+          <span style="font-weight:600;color:var(--text)">${e.amount.toLocaleString()} ${e.currency}</span>
+          ${e.created_at?`<span>${e.created_at}</span>`:''}
+          ${dl?`<span>${dl}</span>`:''}
+        </div>
+        ${e.note?`<div style="font-size:11px;color:var(--hint);margin-top:3px;font-style:italic">${e.note}</div>`:''}
       </div>
     </div>`;
   }).join('');
 }
 
-// ─── TAB SWITCHING ───────────────────────────────────────────────
-const loaded = {};
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('active', ['dashboard','tasks','roadmap','expenses'][i]===name);
-  });
-  document.querySelectorAll('.page').forEach(p=>{
-    p.classList.toggle('active', p.id===`page-${name}`);
-  });
-  if (!loaded[name]) {
-    loaded[name] = true;
-    if (name==='dashboard') loadDashboard();
-    else if (name==='tasks')    loadTasks();
-    else if (name==='roadmap')  loadRoadmap();
-    else if (name==='expenses') loadExpenses();
+/* ══════════════════════════════════════════════════════
+   STATS
+══════════════════════════════════════════════════════ */
+async function loadStats(){
+  const el=document.getElementById('pg-stats');
+  el.innerHTML=`<div class="page-header"><span class="page-title">Statistika</span>
+    <button class="refresh-btn" onclick="reloadStats()">⟳</button></div>
+    <div id="stats-body"><div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div></div></div>`;
+  await renderStats();
+}
+async function reloadStats(){
+  document.getElementById('stats-body').innerHTML='<div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div></div>';
+  Object.keys(CHARTS).forEach(k=>{try{CHARTS[k].destroy();delete CHARTS[k];}catch(e){}});
+  await renderStats();showToast('Yangilandi ✓');
+}
+async function renderStats(){
+  try{
+    const[s,b]=await Promise.all([api('/api/stats'),api('/api/budget').catch(()=>null)]);
+    let html='';
+
+    /* Leaderboard */
+    if(s.leaderboard?.length){
+      html+=`<div class="card"><div class="card-head"><span class="card-title">Lider jadval</span></div>`;
+      s.leaderboard.forEach((u,i)=>{
+        const rankCls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+        const pct=u.total?Math.round(u.done/u.total*100):0;
+        html+=`<div class="leader-item">
+          <div class="leader-rank ${rankCls}">${i+1}</div>
+          <div class="leader-name">${u.name}</div>
+          <div style="text-align:right">
+            <div class="leader-done">${u.done} ✅</div>
+            <div style="font-size:10px;color:var(--hint)">${pct}%</div>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+
+    /* Expense status chart */
+    const es=s.expense_stats;
+    if(es?.status_counts && Object.keys(es.status_counts).length){
+      html+=`<div class="card"><div class="card-head"><span class="card-title">Xarajat holati (bu oy)</span></div>
+        <div class="chart-wrap" style="height:240px"><canvas id="ch-exp-status"></canvas></div></div>`;
+    }
+
+    /* Budget chart */
+    if(b?.months?.length){
+      html+=`<div class="card"><div class="card-head"><span class="card-title">USD xarajat tarixi</span></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="ch-budget"></canvas></div></div>`;
+    }
+
+    /* Currency bar chart */
+    if(es?.currency_totals){
+      const ct=es.currency_totals;
+      const nonZero=Object.entries(ct).filter(([,v])=>v>0);
+      if(nonZero.length){
+        html+=`<div class="card"><div class="card-head"><span class="card-title">Tasdiqlangan valyuta bo'yicha</span></div>
+          <div class="card-body">
+            ${nonZero.map(([c,v])=>`<div class="prog-wrap">
+              <div class="prog-head"><span>${c}</span><span style="font-weight:600">${v.toLocaleString()}</span></div>
+              <div class="prog-track"><div class="prog-fill" style="width:100%;background:var(--link)"></div></div>
+            </div>`).join('')}
+          </div></div>`;
+      }
+    }
+
+    /* Top 3 */
+    if(es?.top3?.length){
+      html+=`<div class="card"><div class="card-head"><span class="card-title">Top xarajatlar (bu oy)</span></div>`;
+      es.top3.forEach((t,i)=>{
+        const icons=['🥇','🥈','🥉'];
+        html+=`<div class="list-item">
+          <div class="item-icon">${icons[i]||'💰'}</div>
+          <div class="item-body">
+            <div class="item-title">${t.name}</div>
+            <div class="item-meta"><strong style="color:var(--green)">${(t.total||0).toLocaleString()}</strong></div>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+
+    document.getElementById('stats-body').innerHTML = html||'<div class="empty"><div class="empty-ico">📊</div><div>Ma\'lumot yo\'q</div></div>';
+
+    /* Render charts */
+    if(es?.status_counts){
+      const sc=es.status_counts;
+      const labels=Object.keys(sc).map(k=>STATUS_NAME[k]||k);
+      const data=Object.values(sc);
+      const colors=['#f0b429','#3fb950','#f85149','#58a6ff','#bc8cff','#8b949e'];
+      renderDonut('ch-exp-status',data,labels,colors);
+    }
+    if(b?.months?.length){
+      const months=b.months.reverse();
+      renderLine('ch-budget',
+        months.map(m=>`${MONTHS[m.month-1].slice(0,3)} ${m.year}`),
+        [{label:'Sarflandi',data:months.map(m=>m.spent.USD||0),color:'#58a6ff'},
+         {label:'Limit',data:months.map(m=>m.limits.USD||0),color:'#f0b429',dashed:true}]
+      );
+    }
+  }catch(e){
+    document.getElementById('stats-body').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${e.message}</div></div>`;
   }
 }
 
-// Init
-loaded['dashboard'] = true;
-loadDashboard();
+/* ══════════════════════════════════════════════════════
+   CHART HELPERS
+══════════════════════════════════════════════════════ */
+const CHART_DEFAULTS = {
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:'#8b949e',boxWidth:10,padding:12}}},
+};
+function renderDonut(id,data,labels,colors){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  if(CHARTS[id])CHARTS[id].destroy();
+  CHARTS[id]=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:4}]},
+    options:{...CHART_DEFAULTS,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#8b949e',boxWidth:10,padding:14}}}}});
+}
+function renderLine(id,labels,datasets){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  if(CHARTS[id])CHARTS[id].destroy();
+  CHARTS[id]=new Chart(ctx,{type:'line',data:{labels,datasets:datasets.map(d=>({
+    label:d.label,data:d.data,borderColor:d.color,backgroundColor:d.color+'22',
+    borderWidth:2,pointRadius:4,fill:!d.dashed,tension:.4,
+    borderDash:d.dashed?[6,3]:undefined,
+  }))},options:{...CHART_DEFAULTS,scales:{
+    x:{ticks:{color:'#8b949e',maxRotation:0},grid:{color:'#21262d'}},
+    y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'},beginAtZero:true}
+  }}});
+}
+
+/* ── INIT ── */
+loaded['home']=true;
+loadHome();
 </script>
 </body>
 </html>

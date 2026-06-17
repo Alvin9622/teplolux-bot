@@ -182,6 +182,8 @@ def create_app() -> web.Application:
     app.router.add_get("/api/roadmap",        api_roadmap)
     app.router.add_get("/api/expenses",       api_expenses)
     app.router.add_get("/api/tasks",          api_tasks)
+    app.router.add_get("/api/budget",         api_budget)
+    app.router.add_get("/api/stats",          api_stats)
     app.router.add_route("OPTIONS", "/{path:.*}", options_handler)
     return app
 
@@ -194,3 +196,55 @@ async def start_webapp():
     await site.start()
     logger.info("Mini App server started on port %d", PORT)
     return runner
+
+
+async def api_budget(request: web.Request):
+    tg_user = await _get_tg_user(request)
+    if not tg_user:
+        return json_resp({"error": "unauthorized"}, 401)
+    user = await db.get_user(tg_user.get("id"))
+    if not user or user["role"] != "admin":
+        return json_resp({"error": "forbidden"}, 403)
+    import datetime as dt
+    now = dt.datetime.now()
+    result = []
+    for i in range(6):
+        m = (now.month - i - 1) % 12 + 1
+        y = now.year if (now.month - i) > 0 else now.year - 1
+        budget = await db.get_budget(m, y)
+        totals = {}
+        for cur in ("USD", "UZS", "RUB"):
+            totals[cur] = await db.get_monthly_expense_total(m, y, cur)
+        result.append({
+            "month": m, "year": y,
+            "limits": {
+                "USD": budget["limit_usd"] if budget else 0,
+                "UZS": budget["limit_uzs"] if budget else 0,
+                "RUB": budget["limit_rub"] if budget else 0,
+            },
+            "spent": totals,
+        })
+    return json_resp({"months": result})
+
+
+async def api_stats(request: web.Request):
+    tg_user = await _get_tg_user(request)
+    if not tg_user:
+        return json_resp({"error": "unauthorized"}, 401)
+    user = await db.get_user(tg_user.get("id"))
+    if not user:
+        return json_resp({"error": "not_registered"}, 403)
+    import datetime as dt
+    now = dt.datetime.now()
+    stats = await db.get_expense_stats(now.month, now.year)
+    leaderboard = await db.get_all_time_leaderboard()
+    top = [{
+        "name":     u["full_name"].split()[0],
+        "done":     u["done"] or 0,
+        "total":    u["total"] or 0,
+        "overdue":  u["overdue"] or 0,
+    } for u in leaderboard[:7]]
+    return json_resp({
+        "expense_stats": stats,
+        "leaderboard": top,
+    })
