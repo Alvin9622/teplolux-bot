@@ -172,6 +172,19 @@ async def init_db():
             new_value   TEXT DEFAULT '',
             created_at  TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS ideas (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            tg_id      INTEGER NOT NULL,
+            full_name  TEXT DEFAULT '',
+            username   TEXT DEFAULT '',
+            role       TEXT DEFAULT 'employee',
+            type       TEXT DEFAULT 'idea',
+            text       TEXT NOT NULL,
+            status     TEXT DEFAULT 'new',
+            admin_note TEXT DEFAULT '',
+            created_at TEXT
+        );
         """)
         await db.commit()
 
@@ -1092,4 +1105,50 @@ async def update_expense(expense_id, **kwargs):
     vals = list(kwargs.values()) + [expense_id]
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(f"UPDATE expenses SET {sets} WHERE id=?", vals)
+        await db.commit()
+
+
+# ─── IDEAS ──────────────────────────────────────────────────────
+
+async def create_idea(tg_id, full_name, username, role, idea_type, text):
+    now = datetime.datetime.now().isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        c = await db.execute(
+            "INSERT INTO ideas (tg_id,full_name,username,role,type,text,status,created_at) VALUES (?,?,?,?,?,?,?,?)",
+            (tg_id, full_name, username or "", role, idea_type, text, "new", now)
+        )
+        await db.commit()
+        return c.lastrowid
+
+
+async def get_idea(idea_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM ideas WHERE id=?", (idea_id,)) as c:
+            r = await c.fetchone()
+            return _row(r) if r else None
+
+
+async def get_ideas(status=None, tg_id=None, idea_type=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        wheres, params = [], []
+        if status:
+            wheres.append("status=?"); params.append(status)
+        if tg_id:
+            wheres.append("tg_id=?"); params.append(tg_id)
+        if idea_type:
+            wheres.append("type=?"); params.append(idea_type)
+        where = ("WHERE " + " AND ".join(wheres)) if wheres else ""
+        async with db.execute(f"SELECT * FROM ideas {where} ORDER BY id DESC", params) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+
+async def update_idea(idea_id, **kwargs):
+    if not kwargs:
+        return
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [idea_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE ideas SET {sets} WHERE id=?", vals)
         await db.commit()

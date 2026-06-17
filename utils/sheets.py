@@ -25,6 +25,7 @@ SHEET_COMMENTS = "Izohlar"
 SHEET_ACTIVITY = "Faollik"
 SHEET_ROADMAP  = "Teplolux Road Map"
 SHEET_EXPENSES = "Marketing xarajatlari"
+SHEET_IDEAS    = "G'oyalar va takliflar"
 
 STATUS_UZ  = {
     "new": "🆕 Yangi", "in_progress": "🔄 Jarayonda",
@@ -50,6 +51,10 @@ ROADMAP_HEADERS = [
 EXPENSE_HEADERS = [
     "ID", "Nomi", "Summa", "Valyuta", "Muddat", "Izoh", "Holat",
     "Yaratgan", "Tasdiqlagan", "Rad sababi", "Kechiktirish", "Yaratildi"
+]
+IDEA_HEADERS = [
+    "ID", "Turi", "Matn", "Holat", "Muallif", "Username", "Lavozim",
+    "Admin izohi", "Sana"
 ]
 
 
@@ -125,6 +130,7 @@ def _ensure_worksheets(ss):
         (SHEET_ACTIVITY, ACTIVITY_HEADERS),
         (SHEET_ROADMAP,  ROADMAP_HEADERS),
         (SHEET_EXPENSES, EXPENSE_HEADERS),
+        (SHEET_IDEAS,    IDEA_HEADERS),
     ]:
         if title not in existing:
             ws = ss.add_worksheet(title=title, rows=1000, cols=len(headers))
@@ -362,3 +368,38 @@ async def full_sync_all_tasks():
         creator  = await db.get_user_by_id(t["created_by"])  if t.get("created_by")  else None
         await sync_task(t, assignee, creator)
     logger.info("Full Sheets sync done: %d tasks", len(tasks))
+
+
+def _sync_idea_sync(idea: dict):
+    ss = _get_spreadsheet()
+    if not ss:
+        return
+    try:
+        ws = ss.worksheet(SHEET_IDEAS)
+        TYPE_LABELS = {"idea": "💡 G'oya", "problem": "⚠️ Muammo", "future": "🚀 Kelajak"}
+        STATUS_LABELS = {"new": "🆕 Yangi", "review": "👀 Ko'rib chiqilmoqda",
+                         "accepted": "✅ Qabul qilindi", "rejected": "❌ Rad etildi"}
+        row = [
+            idea["id"],
+            TYPE_LABELS.get(idea.get("type"), idea.get("type", "")),
+            idea.get("text") or "",
+            STATUS_LABELS.get(idea.get("status"), idea.get("status", "")),
+            idea.get("full_name") or "",
+            "@" + idea["username"] if idea.get("username") else "",
+            idea.get("role") or "",
+            idea.get("admin_note") or "",
+            _fmt(idea.get("created_at")),
+        ]
+        col_a = ws.col_values(1)
+        for i, val in enumerate(col_a[1:], start=2):
+            if str(val) == str(idea["id"]):
+                ws.update(f"A{i}:I{i}", [row], value_input_option="USER_ENTERED")
+                return
+        ws.append_row(row, value_input_option="USER_ENTERED")
+    except Exception as e:
+        logger.error("sync_idea error: %s", e, exc_info=True)
+
+
+async def sync_idea(idea: dict):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: _sync_idea_sync(idea))

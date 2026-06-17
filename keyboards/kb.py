@@ -22,6 +22,7 @@ def main_kb(lang, is_admin=False):
     rows.append([btn(T(lang, "btn_my_tasks"), "go:mytasks")])
     rows.append([btn(T(lang, "btn_my_stats"), "go:mystats")])
     rows.append([btn(T(lang, "btn_dashboard"), "go:dashboard")])
+    rows.append([btn(T(lang, "btn_ideas"), "go:ideas")])
     if WEBAPP_URL:
         rows.append([InlineKeyboardButton(
             text=T(lang, "btn_miniapp"),
@@ -368,3 +369,43 @@ def dashboard_kb(lang):
         [btn(T(lang, "dashboard_refresh"), "dashboard:refresh")],
         [back_btn(lang, "main")],
     )
+
+
+# ─── IDEAS ───────────────────────────────────────────────────────
+
+def ideas_menu_kb(lang, is_admin=False):
+    rows = [
+        [btn(T(lang, "idea_type_idea"),    "idea:add:idea")],
+        [btn(T(lang, "idea_type_problem"), "idea:add:problem")],
+        [btn(T(lang, "idea_type_future"),  "idea:add:future")],
+        [btn(T(lang, "ideas_my_title") if not is_admin else T(lang, "ideas_list_title"), "idea:list")],
+    ]
+    if is_admin:
+        rows.append([btn("🆕 Yangilar" if lang == "uz" else "🆕 Новые", "idea:filter:new")])
+    rows.append([back_btn(lang, "main")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def idea_view_kb(lang, idea_id, status, is_admin=False):
+    rows = []
+    if is_admin:
+        rows.append([
+            btn("✅ Qabul" if lang == "uz" else "✅ Принять",  f"idea:status:{idea_id}:accepted"),
+            btn("❌ Rad"   if lang == "uz" else "❌ Отклонить", f"idea:status:{idea_id}:rejected"),
+        ])
+        rows.append([btn("👀 Ko'rib chiqilmoqda" if lang == "uz" else "👀 На рассмотрении", f"idea:status:{idea_id}:review")])
+        rows.append([btn("📝 Izoh" if lang == "uz" else "📝 Комментарий", f"idea:note:{idea_id}")])
+    rows.append([back_btn(lang, "ideas")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def ideas_list_kb(lang, ideas, flt="all"):
+    TYPE_ICONS = {"idea": "💡", "problem": "⚠️", "future": "🚀"}
+    STATUS_ICONS = {"new": "🆕", "review": "👀", "accepted": "✅", "rejected": "❌"}
+    rows = []
+    for idea in ideas[:15]:
+        tip  = TYPE_ICONS.get(idea["type"], "💡")
+        st   = STATUS_ICONS.get(idea["status"], "🆕")
+        name = (idea.get("full_name") or "?").split()[0]
+        label = f"{tip}{st} {idea['text'][:28]}… | {name}"
+        rows.append([btn(label, f"idea:view:{idea['id']}")])
+    rows.append([back_btn(lang, "ideas")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)

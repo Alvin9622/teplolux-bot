@@ -241,6 +241,11 @@ async def universal_go(cb: CallbackQuery):
         await dashboard(cb)
         return
 
+    if dest == "ideas":
+        from handlers.ideas import ideas_menu
+        await ideas_menu(cb)
+        return
+
     if dest.startswith("admin:"):
         # admin: prefixli noma'lum yo'nalish — admin menyuga qaytamiz
         from handlers.admin import go_admin
