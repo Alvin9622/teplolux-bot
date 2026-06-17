@@ -63,7 +63,9 @@ def _idea_text(idea, lang):
 # ─── MENU ────────────────────────────────────────────────────────
 
 @router.callback_query(F.data == "go:ideas")
-async def ideas_menu(cb: CallbackQuery):
+async def ideas_menu(cb: CallbackQuery, state: FSMContext = None):
+    if state:
+        await state.clear()
     user = await db.get_user(cb.from_user.id)
     if not user:
         await cb.answer("Avval /start bosing", show_alert=True)
@@ -90,9 +92,11 @@ async def idea_add_start(cb: CallbackQuery, state: FSMContext):
     await state.set_state(IdeaStates.waiting_text)
     await state.update_data(idea_type=idea_type, lang=lang)
     tip_label = _type_label(idea_type, lang)
+    cancel_text = "❌ Bekor qilish" if lang == "uz" else "❌ Отменить"
     await cb.message.edit_text(
         f"<b>{tip_label}</b>\n\n{T(lang, 'ideas_ask_text')}",
         parse_mode="HTML",
+        reply_markup=back_kb(lang, "ideas"),
     )
     await cb.answer()
 
