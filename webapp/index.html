@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Teplolux Dashboard</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      var(--tg-theme-bg-color, #0d1117);
+    --bg2:     var(--tg-theme-secondary-bg-color, #161b22);
+    --text:    var(--tg-theme-text-color, #e6edf3);
+    --hint:    var(--tg-theme-hint-color, #8b949e);
+    --link:    var(--tg-theme-link-color, #58a6ff);
+    --btn:     var(--tg-theme-button-color, #1f6feb);
+    --btn-txt: var(--tg-theme-button-text-color, #ffffff);
+    --accent:  #3fb950;
+    --yellow:  #f0b429;
+    --red:     #f85149;
+    --purple:  #bc8cff;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* NAV TABS */
+  .tabs {
+    display: flex;
+    background: var(--bg2);
+    border-bottom: 1px solid #21262d;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .tab {
+    flex: 1; padding: 12px 4px; text-align: center;
+    cursor: pointer; color: var(--hint); font-size: 12px;
+    border-bottom: 2px solid transparent; transition: all .2s;
+  }
+  .tab.active { color: var(--link); border-bottom-color: var(--link); }
+  .tab-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+
+  /* PAGES */
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2); border-radius: 12px;
+    padding: 16px; margin-bottom: 12px;
+    border: 1px solid #21262d;
+  }
+  .card-title {
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--hint); margin-bottom: 12px;
+  }
+
+  /* STAT GRID */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .stat-box {
+    background: var(--bg2); border-radius: 10px; padding: 14px;
+    border: 1px solid #21262d; text-align: center;
+  }
+  .stat-num  { font-size: 28px; font-weight: 700; color: var(--text); }
+  .stat-label{ font-size: 11px; color: var(--hint); margin-top: 4px; }
+
+  /* PROGRESS BAR */
+  .prog-row  { margin-bottom: 10px; }
+  .prog-label{ display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+  .prog-bar  { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+  /* TASK / EXPENSE LIST */
+  .list-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 0; border-bottom: 1px solid #21262d;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .item-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .item-body { flex: 1; min-width: 0; }
+  .item-title{
+    font-size: 14px; font-weight: 500; margin-bottom: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .item-meta { font-size: 11px; color: var(--hint); }
+  .badge {
+    display: inline-block; padding: 2px 7px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; margin-left: 6px;
+  }
+  .badge-green  { background: #1a3d1f; color: var(--accent); }
+  .badge-yellow { background: #2d2010; color: var(--yellow); }
+  .badge-red    { background: #2d1010; color: var(--red);    }
+  .badge-blue   { background: #0d2040; color: var(--link);   }
+  .badge-purple { background: #1e1040; color: var(--purple); }
+  .badge-gray   { background: #1c2128; color: var(--hint);   }
+
+  /* PHASE SECTION */
+  .phase-title {
+    font-size: 13px; font-weight: 600; margin: 16px 0 8px;
+    color: var(--link);
+  }
+
+  /* SEARCH */
+  .search-wrap { position: relative; margin-bottom: 12px; }
+  .search-input {
+    width: 100%; padding: 10px 14px 10px 36px;
+    background: var(--bg2); border: 1px solid #21262d;
+    border-radius: 10px; color: var(--text); font-size: 14px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--link); }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--hint); }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 40px 20px; color: var(--hint); }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 60px 20px; color: var(--hint); }
+  .spinner {
+    width: 32px; height: 32px; margin: 0 auto 12px;
+    border: 3px solid #21262d; border-top-color: var(--link);
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* PHASE PROGRESS (roadmap) */
+  .phase-block { margin-bottom: 20px; }
+  .phase-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .phase-name { font-weight: 600; font-size: 13px; }
+  .phase-pct  { font-size: 12px; color: var(--hint); }
+
+  /* FILTER CHIPS */
+  .filter-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; }
+  .chip {
+    flex-shrink: 0; padding: 5px 12px; border-radius: 20px;
+    border: 1px solid #21262d; background: var(--bg2);
+    color: var(--hint); cursor: pointer; font-size: 12px; white-space: nowrap;
+  }
+  .chip.active { background: var(--btn); color: var(--btn-txt); border-color: var(--btn); }
+</style>
+</head>
+<body>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard')">
+    <span class="tab-icon">📊</span>Dashboard
+  </div>
+  <div class="tab" onclick="switchTab('tasks')">
+    <span class="tab-icon">📋</span>Vazifalar
+  </div>
+  <div class="tab" onclick="switchTab('roadmap')">
+    <span class="tab-icon">🗺</span>Yo'l xarita
+  </div>
+  <div class="tab" onclick="switchTab('expenses')">
+    <span class="tab-icon">💰</span>Xarajatlar
+  </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="page-dashboard" class="page active">
+  <div id="dash-content" class="loading">
+    <div class="spinner"></div>
+    <div>Yuklanmoqda...</div>
+  </div>
+</div>
+
+<!-- TASKS PAGE -->
+<div id="page-tasks" class="page">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="task-search" placeholder="Qidiruv..." oninput="filterTasks()">
+  </div>
+  <div class="filter-chips" id="task-filters">
+    <div class="chip active" data-status="all" onclick="setTaskFilter('all', this)">Barchasi</div>
+    <div class="chip" data-status="new" onclick="setTaskFilter('new', this)">🆕 Yangi</div>
+    <div class="chip" data-status="in_progress" onclick="setTaskFilter('in_progress', this)">🔄 Jarayonda</div>
+    <div class="chip" data-status="review" onclick="setTaskFilter('review', this)">👀 Tekshiruvda</div>
+    <div class="chip" data-status="done" onclick="setTaskFilter('done', this)">✅ Bajarildi</div>
+  </div>
+  <div id="tasks-content" class="loading">
+    <div class="spinner"></div><div>Yuklanmoqda...</div>
+  </div>
+</div>
+
+<!-- ROADMAP PAGE -->
+<div id="page-roadmap" class="page">
+  <div id="roadmap-content" class="loading">
+    <div class="spinner"></div><div>Yuklanmoqda...</div>
+  </div>
+</div>
+
+<!-- EXPENSES PAGE -->
+<div id="page-expenses" class="page">
+  <div class="filter-chips" id="exp-filters">
+    <div class="chip active" data-status="all" onclick="setExpFilter('all', this)">Barchasi</div>
+    <div class="chip" data-status="pending" onclick="setExpFilter('pending', this)">⏳ Kutilmoqda</div>
+    <div class="chip" data-status="approved" onclick="setExpFilter('approved', this)">✅ Tasdiqlangan</div>
+    <div class="chip" data-status="paid" onclick="setExpFilter('paid', this)">💳 To'langan</div>
+    <div class="chip" data-status="rejected" onclick="setExpFilter('rejected', this)">❌ Rad etilgan</div>
+  </div>
+  <div id="expenses-content" class="loading">
+    <div class="spinner"></div><div>Yuklanmoqda...</div>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+// Colors for dark/light theme
+document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color || '#0d1117');
+
+const INIT_DATA = tg.initData || '';
+let allTasks = [], allExpenses = [], taskFilter = 'all', expFilter = 'all';
+
+const STATUS_ICONS = {
+  new: '🆕', in_progress: '🔄', done: '✅', cancelled: '❌', review: '👀',
+  pending: '⏳', approved: '✅', rejected: '❌', postponed: '🔄', paid: '💳'
+};
+const STATUS_BADGE = {
+  new: 'badge-blue', in_progress: 'badge-yellow', done: 'badge-green',
+  cancelled: 'badge-red', review: 'badge-purple',
+  pending: 'badge-yellow', approved: 'badge-green',
+  rejected: 'badge-red', postponed: 'badge-purple', paid: 'badge-green'
+};
+const STATUS_LABELS = {
+  new: 'Yangi', in_progress: 'Jarayonda', done: 'Bajarildi',
+  cancelled: 'Bekor', review: 'Tekshiruvda',
+  pending: 'Kutilmoqda', approved: 'Tasdiqlangan',
+  rejected: 'Rad etilgan', postponed: 'Kechiktirilgan', paid: "To'langan"
+};
+
+async function apiFetch(path) {
+  const res = await fetch(path, {
+    headers: { 'X-Init-Data': INIT_DATA }
+  });
+  if (!res.ok) throw new Error('API error: ' + res.status);
+  return res.json();
+}
+
+function progBar(done, total, color = '#58a6ff') {
+  const pct = total ? Math.round(done / total * 100) : 0;
+  return `
+    <div class="prog-row">
+      <div class="prog-label"><span>${done}/${total}</span><span>${pct}%</span></div>
+      <div class="prog-bar">
+        <div class="prog-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+    </div>`;
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await apiFetch('/api/dashboard');
+    let html = '';
+    if (d.role === 'admin') {
+      html += `<div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-num" style="color:#f0b429">${d.pending_tasks}</div>
+          <div class="stat-label">Kutilayotgan<br>vazifalar</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:#f85149">${d.overdue_tasks}</div>
+          <div class="stat-label">Muddati<br>o'tgan</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:#58a6ff">${d.pending_expenses}</div>
+          <div class="stat-label">Tasdiqlash<br>kutayotgan</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:#3fb950">${Object.values(d.phase_progress).reduce((s,p)=>s+p.done,0)}</div>
+          <div class="stat-label">Bajarilgan<br>yo'l xarita</div>
+        </div>
+      </div>`;
+      html += `<div class="card"><div class="card-title">Yo'l xarita jarayoni</div>`;
+      const phaseColors = {'1-3':'#3fb950','4-6':'#f0b429','7-9':'#58a6ff','10-18':'#bc8cff'};
+      const phaseNames  = {'1-3':'1–3 oy','4-6':'4–6 oy','7-9':'7–9 oy','10-18':'10–18 oy'};
+      let totalDone = 0, totalAll = 0;
+      for (const [phase, pp] of Object.entries(d.phase_progress)) {
+        totalDone += pp.done; totalAll += pp.total;
+        html += `<div style="margin-bottom:8px">
+          <div class="prog-label"><span style="color:${phaseColors[phase]}">${phaseNames[phase]}</span><span>${pp.done}/${pp.total}</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:${pp.total?Math.round(pp.done/pp.total*100):0}%;background:${phaseColors[phase]}"></div></div>
+        </div>`;
+      }
+      const totalPct = totalAll ? Math.round(totalDone/totalAll*100) : 0;
+      html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid #21262d">
+        <div class="prog-label"><strong>Umumiy</strong><span>${totalDone}/${totalAll} (${totalPct}%)</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${totalPct}%;background:linear-gradient(90deg,#3fb950,#58a6ff)"></div></div>
+      </div></div>`;
+    } else {
+      const tc = d.task_counts || {};
+      const ec = d.exp_counts  || {};
+      html += `<div class="card"><div class="card-title">Mening vazifalarim</div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-num" style="color:#58a6ff">${tc.new||0}</div><div class="stat-label">Yangi</div></div>
+          <div class="stat-box"><div class="stat-num" style="color:#f0b429">${tc.in_progress||0}</div><div class="stat-label">Jarayonda</div></div>
+          <div class="stat-box"><div class="stat-num" style="color:#bc8cff">${tc.review||0}</div><div class="stat-label">Tekshiruvda</div></div>
+          <div class="stat-box"><div class="stat-num" style="color:#3fb950">${tc.done||0}</div><div class="stat-label">Bajarildi</div></div>
+        </div></div>`;
+      html += `<div class="card"><div class="card-title">Mening xarajatlarim</div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-num" style="color:#f0b429">${ec.pending||0}</div><div class="stat-label">Kutilmoqda</div></div>
+          <div class="stat-box"><div class="stat-num" style="color:#3fb950">${ec.approved||0}</div><div class="stat-label">Tasdiqlangan</div></div>
+          <div class="stat-box"><div class="stat-num" style="color:#3fb950">${ec.paid||0}</div><div class="stat-label">To'langan</div></div>
+          <div class="stat-box"><div class="stat-num" style="color:#f85149">${ec.rejected||0}</div><div class="stat-label">Rad etilgan</div></div>
+        </div></div>`;
+    }
+    document.getElementById('dash-content').innerHTML = html;
+  } catch(e) {
+    document.getElementById('dash-content').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+  }
+}
+
+// ─── TASKS ───────────────────────────────────────────────────────
+async function loadTasks() {
+  try {
+    const d = await apiFetch('/api/tasks');
+    allTasks = d.tasks || [];
+    renderTasks();
+  } catch(e) {
+    document.getElementById('tasks-content').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+  }
+}
+
+function setTaskFilter(status, el) {
+  taskFilter = status;
+  document.querySelectorAll('#task-filters .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTasks();
+}
+
+function filterTasks() { renderTasks(); }
+
+function renderTasks() {
+  const q = (document.getElementById('task-search').value || '').toLowerCase();
+  let tasks = allTasks;
+  if (taskFilter !== 'all') tasks = tasks.filter(t => t.status === taskFilter);
+  if (q) tasks = tasks.filter(t => t.title.toLowerCase().includes(q) || (t.assignee||'').toLowerCase().includes(q));
+  if (!tasks.length) {
+    document.getElementById('tasks-content').innerHTML =
+      '<div class="empty"><div class="empty-icon">📋</div><div>Vazifalar yo\'q</div></div>';
+    return;
+  }
+  const priorityColor = {high:'#f85149', medium:'#f0b429', low:'#3fb950'};
+  document.getElementById('tasks-content').innerHTML = tasks.map(t => {
+    const badge = `<span class="badge ${STATUS_BADGE[t.status]||'badge-gray'}">${STATUS_LABELS[t.status]||t.status}</span>`;
+    const dl    = t.deadline ? `📅 ${t.deadline.slice(5).replace('-','.')}` : '';
+    const prio  = `<span style="color:${priorityColor[t.priority]||'#8b949e'};font-size:10px">● ${t.priority}</span>`;
+    const progW = t.progress > 0 ? `<div class="prog-bar" style="margin-top:5px"><div class="prog-fill" style="width:${t.progress}%;background:#58a6ff"></div></div>` : '';
+    return `<div class="list-item">
+      <div class="item-icon">${STATUS_ICONS[t.status]||'📌'}</div>
+      <div class="item-body">
+        <div class="item-title">${t.title}${badge}</div>
+        <div class="item-meta">${[t.assignee,dl,t.category].filter(Boolean).join(' · ')} ${prio}</div>
+        ${progW}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── ROADMAP ─────────────────────────────────────────────────────
+async function loadRoadmap() {
+  try {
+    const d = await apiFetch('/api/roadmap');
+    const phases = d.phases || {};
+    const phaseOrder = ['1-3','4-6','7-9','10-18'];
+    const phaseNames = {'1-3':'Bosqich 1–3 oy','4-6':'Bosqich 4–6 oy','7-9':'Bosqich 7–9 oy','10-18':'Bosqich 10–18 oy'};
+    const phaseColors= {'1-3':'#3fb950','4-6':'#f0b429','7-9':'#58a6ff','10-18':'#bc8cff'};
+    let html = '';
+    let grandDone = 0, grandTotal = 0;
+    for (const ph of phaseOrder) {
+      const tasks = phases[ph] || [];
+      const done  = tasks.filter(t=>t.status==='done').length;
+      const total = tasks.length;
+      grandDone += done; grandTotal += total;
+      const pct = total ? Math.round(done/total*100) : 0;
+      html += `<div class="phase-block">
+        <div class="phase-header">
+          <span class="phase-name" style="color:${phaseColors[ph]}">${phaseNames[ph]}</span>
+          <span class="phase-pct">${done}/${total} (${pct}%)</span>
+        </div>
+        <div class="prog-bar" style="margin-bottom:10px">
+          <div class="prog-fill" style="width:${pct}%;background:${phaseColors[ph]}"></div>
+        </div>`;
+      html += tasks.map(t => {
+        const icon = t.status==='done' ? '✅' : '⬜';
+        const extra = [t.deadline?`📅 ${t.deadline}`:'', t.assignee_name?`👤 ${t.assignee_name}`:''].filter(Boolean).join(' ');
+        return `<div class="list-item">
+          <div class="item-icon" style="font-size:16px">${icon}</div>
+          <div class="item-body">
+            <div class="item-title" style="font-size:13px;${t.status==='done'?'text-decoration:line-through;opacity:.6':''}">${t.title}</div>
+            ${extra ? `<div class="item-meta">${extra}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+      html += '</div>';
+    }
+    const grandPct = grandTotal ? Math.round(grandDone/grandTotal*100) : 0;
+    document.getElementById('roadmap-content').innerHTML =
+      `<div class="card"><div class="card-title">Umumiy progress</div>
+        <div class="prog-label"><span>${grandDone}/${grandTotal} vazifa</span><span>${grandPct}%</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${grandPct}%;background:linear-gradient(90deg,#3fb950,#bc8cff)"></div></div>
+      </div>` + html;
+  } catch(e) {
+    document.getElementById('roadmap-content').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+  }
+}
+
+// ─── EXPENSES ────────────────────────────────────────────────────
+async function loadExpenses() {
+  try {
+    const d = await apiFetch('/api/expenses');
+    allExpenses = d.expenses || [];
+    renderExpenses();
+  } catch(e) {
+    document.getElementById('expenses-content').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><div>${e.message}</div></div>`;
+  }
+}
+
+function setExpFilter(status, el) {
+  expFilter = status;
+  document.querySelectorAll('#exp-filters .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderExpenses();
+}
+
+function renderExpenses() {
+  let exps = allExpenses;
+  if (expFilter !== 'all') exps = exps.filter(e=>e.status===expFilter);
+  if (!exps.length) {
+    document.getElementById('expenses-content').innerHTML =
+      '<div class="empty"><div class="empty-icon">💰</div><div>Xarajatlar yo\'q</div></div>';
+    return;
+  }
+  // Group by currency totals
+  const totals = {};
+  exps.filter(e=>['approved','paid'].includes(e.status)).forEach(e=>{
+    totals[e.currency] = (totals[e.currency]||0) + e.amount;
+  });
+  let totalsHtml = '';
+  if (Object.keys(totals).length) {
+    totalsHtml = `<div class="card" style="margin-bottom:12px"><div class="card-title">Jami (tasdiqlangan)</div>
+      ${Object.entries(totals).map(([c,a])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #21262d">
+        <span>${c}</span><strong>${a.toLocaleString()} ${c}</strong>
+      </div>`).join('')}</div>`;
+  }
+  document.getElementById('expenses-content').innerHTML = totalsHtml + exps.map(e=>{
+    const badge = `<span class="badge ${STATUS_BADGE[e.status]||'badge-gray'}">${STATUS_LABELS[e.status]||e.status}</span>`;
+    const meta  = [e.created_at, e.deadline?`📅 ${e.deadline}`:''].filter(Boolean).join(' · ');
+    return `<div class="list-item">
+      <div class="item-icon">${STATUS_ICONS[e.status]||'💰'}</div>
+      <div class="item-body">
+        <div class="item-title">${e.name}${badge}</div>
+        <div class="item-meta"><strong>${e.amount.toLocaleString()} ${e.currency}</strong> · ${meta}</div>
+        ${e.note ? `<div class="item-meta" style="margin-top:2px;font-style:italic">${e.note}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── TAB SWITCHING ───────────────────────────────────────────────
+const loaded = {};
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active', ['dashboard','tasks','roadmap','expenses'][i]===name);
+  });
+  document.querySelectorAll('.page').forEach(p=>{
+    p.classList.toggle('active', p.id===`page-${name}`);
+  });
+  if (!loaded[name]) {
+    loaded[name] = true;
+    if (name==='dashboard') loadDashboard();
+    else if (name==='tasks')    loadTasks();
+    else if (name==='roadmap')  loadRoadmap();
+    else if (name==='expenses') loadExpenses();
+  }
+}
+
+// Init
+loaded['dashboard'] = true;
+loadDashboard();
+</script>
+</body>
+</html>

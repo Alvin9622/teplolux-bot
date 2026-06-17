@@ -96,11 +96,22 @@ async def main():
     scheduler.add_job(_monthly_report, "cron", day=1, hour=10, minute=0)
     scheduler.start()
 
+    # Mini App web server
+    webapp_runner = None
+    try:
+        from webapp_server import start_webapp
+        webapp_runner = await start_webapp()
+        logger.info("Mini App web server started ✅")
+    except Exception as _we:
+        logger.warning("Mini App server skipped: %s", _we)
+
     logger.info("Bot ishga tushdi ✅")
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         scheduler.shutdown()
+        if webapp_runner:
+            await webapp_runner.cleanup()
         await bot.session.close()
 
 
