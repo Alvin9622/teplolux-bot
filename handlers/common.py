@@ -246,6 +246,55 @@ async def universal_go(cb: CallbackQuery):
         await ideas_menu(cb)
         return
 
+    if dest == "myplan":
+        from handlers.workplan import wp_my_plans
+        await wp_my_plans(cb)
+        return
+
+    if dest == "mykpi":
+        from handlers.kpi import kpi_my_list
+        await kpi_my_list(cb)
+        return
+
+    if dest == "content_menu":
+        from handlers.content import content_menu
+        await content_menu(cb)
+        return
+
+    if dest == "wp_menu":
+        from handlers.workplan import wp_menu
+        await wp_menu(cb)
+        return
+
+    if dest == "wp_templates":
+        from handlers.workplan import wp_templates
+        await wp_templates(cb)
+        return
+
+    if dest == "wp_all_plans":
+        from handlers.workplan import wp_all_plans
+        await wp_all_plans(cb)
+        return
+
+    if dest == "kpi_menu":
+        from handlers.kpi import kpi_menu
+        await kpi_menu(cb)
+        return
+
+    if dest.startswith("wp_plan_"):
+        plan_id = int(dest.split("_")[2])
+        cb.data = f"wp:plan:{plan_id}"
+        from handlers.workplan import wp_plan_view
+        await wp_plan_view(cb)
+        return
+
+    if dest.startswith("content_week_"):
+        offset = int(dest.split("_")[2])
+        cb.data = f"content:week:{offset}"
+        from handlers.content import content_week
+        await content_week(cb)
+        return
+
     if dest == "help":
         await go_help(cb)
         return

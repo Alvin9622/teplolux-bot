@@ -22,7 +22,10 @@ def main_kb(lang, is_admin=False):
     rows.append([btn(T(lang, "btn_my_tasks"), "go:mytasks")])
     rows.append([btn(T(lang, "btn_my_stats"), "go:mystats")])
     rows.append([btn(T(lang, "btn_dashboard"), "go:dashboard")])
-    rows.append([btn(T(lang, "btn_ideas"), "go:ideas")])
+    rows.append([btn(T(lang, "btn_my_workplan"), "go:myplan"),
+                 btn(T(lang, "btn_my_kpi"),      "go:mykpi")])
+    rows.append([btn(T(lang, "btn_content"),  "go:content_menu"),
+                 btn(T(lang, "btn_ideas"),    "go:ideas")])
     if WEBAPP_URL:
         rows.append([InlineKeyboardButton(
             text=T(lang, "btn_miniapp"),
@@ -53,6 +56,9 @@ def admin_kb(lang):
         [btn(T(lang, "btn_expenses"),      "admin:expenses")],
         [btn(T(lang, "btn_budget"),        "budget:menu"),
          btn(T(lang, "btn_activity"),      "activity:log:0")],
+        [btn(T(lang, "btn_workplan"),      "go:wp_menu"),
+         btn(T(lang, "btn_kpi"),           "kpi:menu")],
+        [btn(T(lang, "btn_content"),       "go:content_menu")],
         [back_btn(lang, "main")],
     )
 
@@ -410,4 +416,173 @@ def ideas_list_kb(lang, ideas, flt="all"):
         label = f"{tip}{st} {idea['text'][:28]}… | {name}"
         rows.append([btn(label, f"idea:view:{idea['id']}")])
     rows.append([back_btn(lang, "ideas")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+# ─── WORK PLANS ──────────────────────────────────────────────────
+
+def wp_admin_menu_kb(lang):
+    return ik(
+        [btn(T(lang, "wp_template_new"),    "wp:new_template")],
+        [btn("📋 Shablonlar" if lang=="uz" else "📋 Шаблоны", "wp:templates")],
+        [btn("👥 Barcha rejalar" if lang=="uz" else "👥 Все планы", "wp:all_plans")],
+        [back_btn(lang, "admin")],
+    )
+
+def wp_templates_kb(lang, templates):
+    rows = []
+    for t in templates:
+        period = "🗓" if t["period_type"] == "monthly" else "📆"
+        rows.append([btn(f"{period} {t['title']} — {t['position']}", f"wp:tmpl:{t['id']}")])
+    rows.append([btn(T(lang, "wp_template_new"), "wp:new_template")])
+    rows.append([back_btn(lang, "wp_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def wp_template_view_kb(lang, template_id):
+    return ik(
+        [btn("👤 Hodimga tayinlash" if lang=="uz" else "👤 Назначить сотруднику", f"wp:assign:{template_id}")],
+        [btn("🗑 O'chirish" if lang=="uz" else "🗑 Удалить", f"wp:del_tmpl:{template_id}")],
+        [back_btn(lang, "wp_templates")],
+    )
+
+def wp_period_kb(lang):
+    return ik(
+        [btn(T(lang, "wp_period_monthly"), "wp_period:monthly")],
+        [btn(T(lang, "wp_period_weekly"),  "wp_period:weekly")],
+    )
+
+def wp_plan_kb(lang, plan_id, items, is_admin=False):
+    rows = []
+    for item in items:
+        pct  = round(item["done_count"] / item["target_count"] * 100) if item["target_count"] else 0
+        icon = "✅" if pct >= 100 else ("🔄" if pct > 0 else "⬜")
+        label = f"{icon} {item['title'][:20]} {item['done_count']}/{item['target_count']}"
+        rows.append([btn(label, f"wp:item:{item['id']}")])
+    if is_admin:
+        rows.append([back_btn(lang, "wp_all_plans")])
+    else:
+        rows.append([back_btn(lang, "myplan")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def wp_item_kb(lang, item_id, plan_id, is_admin=False):
+    rows = [
+        [btn("🔢 Natija yangilash" if lang=="uz" else "🔢 Обновить результат", f"wp:update:{item_id}")],
+        [btn("💬 Izoh" if lang=="uz" else "💬 Заметка", f"wp:note:{item_id}")],
+        [back_btn(lang, f"wp_plan_{plan_id}")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def wp_my_plans_kb(lang, plans):
+    rows = []
+    for p in plans:
+        items_total = p.get("items_total", 0)
+        items_done  = p.get("items_done", 0)
+        pct = round(items_done / items_total * 100) if items_total else 0
+        icon = "✅" if pct >= 100 else ("🔄" if pct > 0 else "📋")
+        rows.append([btn(f"{icon} {p['title']} {p['month']}/{p['year']} — {pct}%", f"wp:plan:{p['id']}")])
+    rows.append([back_btn(lang, "main")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def wp_all_plans_kb(lang, plans):
+    rows = []
+    for p in plans:
+        name = (p.get("assignee_name") or "?").split()[0]
+        rows.append([btn(f"👤 {name} — {p['title']} {p['month']}/{p['year']}", f"wp:plan:{p['id']}")])
+    rows.append([back_btn(lang, "wp_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+# ─── KPI ─────────────────────────────────────────────────────────
+
+def kpi_admin_menu_kb(lang, employees):
+    rows = [[btn(f"👤 {e['full_name']}", f"kpi:emp:{e['id']}")] for e in employees]
+    rows.append([back_btn(lang, "admin")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def kpi_emp_kb(lang, user_id, months):
+    rows = [[btn(m["label"], f"kpi:view:{user_id}:{m['month']}:{m['year']}")] for m in months]
+    rows.append([btn("➕ KPI belgilash" if lang=="uz" else "➕ Установить KPI", f"kpi:set:{user_id}")])
+    rows.append([back_btn(lang, "kpi_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def kpi_view_kb(lang, targets, user_id, month, year, is_admin=False):
+    rows = []
+    for t in targets:
+        pct  = round(t["actual_value"] / t["target_value"] * 100) if t["target_value"] else 0
+        icon = "✅" if pct >= 100 else ("🔄" if pct > 0 else "⬜")
+        rows.append([btn(f"{icon} {t['metric_name']}: {t['actual_value']}/{t['target_value']} ({pct}%)",
+                         f"kpi:upd:{t['id']}")])
+    if is_admin:
+        rows.append([btn("➕ Ko'rsatkich qo'shish" if lang=="uz" else "➕ Добавить показатель",
+                         f"kpi:set:{user_id}")])
+        rows.append([btn("🗑 Tozalash" if lang=="uz" else "🗑 Очистить", f"kpi:clear:{user_id}:{month}:{year}")])
+        rows.append([back_btn(lang, "kpi_menu")])
+    else:
+        rows.append([back_btn(lang, "mykpi")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def kpi_my_months_kb(lang, months):
+    rows = [[btn(m["label"], f"kpi:myview:{m['month']}:{m['year']}")] for m in months]
+    rows.append([back_btn(lang, "main")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+# ─── CONTENT CALENDAR ────────────────────────────────────────────
+
+PLATFORMS = [
+    ("📸 Instagram", "instagram"),
+    ("✈️ Telegram", "telegram"),
+    ("🎵 TikTok",   "tiktok"),
+    ("👥 Facebook", "facebook"),
+    ("▶️ YouTube",  "youtube"),
+]
+CONTENT_TYPES = [
+    ("🖼 Post",       "post"),
+    ("📖 Story",      "story"),
+    ("🎬 Reels/Video","reels"),
+    ("🎠 Carousel",   "carousel"),
+    ("📹 Video",      "video"),
+]
+
+def content_menu_kb(lang, is_admin=False):
+    rows = [
+        [btn("➕ Kontent qo'shish" if lang=="uz" else "➕ Добавить контент", "content:add")],
+        [btn("📅 Bu hafta" if lang=="uz" else "📅 Эта неделя", "content:week:0")],
+        [btn("📊 Statistika" if lang=="uz" else "📊 Статистика", "content:stats")],
+    ]
+    if is_admin:
+        rows.append([btn("👥 Barchasi" if lang=="uz" else "👥 Все", "content:all")])
+    rows.append([back_btn(lang, "main")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def content_platform_kb():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[btn(label, f"cplt:{val}")] for label, val in PLATFORMS]
+    )
+
+def content_type_kb():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[btn(label, f"ctype:{val}")] for label, val in CONTENT_TYPES]
+    )
+
+def content_entry_kb(lang, entry_id, status, back_week=0):
+    rows = []
+    if status != "done":
+        rows.append([btn("✅ Bajarildi" if lang=="uz" else "✅ Выполнено", f"content:done:{entry_id}")])
+    if status != "failed":
+        rows.append([btn("❌ Bajarilmadi" if lang=="uz" else "❌ Не выполнено", f"content:fail:{entry_id}")])
+    rows.append([btn("🗑 O'chirish" if lang=="uz" else "🗑 Удалить", f"content:del:{entry_id}")])
+    rows.append([back_btn(lang, f"content_week_{back_week}")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+def content_week_nav_kb(lang, week_offset, entries_count):
+    nav = []
+    if week_offset < 0:
+        nav.append(btn("▶️ Keyingi" if lang=="uz" else "▶️ Далее", f"content:week:{week_offset+1}"))
+    nav.append(btn("◀️ Oldingi" if lang=="uz" else "◀️ Назад", f"content:week:{week_offset-1}"))
+    rows = []
+    if nav:
+        rows.append(nav)
+    rows.append([btn("➕ Qo'shish" if lang=="uz" else "➕ Добавить", "content:add")])
+    rows.append([back_btn(lang, "content_menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)

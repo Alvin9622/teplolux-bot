@@ -185,6 +185,81 @@ async def init_db():
             admin_note TEXT DEFAULT '',
             created_at TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS work_plan_templates (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            title       TEXT NOT NULL,
+            position    TEXT DEFAULT '',
+            period_type TEXT DEFAULT 'monthly',
+            created_by  INTEGER,
+            created_at  TEXT,
+            is_active   INTEGER DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS work_plan_template_items (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            template_id  INTEGER NOT NULL,
+            title        TEXT NOT NULL,
+            target_count INTEGER DEFAULT 1,
+            unit         TEXT DEFAULT 'dona',
+            order_num    INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS work_plans (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL,
+            template_id INTEGER,
+            title       TEXT NOT NULL,
+            period_type TEXT DEFAULT 'monthly',
+            month       INTEGER,
+            year        INTEGER,
+            week_num    INTEGER DEFAULT 0,
+            status      TEXT DEFAULT 'active',
+            created_by  INTEGER,
+            created_at  TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS work_plan_items (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            plan_id      INTEGER NOT NULL,
+            title        TEXT NOT NULL,
+            target_count INTEGER DEFAULT 1,
+            done_count   INTEGER DEFAULT 0,
+            unit         TEXT DEFAULT 'dona',
+            notes        TEXT DEFAULT '',
+            status       TEXT DEFAULT 'pending',
+            order_num    INTEGER DEFAULT 0,
+            updated_at   TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS kpi_targets (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id      INTEGER NOT NULL,
+            month        INTEGER NOT NULL,
+            year         INTEGER NOT NULL,
+            metric_name  TEXT NOT NULL,
+            target_value REAL DEFAULT 0,
+            actual_value REAL DEFAULT 0,
+            unit         TEXT DEFAULT '',
+            note         TEXT DEFAULT '',
+            created_by   INTEGER,
+            created_at   TEXT,
+            updated_at   TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS content_calendar (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id      INTEGER NOT NULL,
+            plan_date    TEXT NOT NULL,
+            platform     TEXT NOT NULL,
+            content_type TEXT NOT NULL,
+            title        TEXT DEFAULT '',
+            status       TEXT DEFAULT 'planned',
+            note         TEXT DEFAULT '',
+            created_by   INTEGER,
+            created_at   TEXT,
+            updated_at   TEXT
+        );
         """)
         await db.commit()
 
@@ -1152,3 +1227,237 @@ async def update_idea(idea_id, **kwargs):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(f"UPDATE ideas SET {sets} WHERE id=?", vals)
         await db.commit()
+
+
+# ─── WORK PLAN TEMPLATES ─────────────────────────────────────────
+
+async def create_wp_template(title, position, period_type, created_by):
+    now = datetime.datetime.now().isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        c = await db.execute(
+            "INSERT INTO work_plan_templates (title,position,period_type,created_by,created_at) VALUES (?,?,?,?,?)",
+            (title, position, period_type, created_by, now)
+        )
+        await db.commit()
+        return c.lastrowid
+
+async def add_wp_template_item(template_id, title, target_count, unit, order_num):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO work_plan_template_items (template_id,title,target_count,unit,order_num) VALUES (?,?,?,?,?)",
+            (template_id, title, target_count, unit, order_num)
+        )
+        await db.commit()
+
+async def get_wp_templates(position=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        if position:
+            async with db.execute("SELECT * FROM work_plan_templates WHERE is_active=1 AND position=? ORDER BY id DESC", (position,)) as c:
+                return [_row(r) for r in await c.fetchall()]
+        async with db.execute("SELECT * FROM work_plan_templates WHERE is_active=1 ORDER BY id DESC") as c:
+            return [_row(r) for r in await c.fetchall()]
+
+async def get_wp_template(template_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM work_plan_templates WHERE id=?", (template_id,)) as c:
+            return _row(await c.fetchone())
+
+async def get_wp_template_items(template_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM work_plan_template_items WHERE template_id=? ORDER BY order_num", (template_id,)) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+async def delete_wp_template(template_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE work_plan_templates SET is_active=0 WHERE id=?", (template_id,))
+        await db.commit()
+
+
+# ─── WORK PLANS ──────────────────────────────────────────────────
+
+async def create_work_plan(user_id, template_id, title, period_type, month, year, week_num, created_by):
+    now = datetime.datetime.now().isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        c = await db.execute(
+            "INSERT INTO work_plans (user_id,template_id,title,period_type,month,year,week_num,created_by,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+            (user_id, template_id, title, period_type, month, year, week_num, created_by, now)
+        )
+        await db.commit()
+        return c.lastrowid
+
+async def add_work_plan_item(plan_id, title, target_count, unit, order_num=0):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO work_plan_items (plan_id,title,target_count,unit,order_num) VALUES (?,?,?,?,?)",
+            (plan_id, title, target_count, unit, order_num)
+        )
+        await db.commit()
+
+async def get_work_plans(user_id=None, month=None, year=None, status=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        wheres, params = [], []
+        if user_id:  wheres.append("wp.user_id=?");  params.append(user_id)
+        if month:    wheres.append("wp.month=?");     params.append(month)
+        if year:     wheres.append("wp.year=?");      params.append(year)
+        if status:   wheres.append("wp.status=?");    params.append(status)
+        where = ("WHERE " + " AND ".join(wheres)) if wheres else ""
+        sql = f"""
+            SELECT wp.*, u.full_name as assignee_name
+            FROM work_plans wp
+            LEFT JOIN users u ON wp.user_id = u.id
+            {where} ORDER BY wp.id DESC
+        """
+        async with db.execute(sql, params) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+async def get_work_plan(plan_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT wp.*, u.full_name as assignee_name FROM work_plans wp LEFT JOIN users u ON wp.user_id=u.id WHERE wp.id=?",
+            (plan_id,)
+        ) as c:
+            return _row(await c.fetchone())
+
+async def get_work_plan_items(plan_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM work_plan_items WHERE plan_id=? ORDER BY id", (plan_id,)) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+async def get_work_plan_item(item_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM work_plan_items WHERE id=?", (item_id,)) as c:
+            return _row(await c.fetchone())
+
+async def update_work_plan_item(item_id, **kwargs):
+    now = datetime.datetime.now().isoformat()
+    kwargs["updated_at"] = now
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [item_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE work_plan_items SET {sets} WHERE id=?", vals)
+        await db.commit()
+
+async def update_work_plan(plan_id, **kwargs):
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [plan_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE work_plans SET {sets} WHERE id=?", vals)
+        await db.commit()
+
+
+# ─── KPI ─────────────────────────────────────────────────────────
+
+async def create_kpi_target(user_id, month, year, metric_name, target_value, unit, created_by, note=""):
+    now = datetime.datetime.now().isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        c = await db.execute(
+            "INSERT INTO kpi_targets (user_id,month,year,metric_name,target_value,actual_value,unit,note,created_by,created_at,updated_at) VALUES (?,?,?,?,?,0,?,?,?,?,?)",
+            (user_id, month, year, metric_name, target_value, unit, note, created_by, now, now)
+        )
+        await db.commit()
+        return c.lastrowid
+
+async def get_kpi_targets(user_id=None, month=None, year=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        wheres, params = [], []
+        if user_id: wheres.append("k.user_id=?"); params.append(user_id)
+        if month:   wheres.append("k.month=?");   params.append(month)
+        if year:    wheres.append("k.year=?");     params.append(year)
+        where = ("WHERE " + " AND ".join(wheres)) if wheres else ""
+        sql = f"SELECT k.*, u.full_name as user_name FROM kpi_targets k LEFT JOIN users u ON k.user_id=u.id {where} ORDER BY k.id"
+        async with db.execute(sql, params) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+async def get_kpi_target(kpi_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM kpi_targets WHERE id=?", (kpi_id,)) as c:
+            return _row(await c.fetchone())
+
+async def update_kpi_target(kpi_id, **kwargs):
+    now = datetime.datetime.now().isoformat()
+    kwargs["updated_at"] = now
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [kpi_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE kpi_targets SET {sets} WHERE id=?", vals)
+        await db.commit()
+
+async def delete_kpi_target(kpi_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM kpi_targets WHERE id=?", (kpi_id,))
+        await db.commit()
+
+
+# ─── CONTENT CALENDAR ────────────────────────────────────────────
+
+async def create_content_entry(user_id, plan_date, platform, content_type, title, created_by, note=""):
+    now = datetime.datetime.now().isoformat()
+    async with aiosqlite.connect(DB_PATH) as db:
+        c = await db.execute(
+            "INSERT INTO content_calendar (user_id,plan_date,platform,content_type,title,status,note,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (user_id, plan_date, platform, content_type, title, "planned", note, created_by, now, now)
+        )
+        await db.commit()
+        return c.lastrowid
+
+async def get_content_entries(user_id=None, date_from=None, date_to=None, status=None):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        wheres, params = [], []
+        if user_id:   wheres.append("c.user_id=?");             params.append(user_id)
+        if date_from: wheres.append("c.plan_date>=?");          params.append(date_from)
+        if date_to:   wheres.append("c.plan_date<=?");          params.append(date_to)
+        if status:    wheres.append("c.status=?");              params.append(status)
+        where = ("WHERE " + " AND ".join(wheres)) if wheres else ""
+        sql = f"SELECT c.*, u.full_name as user_name FROM content_calendar c LEFT JOIN users u ON c.user_id=u.id {where} ORDER BY c.plan_date, c.id"
+        async with db.execute(sql, params) as c:
+            return [_row(r) for r in await c.fetchall()]
+
+async def get_content_entry(entry_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM content_calendar WHERE id=?", (entry_id,)) as c:
+            return _row(await c.fetchone())
+
+async def update_content_entry(entry_id, **kwargs):
+    now = datetime.datetime.now().isoformat()
+    kwargs["updated_at"] = now
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    vals = list(kwargs.values()) + [entry_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE content_calendar SET {sets} WHERE id=?", vals)
+        await db.commit()
+
+async def delete_content_entry(entry_id):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM content_calendar WHERE id=?", (entry_id,))
+        await db.commit()
+
+async def get_content_stats(user_id, month, year):
+    """Oylik kontent statistikasi."""
+    import calendar
+    last_day = calendar.monthrange(year, month)[1]
+    date_from = f"{year}-{month:02d}-01"
+    date_to   = f"{year}-{month:02d}-{last_day}"
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT status, COUNT(*) as cnt FROM content_calendar WHERE user_id=? AND plan_date BETWEEN ? AND ? GROUP BY status",
+            (user_id, date_from, date_to)
+        ) as c:
+            rows = {r["status"]: r["cnt"] for r in await c.fetchall()}
+        async with db.execute(
+            "SELECT platform, COUNT(*) as cnt FROM content_calendar WHERE user_id=? AND plan_date BETWEEN ? AND ? AND status='done' GROUP BY platform",
+            (user_id, date_from, date_to)
+        ) as c:
+            by_platform = {r["platform"]: r["cnt"] for r in await c.fetchall()}
+    return {"by_status": rows, "by_platform": by_platform}
