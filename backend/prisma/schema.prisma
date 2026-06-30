@@ -1,0 +1,130 @@
+// ============================================================================
+// Teplolux AI CRM Assistant — Prisma schema
+// ----------------------------------------------------------------------------
+// Designed for multi-channel CRM. Telegram is the first channel; the schema is
+// intentionally channel-aware and future-ready (amoCRM, WhatsApp, Instagram,
+// website live chat, AI assistant, orders, dealers) without implementing them.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+/// The communication channel a contact / message belongs to.
+/// Telegram is live today; the rest are reserved for future expansion.
+enum Channel {
+  TELEGRAM
+  WHATSAPP
+  INSTAGRAM
+  FACEBOOK
+  WEBCHAT
+}
+
+/// Direction of a chat message relative to the platform.
+enum MessageDirection {
+  INBOUND // user -> platform
+  OUTBOUND // platform -> user
+}
+
+/// Delivery / processing status of a chat message.
+enum MessageStatus {
+  PENDING
+  RECEIVED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+/// Lifecycle state of a conversation (future-ready for routing / AI / operators).
+enum ConversationStatus {
+  OPEN
+  PENDING
+  ASSIGNED
+  RESOLVED
+  CLOSED
+}
+
+// ----------------------------------------------------------------------------
+// Models
+// ----------------------------------------------------------------------------
+
+/// A Telegram end-user. Mirrors the Telegram `User` object plus CRM metadata.
+model TelegramUser {
+  id           String   @id @default(uuid()) @db.Uuid
+  /// Telegram numeric user id (unique across Telegram).
+  telegramId   BigInt   @unique
+  username     String?
+  firstName    String?
+  lastName     String?
+  languageCode String?  @db.VarChar(16)
+  phone        String?  @db.VarChar(32)
+  isBlocked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastActivity DateTime @default(now())
+
+  messages      ChatMessage[]
+  conversations Conversation[]
+
+  @@index([username])
+  @@index([lastActivity])
+  @@map("telegram_users")
+}
+
+/// A single inbound or outbound message exchanged with a Telegram user.
+model ChatMessage {
+  id                String           @id @default(uuid()) @db.Uuid
+  telegramUserId    String           @db.Uuid
+  conversationId    String?          @db.Uuid
+  direction         MessageDirection
+  text              String?
+  /// Telegram's own message id (per-chat). Useful for editing / replies.
+  telegramMessageId BigInt?
+  status            MessageStatus    @default(RECEIVED)
+  /// Raw command (e.g. `/start`) extracted from the message, if any.
+  command           String?          @db.VarChar(64)
+  createdAt         DateTime         @default(now())
+
+  telegramUser TelegramUser  @relation(fields: [telegramUserId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@index([telegramUserId])
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+/// A conversation groups messages for routing, AI handling and operator handoff.
+/// Channel-aware so the same structure serves every future messaging channel.
+model Conversation {
+  id             String             @id @default(uuid()) @db.Uuid
+  telegramUserId String?            @db.Uuid
+  channel        Channel            @default(TELEGRAM)
+  status         ConversationStatus @default(OPEN)
+  /// Operator / agent identifier the conversation is assigned to (future CRM).
+  assignedTo     String?            @db.Uuid
+  /// Free-form subject / topic of the conversation.
+  subject        String?
+  metadata       Json?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  closedAt       DateTime?
+
+  telegramUser TelegramUser? @relation(fields: [telegramUserId], references: [id], onDelete: SetNull)
+  messages     ChatMessage[]
+
+  @@index([telegramUserId])
+  @@index([status])
+  @@index([channel])
+  @@map("conversations")
+}
