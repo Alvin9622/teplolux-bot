@@ -251,6 +251,28 @@ Then open your bot in Telegram and send `/start`. Watch the server logs for
 
 ---
 
+## Internationalisation (i18n)
+
+The bot is fully multilingual. Two languages are supported today — **Uzbek**
+(`uz`) and **Russian** (`ru`); English is intentionally not implemented yet.
+
+- **Translation files** live in [`src/i18n/locales`](./src/i18n/locales)
+  (`uz.json`, `ru.json`) — there are no user-facing hardcoded strings. Both
+  catalogs are validated for key parity on boot.
+- **First `/start`** shows a language selection screen
+  (🇺🇿 O'zbekcha / 🇷🇺 Русский). The choice is persisted on the
+  `TelegramUser.language` column, so the selection step is **skipped** on
+  subsequent starts.
+- Every message and inline button is rendered through `I18nService` in the
+  user's locale; a **🌐 Change Language** button inside the main menu lets the
+  user switch at any time.
+
+Adding a key: add it to **both** `uz.json` and `ru.json`, then reference it via
+a constant in [`src/i18n/i18n.keys.ts`](./src/i18n/i18n.keys.ts) (`TKey.*`),
+which is compile-time checked against the catalog shape.
+
+---
+
 ## Health check
 
 ```

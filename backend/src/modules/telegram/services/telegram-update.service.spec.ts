@@ -3,6 +3,7 @@ import { TelegramUser as PersistedUser } from '@prisma/client';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { BotCommand } from '../constants/commands.constants';
 import { CallbackData } from '../constants/callback-data.constants';
+import { I18nService } from '../../../i18n/i18n.service';
 import { COMMAND_HANDLERS, CommandHandler } from '../handlers/command-handler.interface';
 import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { TelegramApiService } from './telegram-api.service';
@@ -19,6 +20,7 @@ const persistedUser: PersistedUser = {
   firstName: 'Test',
   lastName: null,
   languageCode: 'en',
+  language: null,
   phone: null,
   isBlocked: false,
   createdAt: new Date(),
@@ -66,6 +68,13 @@ describe('TelegramUpdateService', () => {
         { provide: TelegramResponderService, useValue: responder },
         { provide: TelegramCallbackService, useValue: callbacks },
         { provide: TelegramApiService, useValue: api },
+        {
+          provide: I18nService,
+          useValue: {
+            t: jest.fn().mockReturnValue('translated'),
+            scoped: jest.fn().mockReturnValue(() => 'label'),
+          },
+        },
         {
           provide: WINSTON_MODULE_NEST_PROVIDER,
           useValue: { log: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },

@@ -54,6 +54,15 @@ enum ConversationStatus {
   CLOSED
 }
 
+/// The end-user's explicitly selected interface language.
+/// Distinct from Telegram's reported `languageCode` metadata: this reflects a
+/// deliberate choice the user made and persists across sessions. English is
+/// intentionally not offered yet.
+enum Language {
+  UZ
+  RU
+}
+
 // ----------------------------------------------------------------------------
 // Models
 // ----------------------------------------------------------------------------
@@ -66,9 +75,11 @@ model TelegramUser {
   username     String?
   firstName    String?
   lastName     String?
-  languageCode String?  @db.VarChar(16)
-  phone        String?  @db.VarChar(32)
-  isBlocked    Boolean  @default(false)
+  languageCode String?    @db.VarChar(16)
+  /// User-selected interface language (null until they choose on first /start).
+  language     Language?
+  phone        String?    @db.VarChar(32)
+  isBlocked    Boolean    @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   lastActivity DateTime @default(now())

@@ -14,6 +14,9 @@ export const CallbackData = {
   Contact: 'menu:contact',
   Location: 'menu:location',
   BackToMenu: 'nav:menu',
+  ChangeLanguage: 'menu:lang',
+  SelectLangUz: 'lang:uz',
+  SelectLangRu: 'lang:ru',
 } as const;
 
 export type CallbackDataValue = (typeof CallbackData)[keyof typeof CallbackData];

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TelegramUser as PersistedUser } from '@prisma/client';
+import { Locale, localeToPrismaLanguage } from '../../../i18n/i18n.types';
 import { TelegramUserRepository } from '../repositories/telegram-user.repository';
 import { TelegramUser } from '../types/telegram-api.types';
 
@@ -26,5 +27,10 @@ export class TelegramUserService {
 
   async setPhone(userId: string, phone: string): Promise<PersistedUser> {
     return this.repository.updatePhone(userId, phone);
+  }
+
+  /** Persist the user's chosen interface language. */
+  async setLanguage(userId: string, locale: Locale): Promise<PersistedUser> {
+    return this.repository.updateLanguage(userId, localeToPrismaLanguage(locale));
   }
 }

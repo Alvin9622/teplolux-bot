@@ -2,8 +2,10 @@ import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { MessageDirection, MessageStatus, TelegramUser as PersistedUser } from '@prisma/client';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { LogEvent } from '../../../logger/log-events';
+import { I18nService } from '../../../i18n/i18n.service';
+import { TKey } from '../../../i18n/i18n.keys';
+import { DEFAULT_LOCALE, Locale, prismaLanguageToLocale } from '../../../i18n/i18n.types';
 import { BotCommandName } from '../constants/commands.constants';
-import { BotMessage } from '../constants/messages.constants';
 import { Keyboards } from '../keyboards/main-menu.keyboard';
 import { TelegramUpdateDto } from '../dto/telegram-update.dto';
 import { COMMAND_HANDLERS, CommandHandler } from '../handlers/command-handler.interface';
@@ -39,6 +41,7 @@ export class TelegramUpdateService {
     private readonly responder: TelegramResponderService,
     private readonly callbacks: TelegramCallbackService,
     private readonly api: TelegramApiService,
+    private readonly i18n: I18nService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
   ) {
     this.commandMap = new Map(handlers.map((handler) => [handler.command, handler]));
@@ -96,14 +99,22 @@ export class TelegramUpdateService {
     }
 
     // Free-form text with no command — friendly fallback for now.
-    await this.responder.sendText(context, BotMessage.fallback, Keyboards.mainMenu());
+    await this.responder.sendText(
+      context,
+      this.i18n.t(context.locale, TKey.fallback),
+      Keyboards.mainMenu(this.i18n.scoped(context.locale)),
+    );
   }
 
   private async dispatchCommand(command: string, context: HandlerContext): Promise<void> {
     const handler = this.commandMap.get(command as BotCommandName);
     if (!handler) {
       this.logger.warn(`${LogEvent.UnknownCommand}: /${command}`, TelegramUpdateService.name);
-      await this.responder.sendText(context, BotMessage.unknownCommand, Keyboards.mainMenu());
+      await this.responder.sendText(
+        context,
+        this.i18n.t(context.locale, TKey.unknownCommand),
+        Keyboards.mainMenu(this.i18n.scoped(context.locale)),
+      );
       return;
     }
     await handler.handle(context);
@@ -125,7 +136,9 @@ export class TelegramUpdateService {
     const context = this.buildContext(user, chatId, undefined, callback, callback.data);
 
     // Always acknowledge so the Telegram client stops its loading spinner.
-    await this.api.answerCallbackQuery(callback.id, { text: BotMessage.callbackAcknowledged });
+    await this.api.answerCallbackQuery(callback.id, {
+      text: this.i18n.t(context.locale, TKey.callbackAcknowledged),
+    });
 
     if (!callback.data) {
       return;
@@ -137,7 +150,11 @@ export class TelegramUpdateService {
         `${LogEvent.UnknownCommand}: callback "${callback.data}"`,
         TelegramUpdateService.name,
       );
-      await this.responder.sendText(context, BotMessage.fallback, Keyboards.mainMenu());
+      await this.responder.sendText(
+        context,
+        this.i18n.t(context.locale, TKey.fallback),
+        Keyboards.mainMenu(this.i18n.scoped(context.locale)),
+      );
     }
   }
 
@@ -177,7 +194,20 @@ export class TelegramUpdateService {
     callbackQuery?: TelegramCallbackQuery,
     text?: string,
   ): HandlerContext {
-    return { user, chatId, message, callbackQuery, text };
+    return { user, chatId, message, callbackQuery, text, locale: this.resolveLocale(user) };
+  }
+
+  /**
+   * Resolve the locale for an interaction: the user's explicit choice when set,
+   * otherwise a best-effort guess from Telegram's reported language code,
+   * finally the default locale.
+   */
+  private resolveLocale(user: PersistedUser): Locale {
+    const selected = prismaLanguageToLocale(user.language);
+    if (selected) {
+      return selected;
+    }
+    return user.languageCode?.toLowerCase().startsWith('ru') ? 'ru' : DEFAULT_LOCALE;
   }
 }
 

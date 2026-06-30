@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppConfigModule } from './config/config.module';
 import { AppConfigService } from './config/app-config.service';
 import { AppLoggerModule } from './logger/logger.module';
+import { I18nModule } from './i18n/i18n.module';
 import { PrismaModule } from './database/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { HealthModule } from './health/health.module';
@@ -28,6 +29,7 @@ import { AuthModule } from './modules/auth/auth.module';
     // Infrastructure
     AppConfigModule,
     AppLoggerModule,
+    I18nModule,
     PrismaModule,
     RedisModule,
     ThrottlerModule.forRootAsync({

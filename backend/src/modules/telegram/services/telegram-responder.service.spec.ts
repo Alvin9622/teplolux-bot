@@ -11,6 +11,7 @@ const user: PersistedUser = {
   firstName: 'Vasil',
   lastName: null,
   languageCode: 'uz',
+  language: null,
   phone: null,
   isBlocked: false,
   createdAt: new Date(),
@@ -40,6 +41,7 @@ describe('TelegramResponderService.editText', () => {
     const context: HandlerContext = {
       chatId: 7,
       user,
+      locale: 'uz',
       callbackQuery: {
         id: 'cbq',
         from: { id: 7, is_bot: false, first_name: 'Vasil' },
@@ -55,7 +57,7 @@ describe('TelegramResponderService.editText', () => {
   });
 
   it('falls back to sending a new message when there is nothing to edit', async () => {
-    const context: HandlerContext = { chatId: 7, user };
+    const context: HandlerContext = { chatId: 7, user, locale: 'uz' };
 
     await responder.editText(context, 'hello');
 

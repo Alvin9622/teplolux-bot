@@ -1,0 +1,39 @@
+{
+  "language": {
+    "prompt": "🌐 Tilni tanlang:\n🌐 Выберите язык:",
+    "changed": "✅ Til o'zgartirildi."
+  },
+  "welcome": "👋 <b>Xush kelibsiz, {{name}}!</b>\n\nBu <b>Teplolux AI CRM Assistant</b> — Teplolux bilan yagona aloqa nuqtangiz.\n\nQuyidagi menyudan kerakli bo'limni tanlang:",
+  "help": "<b>Sizga qanday yordam bera olaman?</b>\n\nMavjud buyruqlar:\n/start — asosiy menyu\n/catalog — mahsulotlar katalogi\n/service — texnik xizmat so'rovi\n/dealer — diler bo'lish\n/operator — operator bilan bog'lanish\n/contact — aloqa ma'lumotlari\n/location — manzilimiz\n/help — ushbu xabar",
+  "catalog": {
+    "intro": "<b>🛍 Mahsulotlar katalogi</b>\n\nBatafsil ma'lumot uchun mahsulot toifasini tanlang:"
+  },
+  "category": {
+    "boilers": "<b>🏠 Kotyollar</b>\n\nUy va biznes uchun ishonchli isitish kotyollari. Mutaxassislarimiz to'g'ri quvvat va modelni tanlashda yordam beradi.",
+    "radiators": "<b>🔥 Radiatorlar</b>\n\nTurli o'lcham va qoplamadagi yuqori samarali radiatorlar.",
+    "floorHeating": "<b>♨️ Issiq pol</b>\n\nHar qanday xona uchun qulay issiq pol tizimlari."
+  },
+  "service": "<b>🛠 Texnik xizmat so'rovi</b>\n\nMuammoni tasvirlab bering, texnik jamoamiz siz bilan bog'lanadi. Operator qo'ng'iroq qilishi uchun telefon raqamingizni ham yuborishingiz mumkin.",
+  "dealer": "<b>🤝 Diler bo'ling</b>\n\nTeplolux bilan hamkorlik qiling va biznesingizni rivojlantiring. Aloqa ma'lumotlaringizni qoldiring, hamkorlik jamoamiz siz bilan bog'lanadi.",
+  "operator": "<b>👨 Operator bilan bog'lanish</b>\n\nSiz operator navbatiga qo'shildingiz. Savolingizni yozing, tez orada javob beramiz.",
+  "contact": "<b>📞 Aloqa ma'lumotlari</b>\n\nTelefon: +998 (00) 000-00-00\nEmail: info@teplolux.example.com\nIsh vaqti: Dushanba–Shanba, 09:00–18:00",
+  "location": {
+    "intro": "<b>📍 Bizning manzilimiz</b>\n\nManzilimiz quyidagi xaritada ko'rsatilgan.",
+    "detail": "<b>📍 Bizning manzilimiz</b>\n\nTeplolux savdo va xizmat ko'rsatish markazi.\nXaritada ochish: https://maps.google.com/?q={{lat}},{{lng}}"
+  },
+  "unknownCommand": "Kechirasiz, bu buyruqni tushunmadim. /help orqali imkoniyatlarni ko'ring.",
+  "fallback": "Xabaringizni qabul qildim. Menyudan foydalaning yoki /help yuboring.",
+  "callbackAcknowledged": "Tayyor",
+  "menu": {
+    "boilers": "🏠 Kotyollar",
+    "radiators": "🔥 Radiatorlar",
+    "floorHeating": "♨️ Issiq pol",
+    "service": "🛠 Xizmat",
+    "dealer": "🤝 Diler bo'lish",
+    "operator": "👨 Operator",
+    "contact": "📞 Aloqa",
+    "location": "📍 Manzil",
+    "changeLanguage": "🌐 Tilni o'zgartirish",
+    "back": "⬅️ Asosiy menyu"
+  }
+}

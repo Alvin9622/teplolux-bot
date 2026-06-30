@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, TelegramUser } from '@prisma/client';
+import { Language, Prisma, TelegramUser } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
 
 /** Fields used to create or update a Telegram user from an incoming update. */
@@ -52,6 +52,14 @@ export class TelegramUserRepository {
     return this.prisma.telegramUser.update({
       where: { id },
       data: { phone },
+    });
+  }
+
+  /** Persist the user's explicitly selected interface language. */
+  async updateLanguage(id: string, language: Language): Promise<TelegramUser> {
+    return this.prisma.telegramUser.update({
+      where: { id },
+      data: { language },
     });
   }
 
