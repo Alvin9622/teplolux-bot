@@ -92,6 +92,28 @@ export interface AnswerCallbackQueryOptions {
   show_alert?: boolean;
 }
 
+/** A bot command published to Telegram's command menu via `setMyCommands`. */
+export interface BotCommandDefinition {
+  command: string;
+  description: string;
+}
+
+/**
+ * Result of the `getWebhookInfo` method — used to confirm Telegram can reach
+ * the configured webhook endpoint.
+ * @see https://core.telegram.org/bots/api#webhookinfo
+ */
+export interface TelegramWebhookInfo {
+  url: string;
+  has_custom_certificate: boolean;
+  pending_update_count: number;
+  ip_address?: string;
+  last_error_date?: number;
+  last_error_message?: string;
+  max_connections?: number;
+  allowed_updates?: string[];
+}
+
 /** Generic envelope returned by every Bot API method. */
 export interface TelegramApiResponse<T> {
   ok: boolean;

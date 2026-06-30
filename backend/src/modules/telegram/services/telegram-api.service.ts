@@ -6,12 +6,15 @@ import { LogEvent } from '../../../logger/log-events';
 import { TelegramApiException } from '../../../common/exceptions';
 import {
   AnswerCallbackQueryOptions,
+  BotCommandDefinition,
   InlineKeyboardMarkup,
   SendLocationOptions,
   SendMessageOptions,
   TelegramApiResponse,
   TelegramMessage,
+  TelegramWebhookInfo,
 } from '../types/telegram-api.types';
+import { BOT_COMMAND_DESCRIPTIONS } from '../constants/commands.constants';
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org';
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -45,24 +48,91 @@ export class TelegramApiService implements OnModuleInit {
    */
   async onModuleInit(): Promise<void> {
     if (!this.configService.telegram.setWebhookOnStartup) {
+      this.logger.log(
+        'Automatic webhook registration disabled (TELEGRAM_SET_WEBHOOK_ON_STARTUP=false)',
+        TelegramApiService.name,
+      );
       return;
     }
-    await this.registerWebhook();
+
+    try {
+      await this.registerWebhook();
+      await this.publishCommands();
+      await this.verifyWebhook();
+    } catch (error) {
+      // Never let a startup webhook failure crash the whole application.
+      this.logger.error(
+        `${LogEvent.WebhookFailed}: startup registration failed`,
+        error instanceof Error ? error.stack : String(error),
+        TelegramApiService.name,
+      );
+    }
   }
 
   /** Register this service's webhook URL + secret token with Telegram. */
   async registerWebhook(): Promise<void> {
-    const { baseUrl } = this.configService.app;
-    const { webhookPath, webhookSecret } = this.configService.telegram;
-    const url = `${baseUrl.replace(/\/$/, '')}/${webhookPath}`;
-
     await this.call('setWebhook', {
-      url,
-      secret_token: webhookSecret,
+      url: this.webhookUrl(),
+      secret_token: this.configService.telegram.webhookSecret,
       allowed_updates: ['message', 'edited_message', 'callback_query'],
       drop_pending_updates: false,
     });
-    this.logger.log(`${LogEvent.WebhookRegistered}: ${url}`, TelegramApiService.name);
+    this.logger.log(`${LogEvent.WebhookRegistered}: ${this.webhookUrl()}`, TelegramApiService.name);
+  }
+
+  /**
+   * Confirm Telegram accepted and can reach the webhook by reading back its
+   * state via `getWebhookInfo`. Logs the registered URL, the pending-update
+   * backlog and any delivery error Telegram last encountered.
+   */
+  async verifyWebhook(): Promise<TelegramWebhookInfo> {
+    const info = await this.getWebhookInfo();
+    const expected = this.webhookUrl();
+
+    if (info.url !== expected) {
+      this.logger.warn(
+        `${LogEvent.WebhookFailed}: registered URL "${info.url}" does not match expected "${expected}"`,
+        TelegramApiService.name,
+      );
+    }
+
+    if (info.last_error_message) {
+      this.logger.warn(
+        `${LogEvent.WebhookFailed}: Telegram last delivery error — ${info.last_error_message}`,
+        TelegramApiService.name,
+      );
+    }
+
+    this.logger.log(
+      `${LogEvent.WebhookVerified}: url=${info.url || '(none)'} pending=${info.pending_update_count} ip=${info.ip_address ?? 'n/a'}`,
+      TelegramApiService.name,
+    );
+    return info;
+  }
+
+  /** Read the current webhook state from Telegram. */
+  async getWebhookInfo(): Promise<TelegramWebhookInfo> {
+    return this.call<TelegramWebhookInfo>('getWebhookInfo', {});
+  }
+
+  /** Publish the bot's command list so it appears in the Telegram UI menu. */
+  async publishCommands(): Promise<void> {
+    const commands: BotCommandDefinition[] = BOT_COMMAND_DESCRIPTIONS.map((entry) => ({
+      command: entry.command,
+      description: entry.description,
+    }));
+    await this.call('setMyCommands', { commands });
+    this.logger.log(
+      `${LogEvent.BotCommandsPublished}: ${commands.length} commands`,
+      TelegramApiService.name,
+    );
+  }
+
+  /** Fully-qualified webhook URL derived from configuration. */
+  private webhookUrl(): string {
+    const { baseUrl } = this.configService.app;
+    const { webhookPath } = this.configService.telegram;
+    return `${baseUrl.replace(/\/$/, '')}/${webhookPath}`;
   }
 
   async sendMessage(

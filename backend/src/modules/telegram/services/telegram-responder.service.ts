@@ -34,6 +34,29 @@ export class TelegramResponderService {
     await this.recordOutbound(context, text, sent.message_id);
   }
 
+  /**
+   * Edit the message the user just interacted with (inline-button press)
+   * instead of sending a new one, and log the edit.
+   *
+   * Falls back to {@link sendText} when there is no source message to edit
+   * (e.g. a callback whose original message is no longer available).
+   */
+  async editText(
+    context: HandlerContext,
+    text: string,
+    keyboard?: InlineKeyboardMarkup,
+  ): Promise<void> {
+    const messageId = context.callbackQuery?.message?.message_id;
+    if (messageId === undefined) {
+      await this.sendText(context, text, keyboard);
+      return;
+    }
+
+    await this.api.editMessageText(context.chatId, messageId, text, keyboard);
+    await this.recordOutbound(context, text, messageId);
+    this.logger.log(LogEvent.MessageEdited, TelegramResponderService.name);
+  }
+
   /** Send a geographic location pin and log a synthetic outbound entry. */
   async sendLocation(
     context: HandlerContext,

@@ -65,6 +65,14 @@ export const BotMessage = {
 
   location: '<b>📍 Our location</b>\n\nWe have shared our address on the map below.',
 
+  locationDetail: (latitude: number, longitude: number): string =>
+    [
+      '<b>📍 Our location</b>',
+      '',
+      'Teplolux showroom & service center.',
+      `Open in maps: https://maps.google.com/?q=${latitude},${longitude}`,
+    ].join('\n'),
+
   unknownCommand: 'Sorry, I did not recognise that command. Use /help to see what I can do.',
 
   fallback: 'I received your message. Use the menu or /help to get started.',

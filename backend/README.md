@@ -207,11 +207,47 @@ The bot is **webhook-only** (never polling).
     }'
   ```
 
+On startup, when `TELEGRAM_SET_WEBHOOK_ON_STARTUP=true`, the app automatically
+(1) registers the webhook, (2) publishes the command menu (`setMyCommands`) and
+(3) **verifies reachability** by reading `getWebhookInfo` back from Telegram —
+logging the registered URL, the pending-update backlog and any last delivery
+error. A failure here is logged, never fatal.
+
 **Supported commands:** `/start`, `/help`, `/catalog`, `/service`, `/dealer`,
 `/operator`, `/contact`, `/location` — each with its own handler. `/start`
 greets the user and shows the inline menu (🏠 Boilers, 🔥 Radiators,
 ♨️ Floor Heating, 🛠 Service, 🤝 Become Dealer, 👨 Contact Operator, plus
-📞 Contact / 📍 Location).
+📞 Contact / 📍 Location). Pressing any inline button **edits the current
+message in place** (no new messages), and **⬅️ Back to menu** restores the
+personalised main menu.
+
+### Local testing
+
+Telegram only delivers webhooks to a public HTTPS URL, so expose your local
+server through a tunnel:
+
+```bash
+# 1) Start infra + app
+docker compose up -d postgres redis
+npm run prisma:migrate         # first run only
+npm run start:dev
+
+# 2) In another terminal, open an HTTPS tunnel to port 3000
+ngrok http 3000                # or: cloudflared tunnel --url http://localhost:3000
+
+# 3) Put the tunnel URL into .env and let the app self-register on boot
+#    APP_BASE_URL=https://<your-tunnel>.ngrok-free.app
+#    TELEGRAM_SET_WEBHOOK_ON_STARTUP=true
+#    TELEGRAM_BOT_TOKEN=...        (from @BotFather)
+#    TELEGRAM_WEBHOOK_SECRET=...   (any A-Z a-z 0-9 _- string)
+
+# 4) Restart the app — watch the logs for:
+#    "Webhook Registered", "Bot Commands Published", "Webhook Verified"
+```
+
+Then open your bot in Telegram and send `/start`. Watch the server logs for
+`Incoming Update`, `Command Handled`, `Callback Query Received` and
+`Message Edited` as you interact with the menu.
 
 ---
 

@@ -41,19 +41,31 @@ export class TelegramCallbackService {
       [CallbackData.Dealer, { text: BotMessage.dealer, keyboard: Keyboards.backToMenu() }],
       [CallbackData.Operator, { text: BotMessage.operator, keyboard: Keyboards.backToMenu() }],
       [CallbackData.Contact, { text: BotMessage.contact, keyboard: Keyboards.backToMenu() }],
-      [CallbackData.BackToMenu, { text: BotMessage.catalogIntro, keyboard: Keyboards.mainMenu() }],
     ]);
   }
 
-  /** Returns true when the callback was recognised and handled. */
+  /**
+   * Handle an inline-button press. Every callback EDITS the message the user
+   * pressed (rather than sending a new one) so the conversation stays a single,
+   * navigable screen. Returns true when the callback was recognised.
+   */
   async handle(context: HandlerContext, data: string): Promise<boolean> {
-    // Location is special — it sends an actual location pin, not just text.
-    if (data === CallbackData.Location) {
-      await this.responder.sendText(context, BotMessage.location);
-      await this.responder.sendLocation(
+    // "Back to main menu" — restore the personalised welcome + full menu.
+    if (data === CallbackData.BackToMenu) {
+      await this.responder.editText(
         context,
-        CompanyLocation.latitude,
-        CompanyLocation.longitude,
+        BotMessage.welcome(context.user.firstName ?? undefined),
+        Keyboards.mainMenu(),
+      );
+      return true;
+    }
+
+    // Location — edited in place (with a maps link) to honour the
+    // "edit the current message" behaviour for every button.
+    if (data === CallbackData.Location) {
+      await this.responder.editText(
+        context,
+        BotMessage.locationDetail(CompanyLocation.latitude, CompanyLocation.longitude),
         Keyboards.backToMenu(),
       );
       return true;
@@ -63,7 +75,7 @@ export class TelegramCallbackService {
     if (!response) {
       return false;
     }
-    await this.responder.sendText(context, response.text, response.keyboard);
+    await this.responder.editText(context, response.text, response.keyboard);
     return true;
   }
 }

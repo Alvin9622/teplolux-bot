@@ -46,6 +46,11 @@ export class TelegramUpdateService {
 
   /** Entry point: process a single, already-validated update. */
   async process(update: TelegramUpdateDto): Promise<void> {
+    this.logger.log(
+      `${LogEvent.IncomingUpdate}: update_id=${update.update_id} type=${this.updateType(update)}`,
+      TelegramUpdateService.name,
+    );
+
     if (update.callback_query) {
       await this.handleCallbackQuery(update.callback_query as TelegramCallbackQuery);
       return;
@@ -110,6 +115,11 @@ export class TelegramUpdateService {
   // -------------------------------------------------------------------------
 
   private async handleCallbackQuery(callback: TelegramCallbackQuery): Promise<void> {
+    this.logger.log(
+      `${LogEvent.CallbackQueryReceived}: data="${callback.data ?? ''}" from=${callback.from.id}`,
+      TelegramUpdateService.name,
+    );
+
     const user = await this.users.upsertFromTelegram(callback.from);
     const chatId = callback.message?.chat.id ?? callback.from.id;
     const context = this.buildContext(user, chatId, undefined, callback, callback.data);
@@ -134,6 +144,20 @@ export class TelegramUpdateService {
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
+
+  /** Human-readable update kind for logging. */
+  private updateType(update: TelegramUpdateDto): string {
+    if (update.callback_query) {
+      return 'callback_query';
+    }
+    if (update.message) {
+      return 'message';
+    }
+    if (update.edited_message) {
+      return 'edited_message';
+    }
+    return 'unknown';
+  }
 
   /** Extract a bare command keyword (e.g. `start`) from a `/command@bot args` message. */
   private extractCommand(message: TelegramMessage): string | null {
