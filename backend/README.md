@@ -385,6 +385,29 @@ hardcoded inside handlers
 
 ---
 
+## FAQ
+
+Frequently asked questions live as **individual Markdown files**, so answers are
+never hardcoded and Telegram can render FAQ pages dynamically
+([`src/modules/telegram/faq`](./src/modules/telegram/faq)).
+
+- Each FAQ item is one file under `articles/` (e.g. `delivery.md`, `payment.md`,
+  `warranty.md`, `working-hours.md`, `contacts.md`, `service.md`, `dealer.md`).
+  Front-matter supplies `question`, `category` and `keywords`; the Markdown body
+  is the answer. The file name becomes the item `id`.
+- `FaqService` exposes a small API: `listItems(category?)`, `getItem(id)`,
+  `findItems(query)` and `matchItem(query)`. Matching is **simple keyword
+  scoring** over the multilingual `keywords` list and the question — so
+  `delivery`, `shipping`, `yetkazib berish` and `доставка` all resolve to the
+  Delivery FAQ — with **no AI, NLP, embeddings or external services**.
+- Items are read via a swappable `FaqSource` bound to the `FAQ_SOURCE` token
+  (default `MarkdownFaqSource`, built on the shared `markdown` loader). A future
+  database/CMS or AI source can replace the binding without changing
+  `FaqService` or its consumers. Markdown files are copied into `dist` via
+  `nest-cli.json` assets.
+
+---
+
 ## Operator summary
 
 When a customer submits a request, the flow generates **one structured operator
