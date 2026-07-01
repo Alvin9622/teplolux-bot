@@ -5,6 +5,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { TKey } from '../../../i18n/i18n.keys';
 import { HandlerContext } from '../handlers/handler-context';
 import { TelegramResponderService } from '../services/telegram-responder.service';
+import { CompanyConfigService } from '../config/company-config.service';
 import { ContentRegistry } from './content.registry';
 import { ContentAction } from './content.constants';
 import { buildContentKeyboard } from './content.keyboard';
@@ -24,6 +25,7 @@ export class ContentService {
     private readonly registry: ContentRegistry,
     private readonly responder: TelegramResponderService,
     private readonly i18n: I18nService,
+    private readonly companyConfig: CompanyConfigService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
   ) {}
 
@@ -58,8 +60,10 @@ export class ContentService {
    */
   private async renderPage(context: HandlerContext, page: ContentPage): Promise<void> {
     const { locale } = context;
-    const title = this.i18n.t(locale, page.titleKey);
-    const description = this.i18n.t(locale, page.descriptionKey);
+    // Inject configured business values (phone, email, social, …) into the copy.
+    const params = page.descriptionParams?.(this.companyConfig.config);
+    const title = this.i18n.t(locale, page.titleKey, params);
+    const description = this.i18n.t(locale, page.descriptionKey, params);
     const text = `<b>${title}</b>\n\n${description}`;
     const keyboard = buildContentKeyboard(this.i18n.scoped(locale), page);
 

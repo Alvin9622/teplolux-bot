@@ -131,7 +131,7 @@
     },
     "contacts": {
       "title": "📍 Контакты",
-      "description": "📞 Телефон: +998 (00) 000-00-00\n✉️ Email: info@teplolux.example.com\n🌐 Веб-сайт: teplolux.example.com\n📍 Адрес: г. Ташкент, Чиланзарский район, д. 1\n🕒 Время работы: Пн–Сб, 09:00–18:00"
+      "description": "🏢 {{companyName}}\n\n📞 Телефон: {{phone}}\n✉️ Email: {{email}}\n🌐 Веб-сайт: {{website}}\n📍 Адрес: {{address}}\n🕒 Время работы: {{workingHours}}\n\n📱 Telegram: {{telegram}}\n📸 Instagram: {{instagram}}\n👍 Facebook: {{facebook}}\n▶️ YouTube: {{youtube}}"
     },
     "branches": {
       "title": "🏬 Филиалы",

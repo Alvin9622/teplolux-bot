@@ -131,7 +131,7 @@
     },
     "contacts": {
       "title": "📍 Kontaktlar",
-      "description": "📞 Telefon: +998 (00) 000-00-00\n✉️ Email: info@teplolux.example.com\n🌐 Veb-sayt: teplolux.example.com\n📍 Manzil: Toshkent sh., Chilonzor tumani, 1-uy\n🕒 Ish vaqti: Dushanba–Shanba, 09:00–18:00"
+      "description": "🏢 {{companyName}}\n\n📞 Telefon: {{phone}}\n✉️ Email: {{email}}\n🌐 Veb-sayt: {{website}}\n📍 Manzil: {{address}}\n🕒 Ish vaqti: {{workingHours}}\n\n📱 Telegram: {{telegram}}\n📸 Instagram: {{instagram}}\n👍 Facebook: {{facebook}}\n▶️ YouTube: {{youtube}}"
     },
     "branches": {
       "title": "🏬 Filiallar",

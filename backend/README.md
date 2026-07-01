@@ -342,6 +342,28 @@ the `ContentRegistry`.
 
 ---
 
+## Company configuration
+
+All business information is served by a single, reusable **configuration
+service** ([`src/modules/telegram/config`](./src/modules/telegram/config)) so
+pages never hardcode business facts.
+
+- `CompanyConfigService` exposes structured sections: **company** (name),
+  **contacts** (phone / email / website / address), **social** (Telegram /
+  Instagram / Facebook / YouTube), **workingHours** and **catalog**.
+- Values come from a swappable `CompanyConfigSource` bound to the
+  `COMPANY_CONFIG_SOURCE` token. The default `StaticCompanyConfigSource`
+  **composes the existing constants** (`CompanyContacts`, `CATALOG_URLS`) with
+  the remaining facts — a single source of truth, no duplicated config.
+- Content pages read values via a page-level `descriptionParams(config)` resolver
+  that feeds `{{placeholder}}` values into the i18n copy (see the Contacts page).
+- **Future-ready**: to move configuration to a database / admin panel / CMS,
+  replace only the `COMPANY_CONFIG_SOURCE` binding in `CompanyConfigModule` —
+  no Telegram handler changes. (No admin UI / auth / DB tables / REST APIs are
+  created here — only the reusable configuration architecture.)
+
+---
+
 ## Health check
 
 ```

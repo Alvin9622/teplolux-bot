@@ -1,4 +1,5 @@
 import { TranslationKey } from '../../../i18n/i18n.types';
+import { CompanyConfig } from '../config/company-config.types';
 
 /**
  * A button action on a content page. Discriminated by `type` so the renderer
@@ -33,6 +34,12 @@ export interface ContentPage {
   readonly imageUrl?: string;
   /** Parent page id used to resolve the ⬅ Back button (root pages omit it). */
   readonly parentId?: string;
+  /**
+   * Optional resolver mapping the company configuration to `{{placeholder}}`
+   * values interpolated into the title/description — so pages read business
+   * facts from configuration instead of hardcoding them in the i18n catalogs.
+   */
+  readonly descriptionParams?: (config: CompanyConfig) => Record<string, string | number>;
   /** Inline keyboard layout, as rows of buttons. */
   readonly buttons: ReadonlyArray<ReadonlyArray<ContentButton>>;
 }

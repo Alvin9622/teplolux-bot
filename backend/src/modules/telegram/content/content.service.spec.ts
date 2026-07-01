@@ -9,6 +9,8 @@ import { ContentRegistry } from './content.registry';
 import { ContentAction, ContentPageId, contentPageCallback } from './content.constants';
 import { CATALOG_URLS, CatalogCategory } from './catalog.config';
 import { ContentPage } from './content.types';
+import { CompanyConfigService } from '../config/company-config.service';
+import { StaticCompanyConfigSource } from '../config/company-config.source';
 
 const user: PersistedUser = {
   id: 'u1',
@@ -54,6 +56,7 @@ describe('ContentService', () => {
       registry,
       responder as unknown as TelegramResponderService,
       new I18nService({ warn: jest.fn() } as never),
+      new CompanyConfigService(new StaticCompanyConfigSource()),
       { log: jest.fn() } as never,
     );
   });
@@ -179,6 +182,20 @@ describe('ContentService', () => {
     expect(buttons).toContainEqual(
       expect.objectContaining({ callback_data: contentPageCallback(ContentPageId.Products) }),
     );
+  });
+
+  it('renders the Contacts page from configuration (no hardcoded business info)', async () => {
+    const config = new CompanyConfigService(new StaticCompanyConfigSource());
+    await service.handleCallback(ctx(), contentPageCallback(ContentPageId.Contacts));
+
+    const [, text] = responder.editText.mock.calls[0];
+    expect(text).toContain(config.company.name);
+    expect(text).toContain(config.contacts.email);
+    expect(text).toContain(config.contacts.website);
+    expect(text).toContain(config.workingHours);
+    expect(text).toContain(config.social.instagram);
+    // No leftover placeholders.
+    expect(text).not.toContain('{{');
   });
 
   it('answers a phone button by sending the callable number', async () => {

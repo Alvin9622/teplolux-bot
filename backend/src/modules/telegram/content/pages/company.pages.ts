@@ -2,6 +2,7 @@ import { TKey } from '../../../../i18n/i18n.keys';
 import { TranslationKey } from '../../../../i18n/i18n.types';
 import { CallbackData } from '../../constants/callback-data.constants';
 import { CompanyContacts } from '../../constants/company.constants';
+import { CompanyConfig } from '../../config/company-config.types';
 import { CATALOG_URLS, CatalogCategory } from '../catalog.config';
 import { ContentPageId } from '../content.constants';
 import { ContentButton, ContentPage } from '../content.types';
@@ -44,6 +45,19 @@ const contacts: ContentPage = {
   id: ContentPageId.Contacts,
   titleKey: TKey.contentContactsTitle,
   descriptionKey: TKey.contentContactsDescription,
+  // All contact/company values are read from configuration, not hardcoded copy.
+  descriptionParams: (c: CompanyConfig) => ({
+    companyName: c.company.name,
+    phone: c.contacts.phone,
+    email: c.contacts.email,
+    website: c.contacts.website,
+    address: c.contacts.address,
+    workingHours: c.workingHours,
+    telegram: c.social.telegram,
+    instagram: c.social.instagram,
+    facebook: c.social.facebook,
+    youtube: c.social.youtube,
+  }),
   buttons: [
     // Location reuses the existing menu callback handler (sends the map pin).
     [
