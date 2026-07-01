@@ -25,6 +25,7 @@ export const LogEvent = {
   FlowValidationFailed: 'Conversation Validation Failed',
   FlowSubmitted: 'Conversation Flow Submitted',
   FlowCancelled: 'Conversation Flow Cancelled',
+  ContentPageRendered: 'Content Page Rendered',
   DatabaseError: 'Database Error',
   ValidationError: 'Validation Error',
   ApiError: 'API Error',

@@ -115,6 +115,12 @@ export interface SendLocationOptions {
   reply_markup?: InlineKeyboardMarkup;
 }
 
+export interface SendPhotoOptions {
+  caption?: string;
+  parse_mode?: ParseMode;
+  reply_markup?: InlineKeyboardMarkup;
+}
+
 export interface AnswerCallbackQueryOptions {
   text?: string;
   show_alert?: boolean;

@@ -20,6 +20,8 @@ import { TelegramUserService } from './services/telegram-user.service';
 import { ConversationStateStore } from './conversation/conversation-state.store';
 import { ConversationService } from './conversation/conversation.service';
 import { FlowRegistry } from './conversation/flow.registry';
+import { ContentRegistry } from './content/content.registry';
+import { ContentService } from './content/content.service';
 
 /** Concrete command handler providers, registered individually for DI. */
 const commandHandlerProviders = [
@@ -57,6 +59,9 @@ const commandHandlerProviders = [
     ConversationStateStore,
     FlowRegistry,
     ConversationService,
+    // Content module (dynamic informational pages)
+    ContentRegistry,
+    ContentService,
     // Command handlers (individual)
     ...commandHandlerProviders,
     // Aggregate the handlers behind the COMMAND_HANDLERS token for the dispatcher.

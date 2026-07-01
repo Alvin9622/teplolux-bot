@@ -302,6 +302,27 @@ in the `FlowRegistry` — no engine changes required.
 
 ---
 
+## Content pages
+
+Company information is served by a data-driven **Content module**
+([`src/modules/telegram/content`](./src/modules/telegram/content)) — no page
+copy is hardcoded in handlers, and no page is hardcoded in the renderer.
+
+- A page is a declarative `ContentPage`: `id`, `titleKey`, `descriptionKey`,
+  optional `imageUrl`, optional `parentId` (for ⬅ Back) and rows of `buttons`.
+- **Button actions**: open another page, start a conversation flow, open a
+  website (url button), reveal a callable phone, ⬅ Back (to the parent page)
+  and 🏠 Main Menu.
+- Text pages are **edited in place**; pages with an image are sent as a photo.
+- All copy lives in the i18n catalogs (`content.*`); the `ContentRegistry` holds
+  the pages (a static registry — not a CMS).
+
+Shipped pages: **About Teplolux**, **Contacts**, **Branches**, **Warranty**,
+reached from the 🏢 About company main-menu button. Add a page by registering
+another `ContentPage` in the `ContentRegistry`.
+
+---
+
 ## Health check
 
 ```

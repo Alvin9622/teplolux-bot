@@ -13,6 +13,7 @@ import { HandlerContext } from '../handlers/handler-context';
 import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { TelegramCallbackQuery, TelegramMessage, TelegramUser } from '../types/telegram-api.types';
 import { ConversationService } from '../conversation/conversation.service';
+import { ContentService } from '../content/content.service';
 import { TelegramApiService } from './telegram-api.service';
 import { TelegramCallbackService } from './telegram-callback.service';
 import { TelegramResponderService } from './telegram-responder.service';
@@ -42,6 +43,7 @@ export class TelegramUpdateService {
     private readonly responder: TelegramResponderService,
     private readonly callbacks: TelegramCallbackService,
     private readonly conversation: ConversationService,
+    private readonly content: ContentService,
     private readonly api: TelegramApiService,
     private readonly i18n: I18nService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
@@ -158,6 +160,11 @@ export class TelegramUpdateService {
     // The conversation engine gets first refusal: it owns flow triggers
     // (product/service/dealer/operator) and the flow control buttons.
     if (await this.conversation.handleCallback(context, callback.data)) {
+      return;
+    }
+
+    // The content module owns informational page navigation (`content:*`).
+    if (await this.content.handleCallback(context, callback.data)) {
       return;
     }
 

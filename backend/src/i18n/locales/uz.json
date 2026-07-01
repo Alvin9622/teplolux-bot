@@ -34,7 +34,8 @@
     "contact": "📞 Aloqa",
     "location": "📍 Manzil",
     "changeLanguage": "🌐 Tilni o'zgartirish",
-    "back": "⬅️ Asosiy menyu"
+    "back": "⬅️ Asosiy menyu",
+    "about": "🏢 Kompaniya haqida"
   },
   "flow": {
     "started": "<b>{{topic}}</b>\n\nIltimos, quyidagi ma'lumotlarni kiriting. Istalgan vaqtda /cancel buyrug'i bilan bekor qilishingiz mumkin.",
@@ -76,5 +77,33 @@
     "editChoose": "✏️ Nimani tahrirlamoqchisiz?",
     "cancelled": "❌ So'rov bekor qilindi.",
     "submitted": "✅ Rahmat! So'rovingiz qabul qilindi. Mutaxassislarimiz tez orada siz bilan bog'lanadi."
+  },
+  "content": {
+    "button": {
+      "contacts": "📞 Kontaktlar",
+      "branches": "🏬 Filiallar",
+      "warranty": "🛡 Kafolat",
+      "website": "🌐 Veb-sayt",
+      "call": "☎️ Qo'ng'iroq qilish",
+      "back": "⬅ Orqaga",
+      "mainMenu": "🏠 Asosiy menyu"
+    },
+    "callMessage": "☎️ Biz bilan bog'laning: {{phone}}",
+    "about": {
+      "title": "🏢 Teplolux haqida",
+      "description": "<b>Teplolux</b> — isitish tizimlari sohasida yetakchi kompaniya. Biz kotyollar, radiatorlar va issiq pol tizimlarini yetkazib beramiz hamda professional montaj va servis xizmatlarini taklif qilamiz.\n\nSifat, ishonchlilik va mijozlarga g'amxo'rlik — bizning asosiy qadriyatlarimiz."
+    },
+    "contacts": {
+      "title": "📞 Kontaktlar",
+      "description": "Telefon: +998 (00) 000-00-00\nEmail: info@teplolux.example.com\nIsh vaqti: Dushanba–Shanba, 09:00–18:00"
+    },
+    "branches": {
+      "title": "🏬 Filiallar",
+      "description": "<b>Toshkent (bosh ofis)</b>\nChilonzor tumani, 1-uy\n\n<b>Samarqand</b>\nRegiston ko'chasi, 15-uy\n\n<b>Buxoro</b>\nMustaqillik ko'chasi, 8-uy"
+    },
+    "warranty": {
+      "title": "🛡 Kafolat",
+      "description": "Barcha mahsulotlarimizga rasmiy ishlab chiqaruvchi kafolati beriladi (modelga qarab 2–5 yil).\n\nKafolat xizmatidan foydalanish uchun sotib olishni tasdiqlovchi hujjatni saqlang. Savollar bo'lsa, servis so'rovi qoldiring."
+    }
   }
 }

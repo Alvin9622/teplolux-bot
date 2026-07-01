@@ -30,6 +30,20 @@ export class TelegramResponderService {
     await this.recordOutbound(context, text, sent.message_id);
   }
 
+  /** Send a photo with an optional HTML caption + inline keyboard, and log it. */
+  async sendPhoto(
+    context: HandlerContext,
+    photoUrl: string,
+    caption?: string,
+    keyboard?: InlineKeyboardMarkup,
+  ): Promise<void> {
+    const sent = await this.api.sendPhoto(context.chatId, photoUrl, {
+      caption,
+      reply_markup: keyboard,
+    });
+    await this.recordOutbound(context, caption ?? `[photo ${photoUrl}]`, sent.message_id);
+  }
+
   /** Send a message that removes any active custom reply keyboard. */
   async removeReplyKeyboard(context: HandlerContext, text: string): Promise<void> {
     const sent = await this.api.sendMessage(context.chatId, text, {

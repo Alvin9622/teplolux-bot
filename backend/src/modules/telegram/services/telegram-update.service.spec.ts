@@ -7,6 +7,7 @@ import { I18nService } from '../../../i18n/i18n.service';
 import { COMMAND_HANDLERS, CommandHandler } from '../handlers/command-handler.interface';
 import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { ConversationService } from '../conversation/conversation.service';
+import { ContentService } from '../content/content.service';
 import { TelegramApiService } from './telegram-api.service';
 import { TelegramCallbackService } from './telegram-callback.service';
 import { TelegramResponderService } from './telegram-responder.service';
@@ -54,6 +55,7 @@ describe('TelegramUpdateService', () => {
     handleMessage: jest.Mock;
     handleCallback: jest.Mock;
   };
+  let content: { handleCallback: jest.Mock };
   let api: { answerCallbackQuery: jest.Mock };
 
   beforeEach(async () => {
@@ -67,6 +69,7 @@ describe('TelegramUpdateService', () => {
       handleMessage: jest.fn().mockResolvedValue(false),
       handleCallback: jest.fn().mockResolvedValue(false),
     };
+    content = { handleCallback: jest.fn().mockResolvedValue(false) };
     api = { answerCallbackQuery: jest.fn().mockResolvedValue(undefined) };
 
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -81,6 +84,7 @@ describe('TelegramUpdateService', () => {
         { provide: TelegramResponderService, useValue: responder },
         { provide: TelegramCallbackService, useValue: callbacks },
         { provide: ConversationService, useValue: conversation },
+        { provide: ContentService, useValue: content },
         { provide: TelegramApiService, useValue: api },
         {
           provide: I18nService,

@@ -1,5 +1,6 @@
 import { InlineKeyboardMarkup } from '../types/telegram-api.types';
 import { CallbackData } from '../constants/callback-data.constants';
+import { contentPageCallback, ContentPageId } from '../content/content.constants';
 import { TKey } from '../../../i18n/i18n.keys';
 import { Translator } from '../../../i18n/i18n.types';
 
@@ -29,6 +30,7 @@ export const Keyboards = {
           { text: t(TKey.menuContact), callback_data: CallbackData.Contact },
           { text: t(TKey.menuLocation), callback_data: CallbackData.Location },
         ],
+        [{ text: t(TKey.menuAbout), callback_data: contentPageCallback(ContentPageId.About) }],
         [{ text: t(TKey.menuChangeLanguage), callback_data: CallbackData.ChangeLanguage }],
       ],
     };

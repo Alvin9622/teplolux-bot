@@ -10,6 +10,7 @@ import {
   InlineKeyboardMarkup,
   SendLocationOptions,
   SendMessageOptions,
+  SendPhotoOptions,
   TelegramApiResponse,
   TelegramMessage,
   TelegramWebhookInfo,
@@ -162,6 +163,21 @@ export class TelegramApiService implements OnModuleInit {
       parse_mode: 'HTML',
       disable_web_page_preview: true,
       ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    });
+  }
+
+  async sendPhoto(
+    chatId: number,
+    photo: string,
+    options: SendPhotoOptions = {},
+  ): Promise<TelegramMessage> {
+    return this.call<TelegramMessage>('sendPhoto', {
+      chat_id: chatId,
+      photo,
+      ...(options.caption
+        ? { caption: options.caption, parse_mode: options.parse_mode ?? 'HTML' }
+        : {}),
+      ...(options.reply_markup ? { reply_markup: options.reply_markup } : {}),
     });
   }
 
