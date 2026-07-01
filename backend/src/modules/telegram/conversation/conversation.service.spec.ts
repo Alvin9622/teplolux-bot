@@ -113,39 +113,59 @@ describe('ConversationService — contact request flow', () => {
     expect(await service.isActive(user.telegramId)).toBe(false);
   });
 
-  it('captures context metadata at start and carries it (product request)', async () => {
+  it('captures context metadata at start and carries it (product price request)', async () => {
     await service.handleCallback(ctx(), CallbackData.Boilers);
 
     expect((await state()).metadata).toEqual({
-      requestType: 'product',
-      productCategory: 'boilers',
-      sourceMenu: 'products',
+      requestType: 'PRICE_REQUEST',
+      productCategory: 'BOILERS',
+      sourceMenu: 'Products',
     });
   });
 
-  it('captures metadata for a main-menu request (no product)', async () => {
+  it('captures metadata for a service request (no product)', async () => {
     await service.handleCallback(ctx(), CallbackData.Service);
 
     expect((await state()).metadata).toEqual({
-      requestType: 'service',
+      requestType: 'SERVICE_REQUEST',
       productCategory: undefined,
-      sourceMenu: 'main_menu',
+      sourceMenu: 'Service',
     });
   });
 
-  it('shows Request Type and Selected Product on the confirmation summary', async () => {
+  it('shows Request Type + Selected Product, hides an empty Customer Message', async () => {
     const i18n = new I18nService({ warn: jest.fn() } as never);
     await service.handleCallback(ctx(), CallbackData.Boilers); // product request
     await service.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
     await service.handleMessage(ctx({ message: textMessage('+998901234567') }));
     await service.handleMessage(ctx({ message: textMessage('Tashkent') }));
-    await service.handleCallback(ctx(), FlowAction.Skip);
+    await service.handleCallback(ctx(), FlowAction.Skip); // skip customer message
 
     expect((await state()).mode).toBe('summary');
     const summaryText = responder.sendText.mock.calls.at(-1)?.[1] as string;
     expect(summaryText).toContain(i18n.t('uz', TKey.flowSummaryRequestType));
     expect(summaryText).toContain(i18n.t('uz', TKey.flowSummaryProduct));
     expect(summaryText).toContain(i18n.t('uz', TKey.contentProductBoilersTitle));
+    // Optional Customer Message was skipped → its label must NOT appear.
+    expect(summaryText).not.toContain(i18n.t('uz', TKey.flowSummaryCustomerMessage));
+  });
+
+  it('collects the optional Customer Message and shows it on the summary', async () => {
+    const i18n = new I18nService({ warn: jest.fn() } as never);
+    await service.handleCallback(ctx(), CallbackData.Service);
+    await service.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
+    await service.handleMessage(ctx({ message: textMessage('+998901234567') }));
+    await service.handleMessage(ctx({ message: textMessage('Tashkent') }));
+    // Final optional question: "What would you like to ask us?"
+    await service.handleMessage(ctx({ message: textMessage('Do you deliver to Samarkand?') }));
+
+    const current = await state();
+    expect(current.mode).toBe('summary');
+    expect(current.data.customerMessage).toBe('Do you deliver to Samarkand?');
+
+    const summaryText = responder.sendText.mock.calls.at(-1)?.[1] as string;
+    expect(summaryText).toContain(i18n.t('uz', TKey.flowSummaryCustomerMessage));
+    expect(summaryText).toContain('Do you deliver to Samarkand?');
   });
 
   it('re-prompts and preserves state on invalid input', async () => {

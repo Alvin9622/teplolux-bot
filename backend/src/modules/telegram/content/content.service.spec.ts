@@ -7,6 +7,7 @@ import { TelegramResponderService } from '../services/telegram-responder.service
 import { ContentService } from './content.service';
 import { ContentRegistry } from './content.registry';
 import { ContentAction, ContentPageId, contentPageCallback } from './content.constants';
+import { CATALOG_URLS, CatalogCategory } from './catalog.config';
 import { ContentPage } from './content.types';
 
 const user: PersistedUser = {
@@ -170,8 +171,10 @@ describe('ContentService', () => {
     expect(buttons).toContainEqual(
       expect.objectContaining({ callback_data: CallbackData.Boilers }),
     );
-    // View Catalog is a url button.
-    expect(buttons.some((b: { url?: string }) => typeof b.url === 'string')).toBe(true);
+    // View Catalog is a url button pointing at the configured per-category catalog.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ url: CATALOG_URLS[CatalogCategory.Boilers] }),
+    );
     // Back returns to the Products page.
     expect(buttons).toContainEqual(
       expect.objectContaining({ callback_data: contentPageCallback(ContentPageId.Products) }),

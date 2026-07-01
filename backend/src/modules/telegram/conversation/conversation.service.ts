@@ -11,7 +11,12 @@ import { TelegramResponderService } from '../services/telegram-responder.service
 import { ConversationStateStore } from './conversation-state.store';
 import { FlowRegistry } from './flow.registry';
 import { FlowKeyboards, StepControlOptions } from './flow.keyboards';
-import { FLOW_TRIGGERS, FlowAction, FlowTrigger } from './conversation.constants';
+import {
+  buildFlowMetadata,
+  FLOW_TRIGGERS,
+  FlowAction,
+  FlowTrigger,
+} from './conversation.constants';
 import { ConversationState, FlowDefinition, FlowStep } from './conversation.types';
 
 /**
@@ -197,17 +202,18 @@ export class ConversationService {
   // -------------------------------------------------------------------------
 
   private async start(context: HandlerContext, trigger: FlowTrigger): Promise<void> {
-    const { flowId, topic, subject, sourceMenu } = trigger;
+    const { flowId, topic, subject } = trigger;
     const flow = this.flows.get(flowId);
     if (!flow || flow.steps.length === 0) {
       return;
     }
+    // Context captured once and carried with the conversation (never re-asked).
+    const metadata = buildFlowMetadata(topic, subject);
     const state: ConversationState = {
       flowId,
       topic,
       subject,
-      // Context captured once and carried with the conversation (not re-asked).
-      metadata: { requestType: topic, productCategory: subject, sourceMenu },
+      metadata,
       currentStepId: flow.steps[0].id,
       history: [],
       mode: 'collect',
@@ -215,7 +221,8 @@ export class ConversationService {
     };
     await this.store.set(context.user.telegramId, state);
     this.logger.log(
-      `${LogEvent.FlowStarted}: ${flowId} topic=${topic}${subject ? `/${subject}` : ''} source=${sourceMenu}`,
+      `${LogEvent.FlowStarted}: ${flowId} type=${metadata.requestType}` +
+        `${metadata.productCategory ? `/${metadata.productCategory}` : ''} source=${metadata.sourceMenu}`,
       ConversationService.name,
     );
 
@@ -394,8 +401,12 @@ export class ConversationService {
     }
     lines.push('');
     for (const step of flow.steps) {
-      const label = this.i18n.t(locale, step.summaryLabelKey);
       const value = state.data[step.id];
+      // Optional fields (e.g. Customer Message) only appear when provided.
+      if (!value && step.optional) {
+        continue;
+      }
+      const label = this.i18n.t(locale, step.summaryLabelKey);
       lines.push(
         `<b>${label}:</b> ${value ? escapeHtml(this.displayValue(locale, step, value)) : empty}`,
       );

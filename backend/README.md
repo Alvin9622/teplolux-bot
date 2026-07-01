@@ -301,13 +301,15 @@ flow-agnostic — no specific flow is hardcoded into the engine.
 
 The first flow, **Contact Request**
 ([`flows/contact-request.flow.ts`](./src/modules/telegram/conversation/flows/contact-request.flow.ts)),
-collects Full Name → Phone → City → optional Comment → Confirmation and records
-the request type (`topic`: service / dealer / operator / product) as the lead.
-To keep the experience lead-focused, it is started **only** from **Request
-Price** (on a product page), **Service**, **Become Dealer** and **Contact
-Operator** — never from Products, About or Contacts (see `FLOW_TRIGGERS`). Add a
-new flow by registering another `FlowDefinition` in the `FlowRegistry` — no
-engine changes required.
+collects Full Name → Phone → City → optional **Customer Message** (“What would
+you like to ask us?”, stored as `customerMessage`) → Confirmation. It captures
+the lead taxonomy automatically via `buildFlowMetadata` (`requestType`:
+`PRICE_REQUEST` / `SERVICE_REQUEST` / `DEALER_REQUEST` / `OPERATOR_REQUEST`;
+`productCategory`: `BOILERS` … `PUMPS`; `sourceMenu`). To keep the experience
+lead-focused, it is started **only** from **Request Price** (on a product page),
+**Service**, **Become Dealer** and **Contact Operator** — never from Products,
+About or Contacts (see `FLOW_TRIGGERS`). Add a new flow by registering another
+`FlowDefinition` in the `FlowRegistry` — no engine changes required.
 
 ---
 
@@ -331,8 +333,12 @@ The **main menu** has exactly six actions — **Products**, **Service**, **Becom
 Dealer**, **Contacts**, **About Company**, **Contact Operator**. Products opens a
 category catalog (Boilers / Radiators / Floor Heating / Water Heaters / Pumps);
 each category page shows a short info page with **View Catalog**, **Request
-Price** (starts the lead flow), **Contact Operator** and ◀ Back. Add a page by
-registering another `ContentPage` in the `ContentRegistry`.
+Price** (starts the lead flow), **Contact Operator** and ◀ Back. **View Catalog**
+links are configured per category in
+[`content/catalog.config.ts`](./src/modules/telegram/content/catalog.config.ts)
+(`CATALOG_URLS`) — never hardcoded in pages/handlers — so real catalog URLs can
+be swapped in per category. Add a page by registering another `ContentPage` in
+the `ContentRegistry`.
 
 ---
 

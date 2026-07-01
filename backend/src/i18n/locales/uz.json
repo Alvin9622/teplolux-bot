@@ -51,7 +51,8 @@
       "fullName": "👤 To'liq ismingizni kiriting:",
       "phone": "📱 Telefon raqamingizni yuboring yoki pastdagi tugma orqali ulashing:",
       "city": "🏙 Shahringizni kiriting:",
-      "comment": "✍️ Qo'shimcha izoh qoldiring (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:"
+      "comment": "✍️ Qo'shimcha izoh qoldiring (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
+      "customerMessage": "💬 Bizga nima demoqchisiz? (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:"
     },
     "error": {
       "fullName": "❗️ Iltimos, to'g'ri ism kiriting (kamida 2 ta harf).",
@@ -76,6 +77,7 @@
       "phone": "Telefon",
       "city": "Shahar",
       "comment": "Izoh",
+      "customerMessage": "Xabar",
       "empty": "—"
     },
     "editChoose": "✏️ Nimani tahrirlamoqchisiz?",

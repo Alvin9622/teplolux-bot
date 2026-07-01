@@ -2,6 +2,7 @@ import { TKey } from '../../../../i18n/i18n.keys';
 import { TranslationKey } from '../../../../i18n/i18n.types';
 import { CallbackData } from '../../constants/callback-data.constants';
 import { CompanyContacts } from '../../constants/company.constants';
+import { CATALOG_URLS, CatalogCategory } from '../catalog.config';
 import { ContentPageId } from '../content.constants';
 import { ContentButton, ContentPage } from '../content.types';
 
@@ -66,6 +67,7 @@ function productPage(
   titleKey: TranslationKey,
   descriptionKey: TranslationKey,
   priceTrigger: string,
+  viewCatalogUrl: string,
 ): ContentPage {
   return {
     id,
@@ -76,7 +78,7 @@ function productPage(
       [
         {
           labelKey: TKey.contentButtonViewCatalog,
-          action: { type: 'url', url: CompanyContacts.catalog },
+          action: { type: 'url', url: viewCatalogUrl },
         },
       ],
       // Request Price is the ONLY product entry point into the Contact Request flow.
@@ -97,30 +99,35 @@ const productBoilers = productPage(
   TKey.contentProductBoilersTitle,
   TKey.contentProductBoilersDescription,
   CallbackData.Boilers,
+  CATALOG_URLS[CatalogCategory.Boilers],
 );
 const productRadiators = productPage(
   ContentPageId.ProductRadiators,
   TKey.contentProductRadiatorsTitle,
   TKey.contentProductRadiatorsDescription,
   CallbackData.Radiators,
+  CATALOG_URLS[CatalogCategory.Radiators],
 );
 const productFloorHeating = productPage(
   ContentPageId.ProductFloorHeating,
   TKey.contentProductFloorHeatingTitle,
   TKey.contentProductFloorHeatingDescription,
   CallbackData.FloorHeating,
+  CATALOG_URLS[CatalogCategory.FloorHeating],
 );
 const productWaterHeaters = productPage(
   ContentPageId.ProductWaterHeaters,
   TKey.contentProductWaterHeatersTitle,
   TKey.contentProductWaterHeatersDescription,
   CallbackData.WaterHeaters,
+  CATALOG_URLS[CatalogCategory.WaterHeaters],
 );
 const productPumps = productPage(
   ContentPageId.ProductPumps,
   TKey.contentProductPumpsTitle,
   TKey.contentProductPumpsDescription,
   CallbackData.Pumps,
+  CATALOG_URLS[CatalogCategory.Pumps],
 );
 
 /** Products landing page — lists the category pages. */

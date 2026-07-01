@@ -25,7 +25,7 @@ function validateCity(raw: string): StepValidation {
   return CITY_RE.test(value) ? { ok: true, value } : { ok: false, errorKey: TKey.flowErrorCity };
 }
 
-function validateComment(raw: string): StepValidation {
+function validateCustomerMessage(raw: string): StepValidation {
   // Optional free-text; only bounded in length.
   return { ok: true, value: raw.trim().slice(0, 1000) };
 }
@@ -54,12 +54,13 @@ const steps: ReadonlyArray<FlowStep> = [
     validate: validateCity,
   },
   {
-    id: 'comment',
-    promptKey: TKey.flowPromptComment,
-    summaryLabelKey: TKey.flowSummaryComment,
+    // Final optional question: "What would you like to ask us?" (customerMessage).
+    id: 'customerMessage',
+    promptKey: TKey.flowPromptCustomerMessage,
+    summaryLabelKey: TKey.flowSummaryCustomerMessage,
     type: 'text',
     optional: true,
-    validate: validateComment,
+    validate: validateCustomerMessage,
   },
 ];
 
