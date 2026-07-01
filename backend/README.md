@@ -364,6 +364,27 @@ pages never hardcode business facts.
 
 ---
 
+## Knowledge base
+
+Long-form content lives as structured **Markdown files**, so it is never
+hardcoded inside handlers
+([`src/modules/telegram/knowledge`](./src/modules/telegram/knowledge)).
+
+- Articles are organised under `articles/` — root topics (`company`, `delivery`,
+  `payment`, `service`, `dealer`, `warranty`), `products/` and `brands/`. Each
+  file supports optional front-matter (`title`, `tags`); the folder becomes the
+  article `category` and the file path becomes its `slug` (e.g. `products/boilers`).
+- `KnowledgeService` exposes a small API: `getArticle(slug)`, `listArticles(category?)`
+  and `findArticle(query)` (a simple keyword ranker — **no AI, vectors,
+  embeddings or external services**).
+- Articles are read via a swappable `KnowledgeSource` bound to the
+  `KNOWLEDGE_SOURCE` token (default `MarkdownKnowledgeSource`). A future
+  AI/vector or database/CMS source can replace the binding without changing
+  `KnowledgeService` or its consumers — keeping the layer ready for later AI
+  integration. Markdown files are copied into `dist` via `nest-cli.json` assets.
+
+---
+
 ## Health check
 
 ```

@@ -23,6 +23,7 @@ import { FlowRegistry } from './conversation/flow.registry';
 import { ContentRegistry } from './content/content.registry';
 import { ContentService } from './content/content.service';
 import { CompanyConfigModule } from './config/company-config.module';
+import { KnowledgeModule } from './knowledge/knowledge.module';
 
 /** Concrete command handler providers, registered individually for DI. */
 const commandHandlerProviders = [
@@ -45,7 +46,7 @@ const commandHandlerProviders = [
  * Redis, config and logging modules.
  */
 @Module({
-  imports: [CompanyConfigModule],
+  imports: [CompanyConfigModule, KnowledgeModule],
   controllers: [TelegramWebhookController],
   providers: [
     // Repositories

@@ -5,6 +5,9 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "plugins": ["@nestjs/swagger"],
-    "assets": [{ "include": "i18n/locales/**/*.json", "watchAssets": true }]
+    "assets": [
+      { "include": "i18n/locales/**/*.json", "watchAssets": true },
+      { "include": "modules/telegram/knowledge/articles/**/*.md", "watchAssets": true }
+    ]
   }
 }
