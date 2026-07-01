@@ -7,6 +7,7 @@ import { TelegramApiException } from '../../../common/exceptions';
 import {
   AnswerCallbackQueryOptions,
   BotCommandDefinition,
+  ChatAction,
   InlineKeyboardMarkup,
   SendLocationOptions,
   SendMessageOptions,
@@ -193,6 +194,18 @@ export class TelegramApiService implements OnModuleInit {
       longitude,
       ...(options.reply_markup ? { reply_markup: options.reply_markup } : {}),
     });
+  }
+
+  /**
+   * Send a chat action (e.g. "typing…"). Best-effort: a failed UX hint must
+   * never break the actual response, so errors are swallowed.
+   */
+  async sendChatAction(chatId: number, action: ChatAction = 'typing'): Promise<void> {
+    try {
+      await this.call<boolean>('sendChatAction', { chat_id: chatId, action });
+    } catch {
+      // Intentionally ignored — the typing indicator is non-critical.
+    }
   }
 
   async answerCallbackQuery(

@@ -60,10 +60,25 @@ export type ConversationMode = 'collect' | 'summary' | 'edit';
  * Navigation is tracked with a `currentStepId` plus a `history` stack, which
  * supports both the configurable `nextStepId` and the ⬅ Back button.
  */
+/**
+ * Contextual metadata captured when a flow starts and carried — untouched and
+ * unasked — with the conversation all the way to confirmation / submission.
+ */
+export interface ConversationMetadata {
+  /** The request type (mirrors {@link ConversationState.topic}). */
+  requestType: string;
+  /** The selected product category, if any (mirrors `subject`). */
+  productCategory?: string;
+  /** The screen the flow was started from. */
+  sourceMenu: string;
+}
+
 export interface ConversationState {
   flowId: string;
   topic: string;
   subject?: string;
+  /** Context captured at start; travels with the flow until confirmation. */
+  metadata?: ConversationMetadata;
   currentStepId: string;
   history: string[];
   mode: ConversationMode;

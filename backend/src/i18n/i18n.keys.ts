@@ -98,6 +98,8 @@ export const TKey = {
   flowButtonEdit: 'flow.button.edit',
   flowSummaryTitle: 'flow.summary.title',
   flowSummaryTopic: 'flow.summary.topic',
+  flowSummaryRequestType: 'flow.summary.requestType',
+  flowSummaryProduct: 'flow.summary.product',
   flowSummaryFullName: 'flow.summary.fullName',
   flowSummaryPhone: 'flow.summary.phone',
   flowSummaryCity: 'flow.summary.city',

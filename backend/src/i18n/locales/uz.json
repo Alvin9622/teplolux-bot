@@ -70,6 +70,8 @@
     "summary": {
       "title": "📋 <b>So'rovingizni tasdiqlang</b>",
       "topic": "Bo'lim",
+      "requestType": "So'rov turi",
+      "product": "Tanlangan mahsulot",
       "fullName": "Ism",
       "phone": "Telefon",
       "city": "Shahar",

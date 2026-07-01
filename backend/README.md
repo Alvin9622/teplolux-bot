@@ -287,11 +287,17 @@ flow-agnostic — no specific flow is hardcoded into the engine.
   `location` (native location button) and `choice` (inline options, validated).
 - **Navigation**: ⬅ Back and ❌ Cancel at every step. Cancelling clears the
   Redis state and returns to the main menu.
-- **Confirmation**: once all steps are answered a summary is shown with
-  ✅ Confirm / ✏️ Edit / ❌ Cancel; Edit jumps back to any field.
+- **Context metadata** (`requestType`, `productCategory`, `sourceMenu`) is
+  captured from the trigger when the flow starts and carried — never re-asked —
+  with the conversation to confirmation/submission.
+- **Confirmation**: once all steps are answered a summary is shown that includes
+  the **Request Type** and the **Selected Product** (when any) followed by the
+  collected fields, with ✅ Confirm / ✏️ Edit / ❌ Cancel; Edit jumps to any field.
 - **State** is stored transiently in **Redis** (`conv:<telegramId>`, 1h TTL) —
   no database schema change. Nothing is written to a CRM yet.
-- All copy is translated via the i18n module.
+- All copy is translated via the i18n module. Multi-line responses are preceded
+  by a brief Telegram "typing…" action (single-line prompts are not, to avoid
+  overusing it).
 
 The first flow, **Contact Request**
 ([`flows/contact-request.flow.ts`](./src/modules/telegram/conversation/flows/contact-request.flow.ts)),

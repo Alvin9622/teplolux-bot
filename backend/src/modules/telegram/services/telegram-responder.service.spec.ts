@@ -20,7 +20,7 @@ const user: PersistedUser = {
 };
 
 describe('TelegramResponderService.editText', () => {
-  let api: { editMessageText: jest.Mock; sendMessage: jest.Mock };
+  let api: { editMessageText: jest.Mock; sendMessage: jest.Mock; sendChatAction: jest.Mock };
   let chatMessages: { create: jest.Mock };
   let responder: TelegramResponderService;
 
@@ -28,6 +28,7 @@ describe('TelegramResponderService.editText', () => {
     api = {
       editMessageText: jest.fn().mockResolvedValue(undefined),
       sendMessage: jest.fn().mockResolvedValue({ message_id: 123 }),
+      sendChatAction: jest.fn().mockResolvedValue(undefined),
     };
     chatMessages = { create: jest.fn().mockResolvedValue(undefined) };
     responder = new TelegramResponderService(
@@ -63,5 +64,21 @@ describe('TelegramResponderService.editText', () => {
 
     expect(api.sendMessage).toHaveBeenCalled();
     expect(api.editMessageText).not.toHaveBeenCalled();
+  });
+
+  it('sends a typing action before a multi-line response', async () => {
+    const context: HandlerContext = { chatId: 7, user, locale: 'uz' };
+
+    await responder.sendText(context, 'line one\nline two');
+
+    expect(api.sendChatAction).toHaveBeenCalledWith(7, 'typing');
+  });
+
+  it('does not send a typing action for a single-line response', async () => {
+    const context: HandlerContext = { chatId: 7, user, locale: 'uz' };
+
+    await responder.sendText(context, 'just one line');
+
+    expect(api.sendChatAction).not.toHaveBeenCalled();
   });
 });

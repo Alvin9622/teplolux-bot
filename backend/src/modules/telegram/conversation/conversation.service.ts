@@ -11,7 +11,7 @@ import { TelegramResponderService } from '../services/telegram-responder.service
 import { ConversationStateStore } from './conversation-state.store';
 import { FlowRegistry } from './flow.registry';
 import { FlowKeyboards, StepControlOptions } from './flow.keyboards';
-import { FLOW_TRIGGERS, FlowAction } from './conversation.constants';
+import { FLOW_TRIGGERS, FlowAction, FlowTrigger } from './conversation.constants';
 import { ConversationState, FlowDefinition, FlowStep } from './conversation.types';
 
 /**
@@ -51,7 +51,7 @@ export class ConversationService {
   async handleCallback(context: HandlerContext, data: string): Promise<boolean> {
     const trigger = FLOW_TRIGGERS[data];
     if (trigger) {
-      await this.start(context, trigger.flowId, trigger.topic, trigger.subject);
+      await this.start(context, trigger);
       return true;
     }
 
@@ -196,12 +196,8 @@ export class ConversationService {
   // Lifecycle
   // -------------------------------------------------------------------------
 
-  private async start(
-    context: HandlerContext,
-    flowId: string,
-    topic: string,
-    subject?: string,
-  ): Promise<void> {
+  private async start(context: HandlerContext, trigger: FlowTrigger): Promise<void> {
+    const { flowId, topic, subject, sourceMenu } = trigger;
     const flow = this.flows.get(flowId);
     if (!flow || flow.steps.length === 0) {
       return;
@@ -210,6 +206,8 @@ export class ConversationService {
       flowId,
       topic,
       subject,
+      // Context captured once and carried with the conversation (not re-asked).
+      metadata: { requestType: topic, productCategory: subject, sourceMenu },
       currentStepId: flow.steps[0].id,
       history: [],
       mode: 'collect',
@@ -217,7 +215,7 @@ export class ConversationService {
     };
     await this.store.set(context.user.telegramId, state);
     this.logger.log(
-      `${LogEvent.FlowStarted}: ${flowId} topic=${topic}${subject ? `/${subject}` : ''}`,
+      `${LogEvent.FlowStarted}: ${flowId} topic=${topic}${subject ? `/${subject}` : ''} source=${sourceMenu}`,
       ConversationService.name,
     );
 
@@ -323,11 +321,14 @@ export class ConversationService {
     state: ConversationState,
     flow: FlowDefinition,
   ): Promise<void> {
-    // No CRM integration yet — record the captured request and clear the state.
+    // No CRM integration yet — record the captured request (incl. the context
+    // metadata that travelled with the flow) and clear the state.
     this.logger.log(
       `${LogEvent.FlowSubmitted}: ${flow.id} ${JSON.stringify({
-        topic: state.topic,
-        subject: state.subject,
+        metadata: state.metadata ?? {
+          requestType: state.topic,
+          productCategory: state.subject,
+        },
         data: state.data,
       })}`,
       ConversationService.name,
@@ -379,8 +380,19 @@ export class ConversationService {
     const lines: string[] = [
       this.i18n.t(locale, TKey.flowSummaryTitle),
       '',
-      `<b>${this.i18n.t(locale, TKey.flowSummaryTopic)}:</b> ${this.topicLine(locale, state, flow)}`,
+      // Always show the request type; show the selected product only when present.
+      `<b>${this.i18n.t(locale, TKey.flowSummaryRequestType)}:</b> ${this.i18n.t(
+        locale,
+        flow.topicLabelKey(state.topic),
+      )}`,
     ];
+    const subjectKey = state.subject ? flow.subjectLabelKey?.(state.subject) : undefined;
+    if (subjectKey) {
+      lines.push(
+        `<b>${this.i18n.t(locale, TKey.flowSummaryProduct)}:</b> ${this.i18n.t(locale, subjectKey)}`,
+      );
+    }
+    lines.push('');
     for (const step of flow.steps) {
       const label = this.i18n.t(locale, step.summaryLabelKey);
       const value = state.data[step.id];
@@ -403,12 +415,6 @@ export class ConversationService {
       return choice ? this.i18n.t(locale, choice.labelKey) : value;
     }
     return value;
-  }
-
-  private topicLine(locale: Locale, state: ConversationState, flow: FlowDefinition): string {
-    const topic = this.i18n.t(locale, flow.topicLabelKey(state.topic));
-    const subjectKey = state.subject ? flow.subjectLabelKey?.(state.subject) : undefined;
-    return subjectKey ? `${topic} — ${this.i18n.t(locale, subjectKey)}` : topic;
   }
 
   private async showMainMenu(context: HandlerContext): Promise<void> {

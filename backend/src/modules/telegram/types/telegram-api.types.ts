@@ -105,6 +105,9 @@ export type ReplyMarkup = InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyb
 
 export type ParseMode = 'HTML' | 'MarkdownV2' | 'Markdown';
 
+/** Chat actions surfaced to the user (only "typing" is used today). */
+export type ChatAction = 'typing' | 'upload_photo';
+
 export interface SendMessageOptions {
   parse_mode?: ParseMode;
   reply_markup?: ReplyMarkup;

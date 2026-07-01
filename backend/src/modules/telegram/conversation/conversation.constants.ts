@@ -27,10 +27,18 @@ export const FlowTopic = {
   Operator: 'operator',
 } as const;
 
+/** Which screen a flow was started from (captured as lead metadata). */
+export const SourceMenu = {
+  MainMenu: 'main_menu',
+  Products: 'products',
+} as const;
+
 export interface FlowTrigger {
   readonly flowId: string;
   readonly topic: string;
   readonly subject?: string;
+  /** The menu/screen this request originated from (context for the future CRM). */
+  readonly sourceMenu: string;
 }
 
 /**
@@ -42,30 +50,47 @@ export const FLOW_TRIGGERS: Readonly<Record<string, FlowTrigger>> = {
     flowId: CONTACT_REQUEST_FLOW_ID,
     topic: FlowTopic.Product,
     subject: 'boilers',
+    sourceMenu: SourceMenu.Products,
   },
   [CallbackData.Radiators]: {
     flowId: CONTACT_REQUEST_FLOW_ID,
     topic: FlowTopic.Product,
     subject: 'radiators',
+    sourceMenu: SourceMenu.Products,
   },
   [CallbackData.FloorHeating]: {
     flowId: CONTACT_REQUEST_FLOW_ID,
     topic: FlowTopic.Product,
     subject: 'floorHeating',
+    sourceMenu: SourceMenu.Products,
   },
   [CallbackData.WaterHeaters]: {
     flowId: CONTACT_REQUEST_FLOW_ID,
     topic: FlowTopic.Product,
     subject: 'waterHeaters',
+    sourceMenu: SourceMenu.Products,
   },
   [CallbackData.Pumps]: {
     flowId: CONTACT_REQUEST_FLOW_ID,
     topic: FlowTopic.Product,
     subject: 'pumps',
+    sourceMenu: SourceMenu.Products,
   },
-  [CallbackData.Service]: { flowId: CONTACT_REQUEST_FLOW_ID, topic: FlowTopic.Service },
-  [CallbackData.Dealer]: { flowId: CONTACT_REQUEST_FLOW_ID, topic: FlowTopic.Dealer },
-  [CallbackData.Operator]: { flowId: CONTACT_REQUEST_FLOW_ID, topic: FlowTopic.Operator },
+  [CallbackData.Service]: {
+    flowId: CONTACT_REQUEST_FLOW_ID,
+    topic: FlowTopic.Service,
+    sourceMenu: SourceMenu.MainMenu,
+  },
+  [CallbackData.Dealer]: {
+    flowId: CONTACT_REQUEST_FLOW_ID,
+    topic: FlowTopic.Dealer,
+    sourceMenu: SourceMenu.MainMenu,
+  },
+  [CallbackData.Operator]: {
+    flowId: CONTACT_REQUEST_FLOW_ID,
+    topic: FlowTopic.Operator,
+    sourceMenu: SourceMenu.MainMenu,
+  },
 };
 
 /** Conversation state lives in Redis for one hour of inactivity. */

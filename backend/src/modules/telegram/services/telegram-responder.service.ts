@@ -24,6 +24,7 @@ export class TelegramResponderService {
 
   /** Send an HTML text message (optionally with any reply markup) and log it. */
   async sendText(context: HandlerContext, text: string, keyboard?: ReplyMarkup): Promise<void> {
+    await this.maybeTyping(context, text);
     const sent = await this.api.sendMessage(context.chatId, text, {
       reply_markup: keyboard,
     });
@@ -37,6 +38,9 @@ export class TelegramResponderService {
     caption?: string,
     keyboard?: InlineKeyboardMarkup,
   ): Promise<void> {
+    if (caption) {
+      await this.maybeTyping(context, caption);
+    }
     const sent = await this.api.sendPhoto(context.chatId, photoUrl, {
       caption,
       reply_markup: keyboard,
@@ -70,6 +74,7 @@ export class TelegramResponderService {
       return;
     }
 
+    await this.maybeTyping(context, text);
     await this.api.editMessageText(context.chatId, messageId, text, keyboard);
     await this.recordOutbound(context, text, messageId);
     this.logger.log(LogEvent.MessageEdited, TelegramResponderService.name);
@@ -86,6 +91,19 @@ export class TelegramResponderService {
       reply_markup: keyboard,
     });
     await this.recordOutbound(context, `[location ${latitude},${longitude}]`, sent.message_id);
+  }
+
+  /**
+   * Send a short-lived "typing…" chat action before a multi-line response.
+   *
+   * Guarded to multi-line text only, so single-line prompts don't overuse the
+   * indicator. It is best-effort and fire-immediately (no artificial delay), so
+   * it never adds more than Telegram's own sub-second action lifetime.
+   */
+  private async maybeTyping(context: HandlerContext, text: string): Promise<void> {
+    if (text.includes('\n')) {
+      await this.api.sendChatAction(context.chatId, 'typing');
+    }
   }
 
   private async recordOutbound(

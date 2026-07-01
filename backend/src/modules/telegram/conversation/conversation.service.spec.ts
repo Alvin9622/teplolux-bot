@@ -113,6 +113,41 @@ describe('ConversationService — contact request flow', () => {
     expect(await service.isActive(user.telegramId)).toBe(false);
   });
 
+  it('captures context metadata at start and carries it (product request)', async () => {
+    await service.handleCallback(ctx(), CallbackData.Boilers);
+
+    expect((await state()).metadata).toEqual({
+      requestType: 'product',
+      productCategory: 'boilers',
+      sourceMenu: 'products',
+    });
+  });
+
+  it('captures metadata for a main-menu request (no product)', async () => {
+    await service.handleCallback(ctx(), CallbackData.Service);
+
+    expect((await state()).metadata).toEqual({
+      requestType: 'service',
+      productCategory: undefined,
+      sourceMenu: 'main_menu',
+    });
+  });
+
+  it('shows Request Type and Selected Product on the confirmation summary', async () => {
+    const i18n = new I18nService({ warn: jest.fn() } as never);
+    await service.handleCallback(ctx(), CallbackData.Boilers); // product request
+    await service.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
+    await service.handleMessage(ctx({ message: textMessage('+998901234567') }));
+    await service.handleMessage(ctx({ message: textMessage('Tashkent') }));
+    await service.handleCallback(ctx(), FlowAction.Skip);
+
+    expect((await state()).mode).toBe('summary');
+    const summaryText = responder.sendText.mock.calls.at(-1)?.[1] as string;
+    expect(summaryText).toContain(i18n.t('uz', TKey.flowSummaryRequestType));
+    expect(summaryText).toContain(i18n.t('uz', TKey.flowSummaryProduct));
+    expect(summaryText).toContain(i18n.t('uz', TKey.contentProductBoilersTitle));
+  });
+
   it('re-prompts and preserves state on invalid input', async () => {
     await service.handleCallback(ctx(), CallbackData.Service);
     responder.sendText.mockClear();
