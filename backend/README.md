@@ -385,6 +385,25 @@ hardcoded inside handlers
 
 ---
 
+## Operator summary
+
+When a customer submits a request, the flow generates **one structured operator
+summary** and logs it — ready for a future CRM
+([`src/modules/telegram/operator`](./src/modules/telegram/operator)).
+
+- `OperatorSummaryBuilder` is a reusable, side-effect-free builder shared by
+  **every** request type. `build()` produces the `OperatorRequestSummary`
+  object (Request Type, Selected Product, Customer Name, Phone, City, Customer
+  Message, Request Time, Language) and `format()` renders the operator-facing
+  `📩 New Customer Request` block.
+- `OperatorSummaryService.record()` builds the summary and hands it to the
+  configured `OperatorSummarySink`. The default `LoggingOperatorSummarySink`
+  logs it (readable block + structured JSON) — **no amoCRM, no operator chat**.
+- To deliver summaries to a CRM later, replace only the `OPERATOR_SUMMARY_SINK`
+  binding in `OperatorModule` — no changes to the conversation flow.
+
+---
+
 ## Health check
 
 ```

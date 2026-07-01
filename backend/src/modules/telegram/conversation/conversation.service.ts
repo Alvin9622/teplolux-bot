@@ -8,6 +8,7 @@ import { escapeHtml } from '../constants/messages.constants';
 import { Keyboards } from '../keyboards/main-menu.keyboard';
 import { HandlerContext } from '../handlers/handler-context';
 import { TelegramResponderService } from '../services/telegram-responder.service';
+import { OperatorSummaryService } from '../operator/operator-summary.service';
 import { ConversationStateStore } from './conversation-state.store';
 import { FlowRegistry } from './flow.registry';
 import { FlowKeyboards, StepControlOptions } from './flow.keyboards';
@@ -35,6 +36,7 @@ export class ConversationService {
     private readonly flows: FlowRegistry,
     private readonly responder: TelegramResponderService,
     private readonly i18n: I18nService,
+    private readonly operatorSummary: OperatorSummaryService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
   ) {}
 
@@ -328,18 +330,19 @@ export class ConversationService {
     state: ConversationState,
     flow: FlowDefinition,
   ): Promise<void> {
-    // No CRM integration yet — record the captured request (incl. the context
-    // metadata that travelled with the flow) and clear the state.
-    this.logger.log(
-      `${LogEvent.FlowSubmitted}: ${flow.id} ${JSON.stringify({
-        metadata: state.metadata ?? {
-          requestType: state.topic,
-          productCategory: state.subject,
-        },
-        data: state.data,
-      })}`,
-      ConversationService.name,
-    );
+    // Generate one structured operator summary (reusable across request types),
+    // which the operator service logs and prepares for future CRM integration.
+    this.logger.log(`${LogEvent.FlowSubmitted}: ${flow.id}`, ConversationService.name);
+    await this.operatorSummary.record({
+      requestType: state.metadata?.requestType ?? state.topic,
+      productCategory: state.metadata?.productCategory ?? state.subject,
+      fullName: state.data.fullName ?? '',
+      phone: state.data.phone ?? '',
+      city: state.data.city ?? '',
+      customerMessage: state.data.customerMessage,
+      language: context.locale,
+      requestTime: new Date(),
+    });
     await this.store.clear(context.user.telegramId);
     await this.responder.sendText(context, this.i18n.t(context.locale, TKey.flowSubmitted));
     await this.showMainMenu(context);

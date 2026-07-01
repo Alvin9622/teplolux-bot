@@ -5,6 +5,7 @@ import { CallbackData } from '../constants/callback-data.constants';
 import { HandlerContext } from '../handlers/handler-context';
 import { TelegramMessage } from '../types/telegram-api.types';
 import { TelegramResponderService } from '../services/telegram-responder.service';
+import { OperatorSummaryService } from '../operator/operator-summary.service';
 import { ConversationService } from './conversation.service';
 import { ConversationStateStore } from './conversation-state.store';
 import { FlowRegistry } from './flow.registry';
@@ -62,12 +63,18 @@ function buildResponder(): Responder {
   };
 }
 
-function buildService(store: InMemoryStore, responder: Responder, registry: FlowRegistry) {
+function buildService(
+  store: InMemoryStore,
+  responder: Responder,
+  registry: FlowRegistry,
+  operator: { record: jest.Mock } = { record: jest.fn().mockResolvedValue(undefined) },
+) {
   return new ConversationService(
     store as unknown as ConversationStateStore,
     registry,
     responder as unknown as TelegramResponderService,
     new I18nService({ warn: jest.fn() } as never),
+    operator as unknown as OperatorSummaryService,
     { log: jest.fn(), warn: jest.fn() } as never,
   );
 }
@@ -111,6 +118,29 @@ describe('ConversationService — contact request flow', () => {
 
     await service.handleCallback(ctx(), FlowAction.Submit);
     expect(await service.isActive(user.telegramId)).toBe(false);
+  });
+
+  it('records a structured operator summary on submit', async () => {
+    const operator = { record: jest.fn().mockResolvedValue(undefined) };
+    const svc = buildService(store, responder, new FlowRegistry(), operator);
+
+    await svc.handleCallback(ctx(), CallbackData.Service);
+    await svc.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
+    await svc.handleMessage(ctx({ message: textMessage('+998901234567') }));
+    await svc.handleMessage(ctx({ message: textMessage('Tashkent') }));
+    await svc.handleCallback(ctx(), FlowAction.Skip);
+    await svc.handleCallback(ctx(), FlowAction.Submit);
+
+    expect(operator.record).toHaveBeenCalledTimes(1);
+    expect(operator.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestType: 'SERVICE_REQUEST',
+        fullName: 'Vasil Sodiqov',
+        phone: '+998901234567',
+        city: 'Tashkent',
+        language: 'uz',
+      }),
+    );
   });
 
   it('captures context metadata at start and carries it (product price request)', async () => {
