@@ -12,6 +12,7 @@ export const BotCommand = {
   Operator: 'operator',
   Contact: 'contact',
   Location: 'location',
+  Cancel: 'cancel',
 } as const;
 
 export type BotCommandName = (typeof BotCommand)[keyof typeof BotCommand];
@@ -28,5 +29,6 @@ export const BOT_COMMAND_DESCRIPTIONS: ReadonlyArray<{
   { command: BotCommand.Operator, description: 'Talk to an operator' },
   { command: BotCommand.Contact, description: 'Contact information' },
   { command: BotCommand.Location, description: 'Our location' },
+  { command: BotCommand.Cancel, description: 'Cancel the current request' },
   { command: BotCommand.Help, description: 'How to use the assistant' },
 ];

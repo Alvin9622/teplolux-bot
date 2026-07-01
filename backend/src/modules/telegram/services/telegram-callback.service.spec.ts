@@ -58,12 +58,25 @@ describe('TelegramCallbackService', () => {
     );
   });
 
-  it('edits the current message (never sends a new one) on a category press', async () => {
-    const handled = await service.handle(callbackContext(), CallbackData.Boilers);
+  it('edits the current message (never sends a new one) for an info screen', async () => {
+    const handled = await service.handle(callbackContext(), CallbackData.Contact);
 
     expect(handled).toBe(true);
     expect(responder.editText).toHaveBeenCalledTimes(1);
     expect(responder.sendText).not.toHaveBeenCalled();
+  });
+
+  it('does not handle flow-trigger callbacks (owned by the conversation engine)', async () => {
+    for (const trigger of [
+      CallbackData.Boilers,
+      CallbackData.Radiators,
+      CallbackData.FloorHeating,
+      CallbackData.Service,
+      CallbackData.Dealer,
+      CallbackData.Operator,
+    ]) {
+      expect(await service.handle(callbackContext(), trigger)).toBe(false);
+    }
   });
 
   it('opens the language selection screen on "Change language"', async () => {
@@ -99,8 +112,16 @@ describe('TelegramCallbackService', () => {
     expect(responder.sendLocation).not.toHaveBeenCalled();
   });
 
-  it('handles every defined callback value', async () => {
-    for (const data of Object.values(CallbackData)) {
+  it('handles every navigation/info callback it owns', async () => {
+    const owned = [
+      CallbackData.Contact,
+      CallbackData.Location,
+      CallbackData.BackToMenu,
+      CallbackData.ChangeLanguage,
+      CallbackData.SelectLangUz,
+      CallbackData.SelectLangRu,
+    ];
+    for (const data of owned) {
       responder.editText.mockClear();
       const handled = await service.handle(callbackContext(), data);
       expect(handled).toBe(true);

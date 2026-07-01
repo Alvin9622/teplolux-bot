@@ -5,7 +5,7 @@ import { LogEvent } from '../../../logger/log-events';
 import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { TelegramApiService } from './telegram-api.service';
 import { HandlerContext } from '../handlers/handler-context';
-import { InlineKeyboardMarkup } from '../types/telegram-api.types';
+import { InlineKeyboardMarkup, ReplyMarkup } from '../types/telegram-api.types';
 
 /**
  * High-level outbound messaging facade used by handlers.
@@ -22,14 +22,18 @@ export class TelegramResponderService {
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
   ) {}
 
-  /** Send an HTML text message (optionally with an inline keyboard) and log it. */
-  async sendText(
-    context: HandlerContext,
-    text: string,
-    keyboard?: InlineKeyboardMarkup,
-  ): Promise<void> {
+  /** Send an HTML text message (optionally with any reply markup) and log it. */
+  async sendText(context: HandlerContext, text: string, keyboard?: ReplyMarkup): Promise<void> {
     const sent = await this.api.sendMessage(context.chatId, text, {
       reply_markup: keyboard,
+    });
+    await this.recordOutbound(context, text, sent.message_id);
+  }
+
+  /** Send a message that removes any active custom reply keyboard. */
+  async removeReplyKeyboard(context: HandlerContext, text: string): Promise<void> {
+    const sent = await this.api.sendMessage(context.chatId, text, {
+      reply_markup: { remove_keyboard: true },
     });
     await this.recordOutbound(context, text, sent.message_id);
   }

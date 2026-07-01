@@ -6,6 +6,7 @@ import { CallbackData } from '../constants/callback-data.constants';
 import { I18nService } from '../../../i18n/i18n.service';
 import { COMMAND_HANDLERS, CommandHandler } from '../handlers/command-handler.interface';
 import { ChatMessageRepository } from '../repositories/chat-message.repository';
+import { ConversationService } from '../conversation/conversation.service';
 import { TelegramApiService } from './telegram-api.service';
 import { TelegramCallbackService } from './telegram-callback.service';
 import { TelegramResponderService } from './telegram-responder.service';
@@ -47,6 +48,12 @@ describe('TelegramUpdateService', () => {
   let chatMessages: { create: jest.Mock };
   let responder: { sendText: jest.Mock };
   let callbacks: { handle: jest.Mock };
+  let conversation: {
+    isActive: jest.Mock;
+    abort: jest.Mock;
+    handleMessage: jest.Mock;
+    handleCallback: jest.Mock;
+  };
   let api: { answerCallbackQuery: jest.Mock };
 
   beforeEach(async () => {
@@ -54,6 +61,12 @@ describe('TelegramUpdateService', () => {
     chatMessages = { create: jest.fn().mockResolvedValue(undefined) };
     responder = { sendText: jest.fn().mockResolvedValue(undefined) };
     callbacks = { handle: jest.fn().mockResolvedValue(true) };
+    conversation = {
+      isActive: jest.fn().mockResolvedValue(false),
+      abort: jest.fn().mockResolvedValue(undefined),
+      handleMessage: jest.fn().mockResolvedValue(false),
+      handleCallback: jest.fn().mockResolvedValue(false),
+    };
     api = { answerCallbackQuery: jest.fn().mockResolvedValue(undefined) };
 
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -67,6 +80,7 @@ describe('TelegramUpdateService', () => {
         { provide: ChatMessageRepository, useValue: chatMessages },
         { provide: TelegramResponderService, useValue: responder },
         { provide: TelegramCallbackService, useValue: callbacks },
+        { provide: ConversationService, useValue: conversation },
         { provide: TelegramApiService, useValue: api },
         {
           provide: I18nService,

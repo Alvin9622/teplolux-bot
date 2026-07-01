@@ -28,13 +28,10 @@ export class TelegramCallbackService {
     private readonly users: TelegramUserService,
     private readonly i18n: I18nService,
   ) {
+    // NOTE: product/service/dealer/operator callbacks are intentionally NOT
+    // handled here — they start a guided conversation via ConversationService
+    // (see FLOW_TRIGGERS). This layer only owns informational/navigation screens.
     this.textRoutes = new Map<CallbackDataValue, TranslationKey>([
-      [CallbackData.Boilers, TKey.categoryBoilers],
-      [CallbackData.Radiators, TKey.categoryRadiators],
-      [CallbackData.FloorHeating, TKey.categoryFloorHeating],
-      [CallbackData.Service, TKey.service],
-      [CallbackData.Dealer, TKey.dealer],
-      [CallbackData.Operator, TKey.operator],
       [CallbackData.Contact, TKey.contact],
     ]);
   }

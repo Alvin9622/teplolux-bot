@@ -273,6 +273,35 @@ which is compile-time checked against the catalog shape.
 
 ---
 
+## Conversation flows
+
+A generic, reusable **conversation flow engine** collects structured input from
+users step by step. It lives in
+[`src/modules/telegram/conversation`](./src/modules/telegram/conversation) and is
+flow-agnostic — no specific flow is hardcoded into the engine.
+
+- A **flow** is a declarative `FlowDefinition`: an ordered list of steps, each
+  with an `id`, a `promptKey`, an input `type`, `validate()`, an optional
+  `nextStepId` (configurable ordering) and, for choices, its `choices`.
+- **Input types**: `text`, `phone` (offers the native Telegram contact button),
+  `location` (native location button) and `choice` (inline options, validated).
+- **Navigation**: ⬅ Back and ❌ Cancel at every step. Cancelling clears the
+  Redis state and returns to the main menu.
+- **Confirmation**: once all steps are answered a summary is shown with
+  ✅ Confirm / ✏️ Edit / ❌ Cancel; Edit jumps back to any field.
+- **State** is stored transiently in **Redis** (`conv:<telegramId>`, 1h TTL) —
+  no database schema change. Nothing is written to a CRM yet.
+- All copy is translated via the i18n module.
+
+The first flow, **Contact Request**
+([`flows/contact-request.flow.ts`](./src/modules/telegram/conversation/flows/contact-request.flow.ts)),
+collects Full Name → Phone → City → optional Comment → Confirmation, and is
+started from the product / service / dealer / operator menu buttons
+(see `FLOW_TRIGGERS`). Add a new flow by registering another `FlowDefinition`
+in the `FlowRegistry` — no engine changes required.
+
+---
+
 ## Health check
 
 ```

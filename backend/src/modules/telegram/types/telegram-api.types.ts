@@ -37,6 +37,11 @@ export interface TelegramContact {
   user_id?: number;
 }
 
+export interface TelegramLocation {
+  latitude: number;
+  longitude: number;
+}
+
 export interface TelegramMessage {
   message_id: number;
   from?: TelegramUser;
@@ -45,6 +50,7 @@ export interface TelegramMessage {
   text?: string;
   entities?: TelegramMessageEntity[];
   contact?: TelegramContact;
+  location?: TelegramLocation;
 }
 
 export interface TelegramCallbackQuery {
@@ -75,11 +81,33 @@ export interface InlineKeyboardMarkup {
   inline_keyboard: InlineKeyboardButton[][];
 }
 
+/** A custom reply-keyboard button. `request_contact` asks for the user's phone. */
+export interface KeyboardButton {
+  text: string;
+  request_contact?: boolean;
+  request_location?: boolean;
+}
+
+export interface ReplyKeyboardMarkup {
+  keyboard: KeyboardButton[][];
+  resize_keyboard?: boolean;
+  one_time_keyboard?: boolean;
+  input_field_placeholder?: string;
+}
+
+/** Instructs Telegram to hide the current custom reply keyboard. */
+export interface ReplyKeyboardRemove {
+  remove_keyboard: true;
+}
+
+/** Any markup accepted by `sendMessage`'s `reply_markup`. */
+export type ReplyMarkup = InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove;
+
 export type ParseMode = 'HTML' | 'MarkdownV2' | 'Markdown';
 
 export interface SendMessageOptions {
   parse_mode?: ParseMode;
-  reply_markup?: InlineKeyboardMarkup;
+  reply_markup?: ReplyMarkup;
   disable_web_page_preview?: boolean;
 }
 

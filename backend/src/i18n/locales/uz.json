@@ -35,5 +35,46 @@
     "location": "📍 Manzil",
     "changeLanguage": "🌐 Tilni o'zgartirish",
     "back": "⬅️ Asosiy menyu"
+  },
+  "flow": {
+    "started": "<b>{{topic}}</b>\n\nIltimos, quyidagi ma'lumotlarni kiriting. Istalgan vaqtda /cancel buyrug'i bilan bekor qilishingiz mumkin.",
+    "topic": {
+      "product": "🛍 Mahsulot bo'yicha so'rov",
+      "service": "🛠 Servis so'rovi",
+      "dealer": "🤝 Diler arizasi",
+      "operator": "👨 Operator bilan bog'lanish"
+    },
+    "prompt": {
+      "fullName": "👤 To'liq ismingizni kiriting:",
+      "phone": "📱 Telefon raqamingizni yuboring yoki pastdagi tugma orqali ulashing:",
+      "city": "🏙 Shahringizni kiriting:",
+      "comment": "✍️ Qo'shimcha izoh qoldiring (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:"
+    },
+    "error": {
+      "fullName": "❗️ Iltimos, to'g'ri ism kiriting (kamida 2 ta harf).",
+      "phone": "❗️ Telefon raqami noto'g'ri. Masalan: +998901234567",
+      "city": "❗️ Iltimos, to'g'ri shahar nomini kiriting."
+    },
+    "button": {
+      "shareContact": "📱 Telefon raqamni ulashish",
+      "shareLocation": "📍 Joylashuvni ulashish",
+      "cancel": "❌ Bekor qilish",
+      "back": "⬅ Orqaga",
+      "skip": "⏭ O'tkazib yuborish",
+      "submit": "✅ Tasdiqlash",
+      "edit": "✏️ Tahrirlash"
+    },
+    "summary": {
+      "title": "📋 <b>So'rovingizni tasdiqlang</b>",
+      "topic": "Bo'lim",
+      "fullName": "Ism",
+      "phone": "Telefon",
+      "city": "Shahar",
+      "comment": "Izoh",
+      "empty": "—"
+    },
+    "editChoose": "✏️ Nimani tahrirlamoqchisiz?",
+    "cancelled": "❌ So'rov bekor qilindi.",
+    "submitted": "✅ Rahmat! So'rovingiz qabul qilindi. Mutaxassislarimiz tez orada siz bilan bog'lanadi."
   }
 }

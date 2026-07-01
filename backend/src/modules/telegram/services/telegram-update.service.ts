@@ -12,6 +12,7 @@ import { COMMAND_HANDLERS, CommandHandler } from '../handlers/command-handler.in
 import { HandlerContext } from '../handlers/handler-context';
 import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { TelegramCallbackQuery, TelegramMessage, TelegramUser } from '../types/telegram-api.types';
+import { ConversationService } from '../conversation/conversation.service';
 import { TelegramApiService } from './telegram-api.service';
 import { TelegramCallbackService } from './telegram-callback.service';
 import { TelegramResponderService } from './telegram-responder.service';
@@ -40,6 +41,7 @@ export class TelegramUpdateService {
     private readonly chatMessages: ChatMessageRepository,
     private readonly responder: TelegramResponderService,
     private readonly callbacks: TelegramCallbackService,
+    private readonly conversation: ConversationService,
     private readonly api: TelegramApiService,
     private readonly i18n: I18nService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
@@ -94,11 +96,20 @@ export class TelegramUpdateService {
     const context = this.buildContext(user, message.chat.id, message, undefined, message.text);
 
     if (command) {
+      // A command interrupts any in-progress guided conversation.
+      if (await this.conversation.isActive(user.telegramId)) {
+        await this.conversation.abort(user.telegramId);
+      }
       await this.dispatchCommand(command, context);
       return;
     }
 
-    // Free-form text with no command — friendly fallback for now.
+    // An active conversation consumes step answers (text or shared contact).
+    if (await this.conversation.handleMessage(context)) {
+      return;
+    }
+
+    // Free-form text with no command and no active flow — friendly fallback.
     await this.responder.sendText(
       context,
       this.i18n.t(context.locale, TKey.fallback),
@@ -141,6 +152,12 @@ export class TelegramUpdateService {
     });
 
     if (!callback.data) {
+      return;
+    }
+
+    // The conversation engine gets first refusal: it owns flow triggers
+    // (product/service/dealer/operator) and the flow control buttons.
+    if (await this.conversation.handleCallback(context, callback.data)) {
       return;
     }
 

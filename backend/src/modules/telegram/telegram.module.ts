@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TelegramWebhookController } from './controllers/telegram-webhook.controller';
 import { COMMAND_HANDLERS, CommandHandler } from './handlers/command-handler.interface';
+import { CancelCommandHandler } from './handlers/cancel.handler';
 import { CatalogCommandHandler } from './handlers/catalog.handler';
 import { ContactCommandHandler } from './handlers/contact.handler';
 import { DealerCommandHandler } from './handlers/dealer.handler';
@@ -16,6 +17,9 @@ import { TelegramCallbackService } from './services/telegram-callback.service';
 import { TelegramResponderService } from './services/telegram-responder.service';
 import { TelegramUpdateService } from './services/telegram-update.service';
 import { TelegramUserService } from './services/telegram-user.service';
+import { ConversationStateStore } from './conversation/conversation-state.store';
+import { ConversationService } from './conversation/conversation.service';
+import { FlowRegistry } from './conversation/flow.registry';
 
 /** Concrete command handler providers, registered individually for DI. */
 const commandHandlerProviders = [
@@ -27,6 +31,7 @@ const commandHandlerProviders = [
   OperatorCommandHandler,
   ContactCommandHandler,
   LocationCommandHandler,
+  CancelCommandHandler,
 ];
 
 /**
@@ -48,6 +53,10 @@ const commandHandlerProviders = [
     TelegramResponderService,
     TelegramCallbackService,
     TelegramUpdateService,
+    // Conversation flow engine (generic + reusable)
+    ConversationStateStore,
+    FlowRegistry,
+    ConversationService,
     // Command handlers (individual)
     ...commandHandlerProviders,
     // Aggregate the handlers behind the COMMAND_HANDLERS token for the dispatcher.
