@@ -9,6 +9,8 @@ import { Keyboards } from '../keyboards/main-menu.keyboard';
 import { HandlerContext } from '../handlers/handler-context';
 import { TelegramResponderService } from '../services/telegram-responder.service';
 import { OperatorSummaryService } from '../operator/operator-summary.service';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { AnalyticsActor } from '../analytics/analytics.event';
 import { ConversationStateStore } from './conversation-state.store';
 import { FlowRegistry } from './flow.registry';
 import { FlowKeyboards, StepControlOptions } from './flow.keyboards';
@@ -37,8 +39,14 @@ export class ConversationService {
     private readonly responder: TelegramResponderService,
     private readonly i18n: I18nService,
     private readonly operatorSummary: OperatorSummaryService,
+    private readonly analytics: AnalyticsService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
   ) {}
+
+  /** Minimal analytics identity for the current interaction. */
+  private actor(context: HandlerContext): AnalyticsActor {
+    return { telegramUserId: context.user.telegramId, language: context.locale };
+  }
 
   /** True when the user currently has an active flow. */
   async isActive(telegramId: bigint | number): Promise<boolean> {
@@ -227,6 +235,12 @@ export class ConversationService {
         `${metadata.productCategory ? `/${metadata.productCategory}` : ''} source=${metadata.sourceMenu}`,
       ConversationService.name,
     );
+    this.analytics.trackFlow(this.actor(context), 'started', {
+      flowId,
+      requestType: metadata.requestType,
+      productCategory: metadata.productCategory,
+      sourceMenu: metadata.sourceMenu,
+    });
 
     await this.responder.sendText(
       context,
@@ -285,6 +299,10 @@ export class ConversationService {
     flow: FlowDefinition,
   ): Promise<void> {
     const leaving = this.currentStep(state, flow);
+    this.analytics.trackFlow(this.actor(context), 'back', {
+      flowId: state.flowId,
+      conversationStep: leaving?.id,
+    });
     if (leaving && this.usesReplyKeyboard(leaving)) {
       await this.responder.removeReplyKeyboard(context, '↩️');
     }
@@ -317,6 +335,7 @@ export class ConversationService {
   async cancel(context: HandlerContext): Promise<void> {
     await this.store.clear(context.user.telegramId);
     this.logger.log(LogEvent.FlowCancelled, ConversationService.name);
+    this.analytics.trackFlow(this.actor(context), 'cancelled');
     // removeReplyKeyboard in case a phone/location reply keyboard is still shown.
     await this.responder.removeReplyKeyboard(
       context,
@@ -343,6 +362,12 @@ export class ConversationService {
       language: context.locale,
       requestTime: new Date(),
     });
+    this.analytics.trackFlow(this.actor(context), 'completed', {
+      flowId: flow.id,
+      requestType: state.metadata?.requestType ?? state.topic,
+      productCategory: state.metadata?.productCategory ?? state.subject,
+      city: state.data.city,
+    });
     await this.store.clear(context.user.telegramId);
     await this.responder.sendText(context, this.i18n.t(context.locale, TKey.flowSubmitted));
     await this.showMainMenu(context);
@@ -363,6 +388,10 @@ export class ConversationService {
       optional: step.optional,
       showBack: state.mode === 'edit' || state.history.length > 0,
     };
+    this.analytics.trackFlow(this.actor(context), 'step', {
+      flowId: state.flowId,
+      conversationStep: step.id,
+    });
 
     switch (step.type) {
       case 'phone':

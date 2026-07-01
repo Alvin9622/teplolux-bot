@@ -5,7 +5,7 @@ import { LogEvent } from '../../../logger/log-events';
 import { I18nService } from '../../../i18n/i18n.service';
 import { TKey } from '../../../i18n/i18n.keys';
 import { DEFAULT_LOCALE, Locale, prismaLanguageToLocale } from '../../../i18n/i18n.types';
-import { BotCommandName } from '../constants/commands.constants';
+import { BotCommand, BotCommandName } from '../constants/commands.constants';
 import { Keyboards } from '../keyboards/main-menu.keyboard';
 import { TelegramUpdateDto } from '../dto/telegram-update.dto';
 import { COMMAND_HANDLERS, CommandHandler } from '../handlers/command-handler.interface';
@@ -14,6 +14,8 @@ import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { TelegramCallbackQuery, TelegramMessage, TelegramUser } from '../types/telegram-api.types';
 import { ConversationService } from '../conversation/conversation.service';
 import { ContentService } from '../content/content.service';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { AnalyticsActor, AnalyticsEvent } from '../analytics/analytics.event';
 import { TelegramApiService } from './telegram-api.service';
 import { TelegramCallbackService } from './telegram-callback.service';
 import { TelegramResponderService } from './telegram-responder.service';
@@ -46,6 +48,7 @@ export class TelegramUpdateService {
     private readonly content: ContentService,
     private readonly api: TelegramApiService,
     private readonly i18n: I18nService,
+    private readonly analytics: AnalyticsService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
   ) {
     this.commandMap = new Map(handlers.map((handler) => [handler.command, handler]));
@@ -96,11 +99,17 @@ export class TelegramUpdateService {
     this.logger.log(LogEvent.MessageReceived, TelegramUpdateService.name);
 
     const context = this.buildContext(user, message.chat.id, message, undefined, message.text);
+    const actor = this.actor(context);
 
     if (command) {
-      // A command interrupts any in-progress guided conversation.
+      // A command interrupts any in-progress guided conversation — an
+      // unfinished flow at this point is effectively abandoned.
       if (await this.conversation.isActive(user.telegramId)) {
         await this.conversation.abort(user.telegramId);
+        this.analytics.trackFlow(actor, 'abandoned', { reason: `command:${command}` });
+      }
+      if (command === BotCommand.Start) {
+        this.analytics.track(AnalyticsEvent.BotStarted, actor);
       }
       await this.dispatchCommand(command, context);
       return;
@@ -157,6 +166,11 @@ export class TelegramUpdateService {
       return;
     }
 
+    // Record the button press for analytics (menu/navigation/content). Flow
+    // triggers and flow controls are ignored here — ConversationService emits
+    // the precise flow-lifecycle events, avoiding double-counting.
+    this.analytics.trackMenu(this.actor(context), callback.data);
+
     // The conversation engine gets first refusal: it owns flow triggers
     // (product/service/dealer/operator) and the flow control buttons.
     if (await this.conversation.handleCallback(context, callback.data)) {
@@ -209,6 +223,11 @@ export class TelegramUpdateService {
     const token = text.split(/\s+/)[0]; // "/start@bot"
     const command = token.slice(1).split('@')[0].toLowerCase();
     return command.length > 0 ? command : null;
+  }
+
+  /** Minimal analytics identity for the current interaction. */
+  private actor(context: HandlerContext): AnalyticsActor {
+    return { telegramUserId: context.user.telegramId, language: context.locale };
   }
 
   private buildContext(

@@ -427,6 +427,36 @@ summary** and logs it — ready for a future CRM
 
 ---
 
+## Analytics & event tracking
+
+Important user interactions are recorded as structured, provider-independent
+events so customer behaviour can be understood later — without coupling the bot
+to any analytics vendor ([`src/modules/telegram/analytics`](./src/modules/telegram/analytics)).
+
+- `AnalyticsService` exposes `track()`, `trackMenu()`, `trackFlow()` and
+  `trackPage()`. Every event carries a consistent shape — `eventName`,
+  `telegramUserId`, `language`, `timestamp`, `sessionId` and optional
+  `metadata` (e.g. `selectedProduct`, `requestType`, `sourceMenu`, `city`,
+  `conversationStep`). Canonical event names live in `analytics.event.ts`.
+- **Sessions** are tracked in-memory (no database): the first event opens a
+  session (`Session Started`) and the next event after 30 min of inactivity
+  closes it (`Session Ended` with the duration and event count).
+- **Non-blocking & failure-safe:** tracking is synchronous for the caller and
+  the sink is never awaited, so a slow or throwing provider can never block a
+  Telegram response or break the bot — failures are logged and swallowed.
+- **Integration stays out of the handlers:** the central dispatcher records one
+  interaction per callback and `analytics.catalog.ts` maps it to a semantic
+  event, while the conversation engine emits precise flow-lifecycle events
+  (started / step / back / completed / cancelled; abandonment is detected when a
+  command interrupts an active flow).
+- Events are delivered through a swappable `AnalyticsSink` bound to the
+  `ANALYTICS_SINK` token (default `LoggingAnalyticsSink`, using the existing
+  logging infrastructure). A Google Analytics / PostHog / Mixpanel / BigQuery /
+  Power BI sink can replace the binding in `AnalyticsModule` **without changing
+  any Telegram handler** — no external analytics service is integrated today.
+
+---
+
 ## Health check
 
 ```

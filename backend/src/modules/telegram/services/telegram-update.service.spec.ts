@@ -8,6 +8,7 @@ import { COMMAND_HANDLERS, CommandHandler } from '../handlers/command-handler.in
 import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { ConversationService } from '../conversation/conversation.service';
 import { ContentService } from '../content/content.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { TelegramApiService } from './telegram-api.service';
 import { TelegramCallbackService } from './telegram-callback.service';
 import { TelegramResponderService } from './telegram-responder.service';
@@ -85,6 +86,10 @@ describe('TelegramUpdateService', () => {
         { provide: TelegramCallbackService, useValue: callbacks },
         { provide: ConversationService, useValue: conversation },
         { provide: ContentService, useValue: content },
+        {
+          provide: AnalyticsService,
+          useValue: { track: jest.fn(), trackMenu: jest.fn(), trackFlow: jest.fn() },
+        },
         { provide: TelegramApiService, useValue: api },
         {
           provide: I18nService,

@@ -6,6 +6,7 @@ import { HandlerContext } from '../handlers/handler-context';
 import { TelegramMessage } from '../types/telegram-api.types';
 import { TelegramResponderService } from '../services/telegram-responder.service';
 import { OperatorSummaryService } from '../operator/operator-summary.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { ConversationService } from './conversation.service';
 import { ConversationStateStore } from './conversation-state.store';
 import { FlowRegistry } from './flow.registry';
@@ -68,6 +69,7 @@ function buildService(
   responder: Responder,
   registry: FlowRegistry,
   operator: { record: jest.Mock } = { record: jest.fn().mockResolvedValue(undefined) },
+  analytics: { trackFlow: jest.Mock } = { trackFlow: jest.fn() },
 ) {
   return new ConversationService(
     store as unknown as ConversationStateStore,
@@ -75,6 +77,7 @@ function buildService(
     responder as unknown as TelegramResponderService,
     new I18nService({ warn: jest.fn() } as never),
     operator as unknown as OperatorSummaryService,
+    analytics as unknown as AnalyticsService,
     { log: jest.fn(), warn: jest.fn() } as never,
   );
 }
