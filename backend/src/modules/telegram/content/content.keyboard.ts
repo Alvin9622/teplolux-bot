@@ -23,6 +23,10 @@ function buildButton(
       return { text, url: action.url };
     case 'phone':
       return { text, callback_data: `${ContentAction.PhonePrefix}${action.phone}` };
+    case 'callback':
+      // Delegate to an existing callback handler (the content service ignores
+      // non-`content:` callbacks, so it falls through to the menu layer).
+      return { text, callback_data: action.data };
     case 'mainMenu':
       // Reuse the existing "back to main menu" callback (rendered by the menu layer).
       return { text, callback_data: CallbackData.BackToMenu };

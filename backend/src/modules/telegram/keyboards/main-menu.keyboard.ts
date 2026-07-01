@@ -12,26 +12,34 @@ import { Translator } from '../../../i18n/i18n.types';
  * in by the caller, keeping markup construction free of hardcoded strings.
  */
 export const Keyboards = {
-  /** Primary menu shown on /start and when returning to the menu. */
+  /**
+   * Primary menu shown on /start and when returning to the menu.
+   *
+   * Deliberately limited to the six top-level actions. Products / Contacts /
+   * About open informational content pages (no lead flow); Service, Become
+   * Dealer and Contact Operator start the existing Contact Request flow.
+   */
   mainMenu(t: Translator): InlineKeyboardMarkup {
     return {
       inline_keyboard: [
         [
-          { text: t(TKey.menuBoilers), callback_data: CallbackData.Boilers },
-          { text: t(TKey.menuRadiators), callback_data: CallbackData.Radiators },
+          {
+            text: t(TKey.menuProducts),
+            callback_data: contentPageCallback(ContentPageId.Products),
+          },
         ],
-        [{ text: t(TKey.menuFloorHeating), callback_data: CallbackData.FloorHeating }],
         [
           { text: t(TKey.menuService), callback_data: CallbackData.Service },
           { text: t(TKey.menuDealer), callback_data: CallbackData.Dealer },
         ],
-        [{ text: t(TKey.menuOperator), callback_data: CallbackData.Operator }],
         [
-          { text: t(TKey.menuContact), callback_data: CallbackData.Contact },
-          { text: t(TKey.menuLocation), callback_data: CallbackData.Location },
+          {
+            text: t(TKey.menuContacts),
+            callback_data: contentPageCallback(ContentPageId.Contacts),
+          },
+          { text: t(TKey.menuAbout), callback_data: contentPageCallback(ContentPageId.About) },
         ],
-        [{ text: t(TKey.menuAbout), callback_data: contentPageCallback(ContentPageId.About) }],
-        [{ text: t(TKey.menuChangeLanguage), callback_data: CallbackData.ChangeLanguage }],
+        [{ text: t(TKey.menuOperator), callback_data: CallbackData.Operator }],
       ],
     };
   },

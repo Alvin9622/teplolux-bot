@@ -10,6 +10,7 @@ export type ContentButtonAction =
   | { readonly type: 'flow'; readonly trigger: string } // start a conversation flow (trigger callback)
   | { readonly type: 'url'; readonly url: string } // open a website
   | { readonly type: 'phone'; readonly phone: string } // reveal a callable phone number
+  | { readonly type: 'callback'; readonly data: string } // reuse an existing callback handler (e.g. Location)
   | { readonly type: 'back' } // go to the page's parent (or main menu)
   | { readonly type: 'mainMenu' }; // return to the main menu
 

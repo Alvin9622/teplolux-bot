@@ -264,8 +264,8 @@ The bot is fully multilingual. Two languages are supported today — **Uzbek**
   `TelegramUser.language` column, so the selection step is **skipped** on
   subsequent starts.
 - Every message and inline button is rendered through `I18nService` in the
-  user's locale; a **🌐 Change Language** button inside the main menu lets the
-  user switch at any time.
+  user's locale. (Language is chosen on first `/start` and persisted; the
+  language-selection screen and its handlers remain available for re-use.)
 
 Adding a key: add it to **both** `uz.json` and `ru.json`, then reference it via
 a constant in [`src/i18n/i18n.keys.ts`](./src/i18n/i18n.keys.ts) (`TKey.*`),
@@ -295,10 +295,13 @@ flow-agnostic — no specific flow is hardcoded into the engine.
 
 The first flow, **Contact Request**
 ([`flows/contact-request.flow.ts`](./src/modules/telegram/conversation/flows/contact-request.flow.ts)),
-collects Full Name → Phone → City → optional Comment → Confirmation, and is
-started from the product / service / dealer / operator menu buttons
-(see `FLOW_TRIGGERS`). Add a new flow by registering another `FlowDefinition`
-in the `FlowRegistry` — no engine changes required.
+collects Full Name → Phone → City → optional Comment → Confirmation and records
+the request type (`topic`: service / dealer / operator / product) as the lead.
+To keep the experience lead-focused, it is started **only** from **Request
+Price** (on a product page), **Service**, **Become Dealer** and **Contact
+Operator** — never from Products, About or Contacts (see `FLOW_TRIGGERS`). Add a
+new flow by registering another `FlowDefinition` in the `FlowRegistry` — no
+engine changes required.
 
 ---
 
@@ -310,16 +313,20 @@ copy is hardcoded in handlers, and no page is hardcoded in the renderer.
 
 - A page is a declarative `ContentPage`: `id`, `titleKey`, `descriptionKey`,
   optional `imageUrl`, optional `parentId` (for ⬅ Back) and rows of `buttons`.
-- **Button actions**: open another page, start a conversation flow, open a
-  website (url button), reveal a callable phone, ⬅ Back (to the parent page)
-  and 🏠 Main Menu.
+- **Button actions**: open another page, start a conversation flow (reuses an
+  existing `FLOW_TRIGGERS` callback), open a website (url button), reveal a
+  callable phone, delegate to an existing callback handler (e.g. Location),
+  ⬅ Back (to the parent page) and 🏠 Main Menu.
 - Text pages are **edited in place**; pages with an image are sent as a photo.
 - All copy lives in the i18n catalogs (`content.*`); the `ContentRegistry` holds
   the pages (a static registry — not a CMS).
 
-Shipped pages: **About Teplolux**, **Contacts**, **Branches**, **Warranty**,
-reached from the 🏢 About company main-menu button. Add a page by registering
-another `ContentPage` in the `ContentRegistry`.
+The **main menu** has exactly six actions — **Products**, **Service**, **Become
+Dealer**, **Contacts**, **About Company**, **Contact Operator**. Products opens a
+category catalog (Boilers / Radiators / Floor Heating / Water Heaters / Pumps);
+each category page shows a short info page with **View Catalog**, **Request
+Price** (starts the lead flow), **Contact Operator** and ◀ Back. Add a page by
+registering another `ContentPage` in the `ContentRegistry`.
 
 ---
 

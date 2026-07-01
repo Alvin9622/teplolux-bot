@@ -53,6 +53,16 @@ export const FLOW_TRIGGERS: Readonly<Record<string, FlowTrigger>> = {
     topic: FlowTopic.Product,
     subject: 'floorHeating',
   },
+  [CallbackData.WaterHeaters]: {
+    flowId: CONTACT_REQUEST_FLOW_ID,
+    topic: FlowTopic.Product,
+    subject: 'waterHeaters',
+  },
+  [CallbackData.Pumps]: {
+    flowId: CONTACT_REQUEST_FLOW_ID,
+    topic: FlowTopic.Product,
+    subject: 'pumps',
+  },
   [CallbackData.Service]: { flowId: CONTACT_REQUEST_FLOW_ID, topic: FlowTopic.Service },
   [CallbackData.Dealer]: { flowId: CONTACT_REQUEST_FLOW_ID, topic: FlowTopic.Dealer },
   [CallbackData.Operator]: { flowId: CONTACT_REQUEST_FLOW_ID, topic: FlowTopic.Operator },

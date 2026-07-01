@@ -8,6 +8,8 @@ export const CallbackData = {
   Boilers: 'cat:boilers',
   Radiators: 'cat:radiators',
   FloorHeating: 'cat:floor_heating',
+  WaterHeaters: 'cat:water_heaters',
+  Pumps: 'cat:pumps',
   Service: 'menu:service',
   Dealer: 'menu:dealer',
   Operator: 'menu:operator',

@@ -28,14 +28,16 @@
     "boilers": "🏠 Kotyollar",
     "radiators": "🔥 Radiatorlar",
     "floorHeating": "♨️ Issiq pol",
-    "service": "🛠 Xizmat",
+    "service": "🛠 Servis",
     "dealer": "🤝 Diler bo'lish",
-    "operator": "👨 Operator",
+    "operator": "👨‍💼 Operator bilan bog'lanish",
     "contact": "📞 Aloqa",
     "location": "📍 Manzil",
     "changeLanguage": "🌐 Tilni o'zgartirish",
     "back": "⬅️ Asosiy menyu",
-    "about": "🏢 Kompaniya haqida"
+    "about": "ℹ️ Kompaniya haqida",
+    "products": "🏠 Mahsulotlar",
+    "contacts": "📍 Kontaktlar"
   },
   "flow": {
     "started": "<b>{{topic}}</b>\n\nIltimos, quyidagi ma'lumotlarni kiriting. Istalgan vaqtda /cancel buyrug'i bilan bekor qilishingiz mumkin.",
@@ -80,22 +82,52 @@
   },
   "content": {
     "button": {
-      "contacts": "📞 Kontaktlar",
+      "contacts": "📍 Kontaktlar",
       "branches": "🏬 Filiallar",
       "warranty": "🛡 Kafolat",
       "website": "🌐 Veb-sayt",
       "call": "☎️ Qo'ng'iroq qilish",
-      "back": "⬅ Orqaga",
-      "mainMenu": "🏠 Asosiy menyu"
+      "back": "◀ Orqaga",
+      "mainMenu": "🏠 Asosiy menyu",
+      "viewCatalog": "📖 Katalogni ko'rish",
+      "requestPrice": "💰 Narx so'rash",
+      "operator": "👨‍💼 Operator bilan bog'lanish",
+      "location": "📍 Manzil (xarita)"
     },
     "callMessage": "☎️ Biz bilan bog'laning: {{phone}}",
+    "products": {
+      "title": "🏠 Mahsulotlar",
+      "description": "Quyidagi mahsulot toifalaridan birini tanlang:"
+    },
+    "product": {
+      "boilers": {
+        "title": "🔥 Kotyollar",
+        "description": "Uy va biznes uchun ishonchli isitish kotyollari. Yevropa brendlari, keng model qatori."
+      },
+      "radiators": {
+        "title": "♨️ Radiatorlar",
+        "description": "Turli o'lcham va quvvatdagi yuqori samarali radiatorlar."
+      },
+      "floorHeating": {
+        "title": "🌡 Issiq pol",
+        "description": "Har qanday xona uchun qulay va tejamkor issiq pol tizimlari."
+      },
+      "waterHeaters": {
+        "title": "💧 Suv isitgichlar",
+        "description": "Uy va tijorat uchun ishonchli suv isitgichlari."
+      },
+      "pumps": {
+        "title": "⚙️ Nasoslar",
+        "description": "Isitish va suv ta'minoti tizimlari uchun sirkulyatsion nasoslar."
+      }
+    },
     "about": {
-      "title": "🏢 Teplolux haqida",
-      "description": "<b>Teplolux</b> — isitish tizimlari sohasida yetakchi kompaniya. Biz kotyollar, radiatorlar va issiq pol tizimlarini yetkazib beramiz hamda professional montaj va servis xizmatlarini taklif qilamiz.\n\nSifat, ishonchlilik va mijozlarga g'amxo'rlik — bizning asosiy qadriyatlarimiz."
+      "title": "ℹ️ Teplolux haqida",
+      "description": "<b>Teplolux</b> — isitish va suv ta'minoti tizimlari sohasidagi yetakchi kompaniya.\n\n• Yevropa brendlari\n• 20+ brend\n• 1000+ mahsulot\n• 200+ hamkor"
     },
     "contacts": {
-      "title": "📞 Kontaktlar",
-      "description": "Telefon: +998 (00) 000-00-00\nEmail: info@teplolux.example.com\nIsh vaqti: Dushanba–Shanba, 09:00–18:00"
+      "title": "📍 Kontaktlar",
+      "description": "📞 Telefon: +998 (00) 000-00-00\n✉️ Email: info@teplolux.example.com\n🌐 Veb-sayt: teplolux.example.com\n📍 Manzil: Toshkent sh., Chilonzor tumani, 1-uy\n🕒 Ish vaqti: Dushanba–Shanba, 09:00–18:00"
     },
     "branches": {
       "title": "🏬 Filiallar",

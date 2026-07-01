@@ -71,9 +71,11 @@ const TOPIC_LABEL_KEYS: Readonly<Record<string, TranslationKey>> = {
 };
 
 const SUBJECT_LABEL_KEYS: Readonly<Record<string, TranslationKey>> = {
-  boilers: TKey.menuBoilers,
-  radiators: TKey.menuRadiators,
-  floorHeating: TKey.menuFloorHeating,
+  boilers: TKey.contentProductBoilersTitle,
+  radiators: TKey.contentProductRadiatorsTitle,
+  floorHeating: TKey.contentProductFloorHeatingTitle,
+  waterHeaters: TKey.contentProductWaterHeatersTitle,
+  pumps: TKey.contentProductPumpsTitle,
 };
 
 /**

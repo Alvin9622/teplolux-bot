@@ -15,6 +15,12 @@ export const ContentPageId = {
   Contacts: 'contacts',
   Branches: 'branches',
   Warranty: 'warranty',
+  Products: 'products',
+  ProductBoilers: 'product_boilers',
+  ProductRadiators: 'product_radiators',
+  ProductFloorHeating: 'product_floor_heating',
+  ProductWaterHeaters: 'product_water_heaters',
+  ProductPumps: 'product_pumps',
 } as const;
 
 export type ContentPageIdValue = (typeof ContentPageId)[keyof typeof ContentPageId];

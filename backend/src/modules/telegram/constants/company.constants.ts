@@ -13,5 +13,6 @@ export const CompanyLocation = {
  */
 export const CompanyContacts = {
   website: 'https://teplolux.example.com',
+  catalog: 'https://teplolux.example.com/catalog',
   phone: '+998000000000',
 } as const;

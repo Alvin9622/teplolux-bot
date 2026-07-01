@@ -68,7 +68,45 @@ describe('ContentService', () => {
   });
 
   it('builds every supported button type with the right payload', async () => {
-    await service.handleCallback(ctx(), contentPageCallback(ContentPageId.Warranty));
+    // A synthetic page exercising all action types (independent of shipped pages).
+    const kitchenSink: ContentPage = {
+      id: 'kitchen',
+      titleKey: TKey.contentAboutTitle,
+      descriptionKey: TKey.contentAboutDescription,
+      parentId: ContentPageId.About,
+      buttons: [
+        [
+          {
+            labelKey: TKey.contentButtonContacts,
+            action: { type: 'page', pageId: ContentPageId.Contacts },
+          },
+        ],
+        [
+          {
+            labelKey: TKey.contentButtonRequestPrice,
+            action: { type: 'flow', trigger: CallbackData.Service },
+          },
+        ],
+        [
+          {
+            labelKey: TKey.contentButtonWebsite,
+            action: { type: 'url', url: 'https://x.example' },
+          },
+        ],
+        [{ labelKey: TKey.contentButtonCall, action: { type: 'phone', phone: '+998900000000' } }],
+        [
+          {
+            labelKey: TKey.contentButtonLocation,
+            action: { type: 'callback', data: CallbackData.Location },
+          },
+        ],
+        [{ labelKey: TKey.contentButtonBack, action: { type: 'back' } }],
+        [{ labelKey: TKey.contentButtonMainMenu, action: { type: 'mainMenu' } }],
+      ],
+    };
+    registry.register(kitchenSink);
+
+    await service.handleCallback(ctx(), contentPageCallback('kitchen'));
     const [, , keyboard] = responder.editText.mock.calls[0];
     const buttons = keyboard.inline_keyboard.flat();
 
@@ -76,9 +114,21 @@ describe('ContentService', () => {
     expect(buttons).toContainEqual(
       expect.objectContaining({ callback_data: contentPageCallback(ContentPageId.Contacts) }),
     );
-    // start conversation flow (reuses the service trigger)
+    // start conversation flow (reuses an existing flow trigger)
     expect(buttons).toContainEqual(
       expect.objectContaining({ callback_data: CallbackData.Service }),
+    );
+    // website -> url button
+    expect(buttons).toContainEqual(expect.objectContaining({ url: 'https://x.example' }));
+    // phone -> content phone callback
+    expect(
+      buttons.some((b: { callback_data?: string }) =>
+        b.callback_data?.startsWith(ContentAction.PhonePrefix),
+      ),
+    ).toBe(true);
+    // callback passthrough -> reuses the existing Location handler
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: CallbackData.Location }),
     );
     // back resolves to the parent page (about)
     expect(buttons).toContainEqual(
@@ -90,17 +140,42 @@ describe('ContentService', () => {
     );
   });
 
-  it('renders a website as a url button and a phone as a callback button', async () => {
-    await service.handleCallback(ctx(), contentPageCallback(ContentPageId.Contacts));
+  it('renders Products as a content page (no lead flow) with category links only', async () => {
+    await service.handleCallback(ctx(), contentPageCallback(ContentPageId.Products));
     const [, , keyboard] = responder.editText.mock.calls[0];
     const buttons = keyboard.inline_keyboard.flat();
 
+    // Category buttons open content pages; none of them is a flow trigger.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: contentPageCallback(ContentPageId.ProductBoilers) }),
+    );
+    const flowTriggers = [
+      CallbackData.Boilers,
+      CallbackData.Radiators,
+      CallbackData.FloorHeating,
+      CallbackData.WaterHeaters,
+      CallbackData.Pumps,
+    ];
+    for (const b of buttons) {
+      expect(flowTriggers).not.toContain(b.callback_data);
+    }
+  });
+
+  it('exposes Request Price (lead flow trigger) on a product category page', async () => {
+    await service.handleCallback(ctx(), contentPageCallback(ContentPageId.ProductBoilers));
+    const [, , keyboard] = responder.editText.mock.calls[0];
+    const buttons = keyboard.inline_keyboard.flat();
+
+    // Request Price carries the existing product flow trigger.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: CallbackData.Boilers }),
+    );
+    // View Catalog is a url button.
     expect(buttons.some((b: { url?: string }) => typeof b.url === 'string')).toBe(true);
-    expect(
-      buttons.some((b: { callback_data?: string }) =>
-        b.callback_data?.startsWith(ContentAction.PhonePrefix),
-      ),
-    ).toBe(true);
+    // Back returns to the Products page.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: contentPageCallback(ContentPageId.Products) }),
+    );
   });
 
   it('answers a phone button by sending the callable number', async () => {
@@ -137,7 +212,7 @@ describe('ContentService', () => {
 });
 
 describe('ContentRegistry', () => {
-  it('ships the four company pages', () => {
+  it('ships every declared content page (about, contacts, products, categories, ...)', () => {
     const registry = new ContentRegistry();
     for (const id of Object.values(ContentPageId)) {
       expect(registry.has(id)).toBe(true);
