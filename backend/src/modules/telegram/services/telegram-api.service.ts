@@ -252,7 +252,10 @@ export class TelegramApiService implements OnModuleInit {
         error instanceof Error ? error.stack : undefined,
         TelegramApiService.name,
       );
-      throw new TelegramApiException(`Telegram API "${method}" request failed`);
+      // Keep the Telegram description in the message so callers can react to
+      // recoverable cases (e.g. "message is not modified", "message to edit not
+      // found"). This is internal only — never surfaced to the end user.
+      throw new TelegramApiException(`Telegram API "${method}" request failed: ${description}`);
     }
   }
 }

@@ -34,9 +34,20 @@ describe('TelegramResponderService.editText', () => {
     responder = new TelegramResponderService(
       api as unknown as TelegramApiService,
       chatMessages as unknown as ChatMessageRepository,
-      { log: jest.fn() } as never,
+      { log: jest.fn(), warn: jest.fn() } as never,
     );
   });
+
+  const callbackContext: HandlerContext = {
+    chatId: 7,
+    user,
+    locale: 'uz',
+    callbackQuery: {
+      id: 'cbq',
+      from: { id: 7, is_bot: false, first_name: 'Vasil' },
+      message: { message_id: 99, date: 1, chat: { id: 7, type: 'private' } },
+    },
+  };
 
   it('edits the source message when a callback message is present', async () => {
     const context: HandlerContext = {
@@ -64,6 +75,33 @@ describe('TelegramResponderService.editText', () => {
 
     expect(api.sendMessage).toHaveBeenCalled();
     expect(api.editMessageText).not.toHaveBeenCalled();
+  });
+
+  it('recovers gracefully when the source message can no longer be edited', async () => {
+    // e.g. the user deleted the message or the callback expired.
+    api.editMessageText.mockRejectedValueOnce(
+      new Error(
+        'Telegram API "editMessageText" request failed: Bad Request: message to edit not found',
+      ),
+    );
+
+    await responder.editText(callbackContext, 'updated');
+
+    // Falls back to a fresh message so the user still gets the response.
+    expect(api.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats an identical edit ("not modified") as a no-op — no duplicate message', async () => {
+    api.editMessageText.mockRejectedValueOnce(
+      new Error(
+        'Telegram API "editMessageText" request failed: Bad Request: message is not modified',
+      ),
+    );
+
+    await responder.editText(callbackContext, 'same');
+
+    // No duplicate: neither a fallback send nor an outbound record.
+    expect(api.sendMessage).not.toHaveBeenCalled();
   });
 
   it('sends a typing action before a multi-line response', async () => {

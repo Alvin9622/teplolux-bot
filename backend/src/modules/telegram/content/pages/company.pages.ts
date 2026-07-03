@@ -7,18 +7,14 @@ import { CATALOG_URLS, CatalogCategory } from '../catalog.config';
 import { ContentPageId } from '../content.constants';
 import { ContentButton, ContentPage } from '../content.types';
 
-/** Reusable button builders shared by the pages. */
+// The Back / Main Menu / Contact Operator buttons are NOT hand-authored here:
+// they are appended consistently to every page by the reusable navigation
+// footer (see content.navigation.ts). Pages declare only their OWN buttons.
+
+/** Reusable content button shared by the pages. */
 const websiteButton: ContentButton = {
   labelKey: TKey.contentButtonWebsite,
   action: { type: 'url', url: CompanyContacts.website },
-};
-
-const backButton: ContentButton = { labelKey: TKey.contentButtonBack, action: { type: 'back' } };
-
-/** Contact Operator starts the existing Contact Request flow (topic OPERATOR). */
-const operatorButton: ContentButton = {
-  labelKey: TKey.contentButtonOperator,
-  action: { type: 'flow', trigger: CallbackData.Operator },
 };
 
 // ---------------------------------------------------------------------------
@@ -37,7 +33,6 @@ const about: ContentPage = {
         action: { type: 'page', pageId: ContentPageId.Contacts },
       },
     ],
-    [backButton],
   ],
 };
 
@@ -66,8 +61,6 @@ const contacts: ContentPage = {
         action: { type: 'callback', data: CallbackData.Location },
       },
     ],
-    [operatorButton],
-    [backButton],
   ],
 };
 
@@ -102,8 +95,6 @@ function productPage(
           action: { type: 'flow', trigger: priceTrigger },
         },
       ],
-      [operatorButton],
-      [backButton],
     ],
   };
 }
@@ -180,7 +171,6 @@ const products: ContentPage = {
         action: { type: 'page', pageId: ContentPageId.ProductPumps },
       },
     ],
-    [backButton],
   ],
 };
 
@@ -193,7 +183,8 @@ const branches: ContentPage = {
   titleKey: TKey.contentBranchesTitle,
   descriptionKey: TKey.contentBranchesDescription,
   parentId: ContentPageId.About,
-  buttons: [[backButton]],
+  // Navigation-only page: the reusable footer supplies Back / Main Menu / Operator.
+  buttons: [],
 };
 
 const warranty: ContentPage = {
@@ -201,7 +192,7 @@ const warranty: ContentPage = {
   titleKey: TKey.contentWarrantyTitle,
   descriptionKey: TKey.contentWarrantyDescription,
   parentId: ContentPageId.About,
-  buttons: [[operatorButton], [backButton]],
+  buttons: [],
 };
 
 /** All content pages shipped today. */

@@ -75,9 +75,31 @@ export class TelegramResponderService {
     }
 
     await this.maybeTyping(context, text);
-    await this.api.editMessageText(context.chatId, messageId, text, keyboard);
+    try {
+      await this.api.editMessageText(context.chatId, messageId, text, keyboard);
+    } catch (error) {
+      // Duplicate edit (identical content) — the message already shows the right
+      // thing, so treat it as a no-op and DO NOT send a duplicate message.
+      if (this.isNotModified(error)) {
+        return;
+      }
+      // The source message is gone or can no longer be edited (deleted message,
+      // expired callback, …). Recover gracefully by sending a fresh message so
+      // the user still gets the response.
+      this.logger.warn(
+        `${LogEvent.MessageEdited} failed, falling back to a new message`,
+        TelegramResponderService.name,
+      );
+      await this.sendText(context, text, keyboard);
+      return;
+    }
     await this.recordOutbound(context, text, messageId);
     this.logger.log(LogEvent.MessageEdited, TelegramResponderService.name);
+  }
+
+  /** Telegram's benign "nothing changed" response to an identical edit. */
+  private isNotModified(error: unknown): boolean {
+    return error instanceof Error && /not modified/i.test(error.message);
   }
 
   /** Send a geographic location pin and log a synthetic outbound entry. */

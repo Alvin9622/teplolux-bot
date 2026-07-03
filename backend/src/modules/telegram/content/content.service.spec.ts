@@ -229,6 +229,36 @@ describe('ContentService', () => {
     expect(await service.handleCallback(ctx(), contentPageCallback('does-not-exist'))).toBe(false);
     expect(await service.handleCallback(ctx(), 'menu:something')).toBe(false);
   });
+
+  it('appends the consistent navigation footer (Operator + Back to menu) to a root page', async () => {
+    await service.handleCallback(ctx(), contentPageCallback(ContentPageId.About));
+    const [, , keyboard] = responder.editText.mock.calls[0];
+    const buttons = keyboard.inline_keyboard.flat();
+
+    // Contact Operator is present on every page via the shared footer.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: CallbackData.Operator }),
+    );
+    // Back on a root page returns straight to the main menu.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: CallbackData.BackToMenu }),
+    );
+  });
+
+  it('offers a direct Main Menu jump on a nested page (Back → parent, Home → menu)', async () => {
+    await service.handleCallback(ctx(), contentPageCallback(ContentPageId.ProductBoilers));
+    const [, , keyboard] = responder.editText.mock.calls[0];
+    const buttons = keyboard.inline_keyboard.flat();
+
+    // Back returns to the Products parent…
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: contentPageCallback(ContentPageId.Products) }),
+    );
+    // …and a separate Main Menu button jumps home directly.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: CallbackData.BackToMenu }),
+    );
+  });
 });
 
 describe('ContentRegistry', () => {

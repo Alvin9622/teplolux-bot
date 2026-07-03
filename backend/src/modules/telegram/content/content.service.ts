@@ -64,7 +64,11 @@ export class ContentService {
     const params = page.descriptionParams?.(this.companyConfig.config);
     const title = this.i18n.t(locale, page.titleKey, params);
     const description = this.i18n.t(locale, page.descriptionKey, params);
-    const text = `<b>${title}</b>\n\n${description}`;
+    // Empty state: never render a blank body — show a friendly placeholder so
+    // the page (and its navigation) still works.
+    const body =
+      description.trim().length > 0 ? description : this.i18n.t(locale, TKey.contentEmptyState);
+    const text = `<b>${title}</b>\n\n${body}`;
     const keyboard = buildContentKeyboard(this.i18n.scoped(locale), page);
 
     if (page.imageUrl) {

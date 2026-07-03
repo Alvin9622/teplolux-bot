@@ -56,6 +56,7 @@ export const TKey = {
   contentButtonOperator: 'content.button.operator',
   contentButtonLocation: 'content.button.location',
   contentCallMessage: 'content.callMessage',
+  contentEmptyState: 'content.emptyState',
   contentProductsTitle: 'content.products.title',
   contentProductsDescription: 'content.products.description',
   contentProductBoilersTitle: 'content.product.boilers.title',

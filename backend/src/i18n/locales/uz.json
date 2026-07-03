@@ -99,6 +99,7 @@
       "location": "📍 Manzil (xarita)"
     },
     "callMessage": "☎️ Biz bilan bog'laning: {{phone}}",
+    "emptyState": "ℹ️ Ma'lumot tez orada qo'shiladi. Savolingiz bo'lsa, operator bilan bog'laning.",
     "products": {
       "title": "🏠 Mahsulotlar",
       "description": "Quyidagi mahsulot toifalaridan birini tanlang:"

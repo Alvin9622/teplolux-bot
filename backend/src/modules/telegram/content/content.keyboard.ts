@@ -2,6 +2,7 @@ import { Translator } from '../../../i18n/i18n.types';
 import { InlineKeyboardButton, InlineKeyboardMarkup } from '../types/telegram-api.types';
 import { CallbackData } from '../constants/callback-data.constants';
 import { ContentAction, contentPageCallback } from './content.constants';
+import { buildNavigationRows } from './content.navigation';
 import { ContentButton, ContentPage } from './content.types';
 
 /** Map a single content button to its Telegram inline-keyboard button. */
@@ -42,9 +43,14 @@ function buildButton(
   }
 }
 
-/** Build the inline keyboard for a content page from its declarative buttons. */
+/**
+ * Build the inline keyboard for a content page: the page's own buttons followed
+ * by the consistent navigation footer (Back / Main Menu / Operator), so no page
+ * hand-authors or duplicates those buttons.
+ */
 export function buildContentKeyboard(t: Translator, page: ContentPage): InlineKeyboardMarkup {
+  const contentRows = page.buttons.map((row) => row.map((button) => buildButton(t, page, button)));
   return {
-    inline_keyboard: page.buttons.map((row) => row.map((button) => buildButton(t, page, button))),
+    inline_keyboard: [...contentRows, ...buildNavigationRows(t, page)],
   };
 }

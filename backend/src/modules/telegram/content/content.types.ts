@@ -22,6 +22,20 @@ export interface ContentButton {
 }
 
 /**
+ * Per-page overrides for the automatic navigation footer (◀ Back / 🏠 Main
+ * Menu / 👨‍💼 Contact Operator). Every page gets a consistent footer by default;
+ * a page only sets these to opt a specific button out (or force it on).
+ */
+export interface NavigationOptions {
+  /** Show the ◀ Back button. Default: true. */
+  readonly back?: boolean;
+  /** Show the 🏠 Main Menu button. Default: true for nested pages (parentId set). */
+  readonly mainMenu?: boolean;
+  /** Show the 👨‍💼 Contact Operator button. Default: true. */
+  readonly operator?: boolean;
+}
+
+/**
  * A declarative, translatable informational page. All copy is referenced by
  * i18n keys — never inlined — so the same structure serves every page and
  * language. Reusable for About, Contacts, Branches, Warranty, Products, etc.
@@ -40,6 +54,11 @@ export interface ContentPage {
    * facts from configuration instead of hardcoding them in the i18n catalogs.
    */
   readonly descriptionParams?: (config: CompanyConfig) => Record<string, string | number>;
-  /** Inline keyboard layout, as rows of buttons. */
+  /** Inline keyboard layout, as rows of the page's OWN buttons. */
   readonly buttons: ReadonlyArray<ReadonlyArray<ContentButton>>;
+  /**
+   * Optional overrides for the automatic navigation footer. Omit for the
+   * consistent default (Back + Operator, plus Main Menu on nested pages).
+   */
+  readonly nav?: NavigationOptions;
 }
