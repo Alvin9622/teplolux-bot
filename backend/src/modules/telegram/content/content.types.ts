@@ -61,4 +61,10 @@ export interface ContentPage {
    * consistent default (Back + Operator, plus Main Menu on nested pages).
    */
   readonly nav?: NavigationOptions;
+  /**
+   * When set, appends an "Available brands" section listing the titles of the
+   * Knowledge Base articles in this category (e.g. `brands`). Brand names are
+   * read from the Knowledge Base — never hardcoded/duplicated here.
+   */
+  readonly knowledgeBrandsCategory?: string;
 }

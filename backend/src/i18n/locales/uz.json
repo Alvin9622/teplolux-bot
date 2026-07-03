@@ -96,7 +96,12 @@
       "viewCatalog": "📖 Katalogni ko'rish",
       "requestPrice": "💰 Narx so'rash",
       "operator": "👨‍💼 Operator bilan bog'lanish",
-      "location": "📍 Manzil (xarita)"
+      "location": "📍 Manzil (xarita)",
+      "faq": "❓ Ko'p so'raladigan savollar",
+      "consultation": "👨‍💼 Texnik maslahat"
+    },
+    "section": {
+      "brands": "🏷 Mavjud brendlar"
     },
     "callMessage": "☎️ Biz bilan bog'laning: {{phone}}",
     "emptyState": "ℹ️ Ma'lumot tez orada qo'shiladi. Savolingiz bo'lsa, operator bilan bog'laning.",
@@ -107,23 +112,23 @@
     "product": {
       "boilers": {
         "title": "🔥 Kotyollar",
-        "description": "Uy va biznes uchun ishonchli isitish kotyollari. Yevropa brendlari, keng model qatori."
+        "description": "Uy va biznes uchun ishonchli isitish kotyollari — Yevropaning yetakchi brendlaridan.\n\n<b>✅ Afzalliklari:</b>\n• Yuqori energiya samaradorligi va tejamkorlik\n• Gaz, elektr va kondensatsion modellar\n• Uzoq xizmat muddati va ishonchlilik\n• Professional o'rnatish va kafolat\n\n<b>🏠 Qo'llanilishi:</b>\n• Xususiy uy\n• Kvartira\n• Ofis\n• Tijorat binosi"
       },
       "radiators": {
         "title": "♨️ Radiatorlar",
-        "description": "Turli o'lcham va quvvatdagi yuqori samarali radiatorlar."
+        "description": "Turli o'lcham va quvvatdagi yuqori samarali radiatorlar — har qanday xona uchun.\n\n<b>✅ Afzalliklari:</b>\n• Tez va bir tekis isitish\n• Alyuminiy, bimetall va po'lat modellar\n• Zamonaviy dizayn va uzoq muddat\n• Oson o'rnatish\n\n<b>🏠 Qo'llanilishi:</b>\n• Xususiy uy\n• Kvartira\n• Ofis"
       },
       "floorHeating": {
         "title": "🌡 Issiq pol",
-        "description": "Har qanday xona uchun qulay va tejamkor issiq pol tizimlari."
+        "description": "Har qanday xona uchun qulay va tejamkor issiq pol tizimlari.\n\n<b>✅ Afzalliklari:</b>\n• Bir tekis va qulay isitish\n• Suvli va elektr tizimlar\n• Energiya tejamkorligi\n• Ko'rinmas, joy tejaydigan yechim\n\n<b>🏠 Qo'llanilishi:</b>\n• Xususiy uy\n• Kvartira\n• Ofis\n• Tijorat binosi"
       },
       "waterHeaters": {
         "title": "💧 Suv isitgichlar",
-        "description": "Uy va tijorat uchun ishonchli suv isitgichlari."
+        "description": "Uy va tijorat uchun ishonchli suv isitgichlar.\n\n<b>✅ Afzalliklari:</b>\n• Tez va uzluksiz issiq suv\n• Akkumulyator va oqim tipidagi modellar\n• Energiya tejamkor va xavfsiz\n• Ixcham dizayn\n\n<b>🏠 Qo'llanilishi:</b>\n• Xususiy uy\n• Kvartira\n• Ofis"
       },
       "pumps": {
         "title": "⚙️ Nasoslar",
-        "description": "Isitish va suv ta'minoti tizimlari uchun sirkulyatsion nasoslar."
+        "description": "Isitish va suv ta'minoti tizimlari uchun sirkulyatsion nasoslar.\n\n<b>✅ Afzalliklari:</b>\n• Barqaror bosim va aylanish\n• Kam shovqin va energiya sarfi\n• Ishonchli va uzoq muddatli\n• Turli quvvatdagi modellar\n\n<b>🏠 Qo'llanilishi:</b>\n• Xususiy uy\n• Kvartira\n• Tijorat binosi\n• Sanoat binosi"
       }
     },
     "about": {
@@ -142,5 +147,9 @@
       "title": "🛡 Kafolat",
       "description": "Barcha mahsulotlarimizga rasmiy ishlab chiqaruvchi kafolati beriladi (modelga qarab 2–5 yil).\n\nKafolat xizmatidan foydalanish uchun sotib olishni tasdiqlovchi hujjatni saqlang. Savollar bo'lsa, servis so'rovi qoldiring."
     }
+  },
+  "faq": {
+    "listTitle": "❓ <b>Ko'p so'raladigan savollar</b>\n\nQiziqtirgan savolni tanlang:",
+    "empty": "Bu bo'lim uchun hozircha savol yo'q. Operator bilan bog'lanishingiz mumkin."
   }
 }

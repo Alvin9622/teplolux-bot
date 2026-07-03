@@ -26,6 +26,7 @@ import { CompanyConfigModule } from './config/company-config.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { OperatorModule } from './operator/operator.module';
 import { FaqModule } from './faq/faq.module';
+import { FaqPresenterService } from './faq/faq-presenter.service';
 import { AnalyticsModule } from './analytics/analytics.module';
 
 /** Concrete command handler providers, registered individually for DI. */
@@ -68,6 +69,8 @@ const commandHandlerProviders = [
     // Content module (dynamic informational pages)
     ContentRegistry,
     ContentService,
+    // FAQ presentation layer (reuses FaqService; opened from product pages)
+    FaqPresenterService,
     // Command handlers (individual)
     ...commandHandlerProviders,
     // Aggregate the handlers behind the COMMAND_HANDLERS token for the dispatcher.

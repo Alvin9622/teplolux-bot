@@ -10,6 +10,7 @@
  */
 import { CallbackData } from '../constants/callback-data.constants';
 import { ContentAction } from '../content/content.constants';
+import { FaqAction } from '../faq/faq.presentation';
 import { AnalyticsEvent, AnalyticsMetadata } from './analytics.event';
 
 export interface ResolvedInteraction {
@@ -107,6 +108,14 @@ export function resolveCallbackInteraction(data: string): ResolvedInteraction | 
         metadata: { page: pageId },
       }
     );
+  }
+
+  // Opening an FAQ list (from a product page or elsewhere) is a FAQ view.
+  if (data.startsWith(FaqAction.ListPrefix)) {
+    return {
+      eventName: AnalyticsEvent.FaqViewed,
+      metadata: { scope: data.slice(FaqAction.ListPrefix.length) },
+    };
   }
 
   return null;

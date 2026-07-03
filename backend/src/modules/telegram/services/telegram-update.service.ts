@@ -14,6 +14,7 @@ import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { TelegramCallbackQuery, TelegramMessage, TelegramUser } from '../types/telegram-api.types';
 import { ConversationService } from '../conversation/conversation.service';
 import { ContentService } from '../content/content.service';
+import { FaqPresenterService } from '../faq/faq-presenter.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { AnalyticsActor, AnalyticsEvent } from '../analytics/analytics.event';
 import { TelegramApiService } from './telegram-api.service';
@@ -46,6 +47,7 @@ export class TelegramUpdateService {
     private readonly callbacks: TelegramCallbackService,
     private readonly conversation: ConversationService,
     private readonly content: ContentService,
+    private readonly faqPresenter: FaqPresenterService,
     private readonly api: TelegramApiService,
     private readonly i18n: I18nService,
     private readonly analytics: AnalyticsService,
@@ -179,6 +181,11 @@ export class TelegramUpdateService {
 
     // The content module owns informational page navigation (`content:*`).
     if (await this.content.handleCallback(context, callback.data)) {
+      return;
+    }
+
+    // The FAQ presenter owns FAQ navigation (`faq:*`), opened from product pages.
+    if (await this.faqPresenter.handleCallback(context, callback.data)) {
       return;
     }
 

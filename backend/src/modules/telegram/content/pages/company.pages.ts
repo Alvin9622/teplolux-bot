@@ -4,6 +4,7 @@ import { CallbackData } from '../../constants/callback-data.constants';
 import { CompanyContacts } from '../../constants/company.constants';
 import { CompanyConfig } from '../../config/company-config.types';
 import { CATALOG_URLS, CatalogCategory } from '../catalog.config';
+import { faqListCallback } from '../../faq/faq.presentation';
 import { ContentPageId } from '../content.constants';
 import { ContentButton, ContentPage } from '../content.types';
 
@@ -68,27 +69,56 @@ const contacts: ContentPage = {
 // Products — a catalog of informational category pages (no lead flow here)
 // ---------------------------------------------------------------------------
 
-/** Build a product category page. "Request Price" starts the lead flow. */
+/**
+ * Build a professional product category page (Product Experience Center).
+ *
+ * Body sections (intro / advantages / applications) come from i18n; the brands
+ * section is read from the Knowledge Base. The keyboard groups Helpful Resources
+ * (Catalog / FAQ / Consultation) and Customer Actions (Request Price). All
+ * navigation, callbacks and the Request Price flow are the EXISTING ones.
+ */
 function productPage(
   id: string,
   titleKey: TranslationKey,
   descriptionKey: TranslationKey,
   priceTrigger: string,
   viewCatalogUrl: string,
+  faqScope: string,
 ): ContentPage {
   return {
     id,
     titleKey,
     descriptionKey,
     parentId: ContentPageId.Products,
+    // Section 4 — Available brands, read from the Knowledge Base (not duplicated).
+    knowledgeBrandsCategory: 'brands',
+    // The page carries its own Technical Consultation (operator) button, so the
+    // footer omits the duplicate Operator button.
+    nav: { operator: false },
     buttons: [
+      // Section 5 — Helpful resources.
       [
         {
           labelKey: TKey.contentButtonViewCatalog,
           action: { type: 'url', url: viewCatalogUrl },
         },
       ],
-      // Request Price is the ONLY product entry point into the Contact Request flow.
+      [
+        {
+          // Opens ONLY the FAQs relevant to this product category (reuses FaqService).
+          labelKey: TKey.contentButtonFaq,
+          action: { type: 'callback', data: faqListCallback(faqScope) },
+        },
+      ],
+      [
+        {
+          // Technical Consultation reuses the existing Contact Operator flow.
+          labelKey: TKey.contentButtonConsultation,
+          action: { type: 'flow', trigger: CallbackData.Operator },
+        },
+      ],
+      // Section 6 — Customer actions. Request Price is the ONLY product entry
+      // point into the (unchanged) Contact Request flow.
       [
         {
           labelKey: TKey.contentButtonRequestPrice,
@@ -105,6 +135,7 @@ const productBoilers = productPage(
   TKey.contentProductBoilersDescription,
   CallbackData.Boilers,
   CATALOG_URLS[CatalogCategory.Boilers],
+  'boilers',
 );
 const productRadiators = productPage(
   ContentPageId.ProductRadiators,
@@ -112,6 +143,7 @@ const productRadiators = productPage(
   TKey.contentProductRadiatorsDescription,
   CallbackData.Radiators,
   CATALOG_URLS[CatalogCategory.Radiators],
+  'radiators',
 );
 const productFloorHeating = productPage(
   ContentPageId.ProductFloorHeating,
@@ -119,6 +151,7 @@ const productFloorHeating = productPage(
   TKey.contentProductFloorHeatingDescription,
   CallbackData.FloorHeating,
   CATALOG_URLS[CatalogCategory.FloorHeating],
+  'floor_heating',
 );
 const productWaterHeaters = productPage(
   ContentPageId.ProductWaterHeaters,
@@ -126,6 +159,7 @@ const productWaterHeaters = productPage(
   TKey.contentProductWaterHeatersDescription,
   CallbackData.WaterHeaters,
   CATALOG_URLS[CatalogCategory.WaterHeaters],
+  'water_heaters',
 );
 const productPumps = productPage(
   ContentPageId.ProductPumps,
@@ -133,6 +167,7 @@ const productPumps = productPage(
   TKey.contentProductPumpsDescription,
   CallbackData.Pumps,
   CATALOG_URLS[CatalogCategory.Pumps],
+  'pumps',
 );
 
 /** Products landing page — lists the category pages. */

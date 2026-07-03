@@ -11,6 +11,8 @@ import { CATALOG_URLS, CatalogCategory } from './catalog.config';
 import { ContentPage } from './content.types';
 import { CompanyConfigService } from '../config/company-config.service';
 import { StaticCompanyConfigSource } from '../config/company-config.source';
+import { KnowledgeService } from '../knowledge/knowledge.service';
+import { faqListCallback } from '../faq/faq.presentation';
 
 const user: PersistedUser = {
   id: 'u1',
@@ -52,11 +54,19 @@ describe('ContentService', () => {
       sendPhoto: jest.fn().mockResolvedValue(undefined),
     };
     registry = new ContentRegistry();
+    // Brand names come from the Knowledge Base (mocked here).
+    const knowledge = {
+      listArticles: jest.fn().mockReturnValue([
+        { slug: 'brands/caleffi', category: 'brands', title: 'Caleffi', tags: [] },
+        { slug: 'brands/tesy', category: 'brands', title: 'Tesy', tags: [] },
+      ]),
+    };
     service = new ContentService(
       registry,
       responder as unknown as TelegramResponderService,
       new I18nService({ warn: jest.fn() } as never),
       new CompanyConfigService(new StaticCompanyConfigSource()),
+      knowledge as unknown as KnowledgeService,
       { log: jest.fn() } as never,
     );
   });
@@ -258,6 +268,30 @@ describe('ContentService', () => {
     expect(buttons).toContainEqual(
       expect.objectContaining({ callback_data: CallbackData.BackToMenu }),
     );
+  });
+
+  it('renders a rich Product Experience Center page (resources + actions + brands)', async () => {
+    await service.handleCallback(ctx(), contentPageCallback(ContentPageId.ProductBoilers));
+    const [, text, keyboard] = responder.editText.mock.calls[0];
+    const buttons = keyboard.inline_keyboard.flat();
+
+    // Section 5 — Helpful resources: View Catalog (existing url), FAQ, Consultation.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ url: CATALOG_URLS[CatalogCategory.Boilers] }),
+    );
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: faqListCallback('boilers') }),
+    );
+    // Technical Consultation + Request Price reuse the existing flow triggers.
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: CallbackData.Operator }),
+    );
+    expect(buttons).toContainEqual(
+      expect.objectContaining({ callback_data: CallbackData.Boilers }),
+    );
+    // Section 4 — Available brands, read from the Knowledge Base (not hardcoded).
+    expect(text).toContain('Caleffi');
+    expect(text).toContain('Tesy');
   });
 });
 

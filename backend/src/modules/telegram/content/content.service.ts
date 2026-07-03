@@ -6,6 +6,7 @@ import { TKey } from '../../../i18n/i18n.keys';
 import { HandlerContext } from '../handlers/handler-context';
 import { TelegramResponderService } from '../services/telegram-responder.service';
 import { CompanyConfigService } from '../config/company-config.service';
+import { KnowledgeService } from '../knowledge/knowledge.service';
 import { ContentRegistry } from './content.registry';
 import { ContentAction } from './content.constants';
 import { buildContentKeyboard } from './content.keyboard';
@@ -26,6 +27,7 @@ export class ContentService {
     private readonly responder: TelegramResponderService,
     private readonly i18n: I18nService,
     private readonly companyConfig: CompanyConfigService,
+    private readonly knowledge: KnowledgeService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
   ) {}
 
@@ -68,7 +70,7 @@ export class ContentService {
     // the page (and its navigation) still works.
     const body =
       description.trim().length > 0 ? description : this.i18n.t(locale, TKey.contentEmptyState);
-    const text = `<b>${title}</b>\n\n${body}`;
+    const text = `<b>${title}</b>\n\n${body}${this.brandsSection(locale, page)}`;
     const keyboard = buildContentKeyboard(this.i18n.scoped(locale), page);
 
     if (page.imageUrl) {
@@ -78,5 +80,23 @@ export class ContentService {
     }
 
     this.logger.log(`${LogEvent.ContentPageRendered}: ${page.id}`, ContentService.name);
+  }
+
+  /**
+   * Optional "Available brands" section, sourced from the Knowledge Base (brand
+   * names only — never duplicated here). Returns '' when the page opts out or no
+   * brands exist, so the section never renders empty.
+   */
+  private brandsSection(locale: HandlerContext['locale'], page: ContentPage): string {
+    if (!page.knowledgeBrandsCategory) {
+      return '';
+    }
+    const brands = this.knowledge
+      .listArticles(page.knowledgeBrandsCategory)
+      .map((article) => article.title);
+    if (brands.length === 0) {
+      return '';
+    }
+    return `\n\n<b>${this.i18n.t(locale, TKey.contentSectionBrands)}:</b> ${brands.join(', ')}`;
   }
 }
