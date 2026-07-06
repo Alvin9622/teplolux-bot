@@ -1,6 +1,5 @@
 import { TelegramUser as PersistedUser } from '@prisma/client';
 import { I18nService } from '../../../i18n/i18n.service';
-import { TKey } from '../../../i18n/i18n.keys';
 import { CallbackData } from '../constants/callback-data.constants';
 import { HandlerContext } from '../handlers/handler-context';
 import { TelegramResponderService } from '../services/telegram-responder.service';
@@ -65,12 +64,14 @@ describe('ProductNavigatorService', () => {
   it('paginates a level with more than 6 children (Next on page 0, Prev on page 1)', async () => {
     const children: ProductNode[] = Array.from({ length: 8 }, (_, i) => ({
       id: `sub_${i}`,
-      titleKey: TKey.contentProductsTitle,
+      title_uz: `Sub ${i}`,
+      title_ru: `Под ${i}`,
       parentId: 'big',
     }));
     const big: ProductNode = {
       id: 'big',
-      titleKey: TKey.contentProductsTitle,
+      title_uz: 'Katta',
+      title_ru: 'Большой',
       parentId: tree.PRODUCT_ROOT_ID,
       children,
     };
@@ -100,8 +101,10 @@ describe('ProductNavigatorService', () => {
   it('renders an action page for a leaf without a content page', async () => {
     const leaf: ProductNode = {
       id: 'gas',
-      titleKey: TKey.contentProductBoilersTitle,
-      descriptionKey: TKey.contentProductBoilersDescription,
+      title_uz: 'Gaz kotyollari',
+      title_ru: 'Газовые котлы',
+      description_uz: 'Gaz kotyollari haqida.',
+      description_ru: 'О газовых котлах.',
       parentId: 'boilers',
       priceTrigger: CallbackData.Boilers,
       // websiteUrl / catalogUrl intentionally empty (architecture only).
@@ -127,6 +130,29 @@ describe('ProductNavigatorService', () => {
       expect(buttons).toContainEqual(
         expect.objectContaining({ callback_data: CallbackData.BackToMenu }),
       );
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('shows a Website button (and localised title) when a node has a websiteUrl', async () => {
+    const leaf: ProductNode = {
+      id: 'gas',
+      title_uz: 'Gaz kotyollari',
+      title_ru: 'Газовые котлы',
+      parentId: 'boilers',
+      websiteUrl: 'https://teplolux.uz/gas',
+    };
+    const spy = jest.spyOn(tree, 'findProductNode').mockReturnValue(leaf);
+    try {
+      await navigator.handleCallback(ctx(), pnavCallback('gas'));
+      const [, text, keyboard] = responder.editText.mock.calls[0];
+      const buttons = keyboard.inline_keyboard.flat();
+
+      // The configured website URL becomes a url button.
+      expect(buttons).toContainEqual(expect.objectContaining({ url: 'https://teplolux.uz/gas' }));
+      // The localised title (uz) is rendered from the config, not an i18n key.
+      expect(text).toContain('Gaz kotyollari');
     } finally {
       spy.mockRestore();
     }

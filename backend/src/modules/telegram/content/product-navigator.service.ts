@@ -12,6 +12,8 @@ import {
   childCallback,
   findProductNode,
   hasChildren,
+  nodeDescription,
+  nodeTitle,
   parsePnav,
   pnavCallback,
   PRODUCT_NAV_PAGE_SIZE,
@@ -68,7 +70,7 @@ export class ProductNavigatorService {
     const slice = productPageSlice(children, page, PRODUCT_NAV_PAGE_SIZE);
 
     const rows: InlineKeyboardButton[][] = slice.items.map((child) => [
-      { text: this.i18n.t(context.locale, child.titleKey), callback_data: childCallback(child) },
+      { text: nodeTitle(child, context.locale), callback_data: childCallback(child) },
     ]);
 
     // Pagination controls only when there is more than one page.
@@ -120,10 +122,9 @@ export class ProductNavigatorService {
 
   /** Title + short description; a friendly placeholder when there is no body. */
   private body(context: HandlerContext, node: ProductNode): string {
-    const title = this.i18n.t(context.locale, node.titleKey);
-    const description = node.descriptionKey
-      ? this.i18n.t(context.locale, node.descriptionKey)
-      : this.i18n.t(context.locale, TKey.contentEmptyState);
+    const title = nodeTitle(node, context.locale);
+    const description =
+      nodeDescription(node, context.locale) || this.i18n.t(context.locale, TKey.contentEmptyState);
     return `<b>${title}</b>\n\n${description}`;
   }
 

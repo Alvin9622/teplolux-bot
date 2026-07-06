@@ -1,27 +1,28 @@
-import { TranslationKey } from '../../../i18n/i18n.types';
-import { TKey } from '../../../i18n/i18n.keys';
-import { CallbackData } from '../constants/callback-data.constants';
-import { CATALOG_URLS, CatalogCategory } from './catalog.config';
-import { ContentPageId, contentPageCallback } from './content.constants';
+import { Locale } from '../../../i18n/i18n.types';
+import { contentPageCallback } from './content.constants';
+import { ProductConfigNode, PRODUCTS_CONFIG } from './products.config';
 
 /**
- * A node in the reusable Product Tree.
+ * A node in the in-memory Product Tree, built from {@link PRODUCTS_CONFIG}.
  *
- * The tree is the single, declarative source of truth for the Product Navigator
- * — categories/subcategories are DATA, never hardcoded pages. A node with
- * `children` is an intermediate level; a node without children is a leaf that
- * opens an action page (or, when `contentPageId` is set, reuses an existing
- * rich content page).
+ * The tree is DATA — categories/subcategories live in the configuration, never
+ * hardcoded here. A node with `children` is an intermediate level; a node
+ * without children is a leaf that opens an action page (or, when `contentPageId`
+ * is set, reuses an existing rich content page).
  */
 export interface ProductNode {
   /** Stable id, unique across the tree (used in callbacks). No `:` characters. */
   readonly id: string;
-  /** Localised title (i18n key). */
-  readonly titleKey: TranslationKey;
+  /** Localised titles (from config). */
+  readonly title_uz: string;
+  readonly title_ru: string;
+  /** Optional localised descriptions shown on a level / action page. */
+  readonly description_uz?: string;
+  readonly description_ru?: string;
+  /** Optional emoji/icon prefixed to the title. */
+  readonly icon?: string;
   /** Parent node id (root has none) — used to resolve ◀ Back. */
   readonly parentId?: string;
-  /** Optional short description (i18n key) shown on the level/action page. */
-  readonly descriptionKey?: TranslationKey;
   /** Optional "View on Website" URL. May stay empty (architecture only). */
   readonly websiteUrl?: string;
   /** Optional "Catalog" URL. May stay empty (architecture only). */
@@ -41,69 +42,55 @@ export interface ProductNode {
 /** Maximum categories shown per page before pagination kicks in. */
 export const PRODUCT_NAV_PAGE_SIZE = 6;
 
-/** Root node id — the "Products" entry point. */
-export const PRODUCT_ROOT_ID = 'products';
-
-/** Build a top-level category leaf that reuses an existing product content page. */
-function category(
-  id: string,
-  titleKey: TranslationKey,
-  contentPageId: string,
-  priceTrigger: string,
-  catalogUrl: string,
-): ProductNode {
-  return { id, titleKey, parentId: PRODUCT_ROOT_ID, contentPageId, priceTrigger, catalogUrl };
-}
+/** Root node id — the "Products" entry point (from config). */
+export const PRODUCT_ROOT_ID = PRODUCTS_CONFIG.id;
 
 /**
- * The shipped Product Tree.
- *
- * Today the five categories are leaves that reuse the existing rich product
- * pages (no page is replaced). The structure already supports subcategories and
- * >6 children with pagination — add nodes here to grow it; no code changes.
+ * Build the in-memory tree from the configuration: drop hidden nodes, sort each
+ * level by `sortOrder`, and derive each child's `parentId`. Pure data transform
+ * — the navigator is unaware of the source, so config can later come from
+ * teplolux.uz / a DB without any consumer change.
  */
-export const PRODUCT_TREE: ProductNode = {
-  id: PRODUCT_ROOT_ID,
-  titleKey: TKey.contentProductsTitle,
-  descriptionKey: TKey.contentProductsDescription,
-  children: [
-    category(
-      'boilers',
-      TKey.contentProductBoilersTitle,
-      ContentPageId.ProductBoilers,
-      CallbackData.Boilers,
-      CATALOG_URLS[CatalogCategory.Boilers],
-    ),
-    category(
-      'radiators',
-      TKey.contentProductRadiatorsTitle,
-      ContentPageId.ProductRadiators,
-      CallbackData.Radiators,
-      CATALOG_URLS[CatalogCategory.Radiators],
-    ),
-    category(
-      'floor_heating',
-      TKey.contentProductFloorHeatingTitle,
-      ContentPageId.ProductFloorHeating,
-      CallbackData.FloorHeating,
-      CATALOG_URLS[CatalogCategory.FloorHeating],
-    ),
-    category(
-      'water_heaters',
-      TKey.contentProductWaterHeatersTitle,
-      ContentPageId.ProductWaterHeaters,
-      CallbackData.WaterHeaters,
-      CATALOG_URLS[CatalogCategory.WaterHeaters],
-    ),
-    category(
-      'pumps',
-      TKey.contentProductPumpsTitle,
-      ContentPageId.ProductPumps,
-      CallbackData.Pumps,
-      CATALOG_URLS[CatalogCategory.Pumps],
-    ),
-  ],
-};
+function buildNode(raw: ProductConfigNode, parentId?: string): ProductNode {
+  const children = (raw.children ?? [])
+    .filter((child) => child.isVisible !== false)
+    .slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map((child) => buildNode(child, raw.id));
+  return {
+    id: raw.id,
+    title_uz: raw.title_uz,
+    title_ru: raw.title_ru,
+    description_uz: raw.description_uz,
+    description_ru: raw.description_ru,
+    icon: raw.icon,
+    parentId: raw.parentId ?? parentId,
+    websiteUrl: raw.websiteUrl,
+    catalogUrl: raw.catalogUrl,
+    contentPageId: raw.contentPageId,
+    priceTrigger: raw.priceTrigger,
+    children: children.length > 0 ? children : undefined,
+  };
+}
+
+/** Build a Product Tree from a configuration node (defaults to the shipped one). */
+export function buildProductTree(config: ProductConfigNode = PRODUCTS_CONFIG): ProductNode {
+  return buildNode(config);
+}
+
+/** The shipped Product Tree, loaded from {@link PRODUCTS_CONFIG}. */
+export const PRODUCT_TREE: ProductNode = buildProductTree();
+
+/** Resolve a node's display title for a locale (icon + localised title). */
+export function nodeTitle(node: ProductNode, locale: Locale): string {
+  const title = locale === 'ru' ? node.title_ru : node.title_uz;
+  return node.icon ? `${node.icon} ${title}` : title;
+}
+
+/** Resolve a node's localised description ('' when none). */
+export function nodeDescription(node: ProductNode, locale: Locale): string {
+  return (locale === 'ru' ? node.description_ru : node.description_uz) ?? '';
+}
 
 /** Depth-first lookup of a node by id (small tree — linear is fine). */
 export function findProductNode(

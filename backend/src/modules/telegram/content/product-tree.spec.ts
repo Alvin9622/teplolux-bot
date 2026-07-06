@@ -1,8 +1,12 @@
 import { CallbackData } from '../constants/callback-data.constants';
 import { contentPageCallback, ContentPageId } from './content.constants';
+import { ProductConfigNode } from './products.config';
 import {
+  buildProductTree,
   childCallback,
   findProductNode,
+  nodeDescription,
+  nodeTitle,
   parsePnav,
   pnavCallback,
   PRODUCT_NAV_PAGE_SIZE,
@@ -41,10 +45,41 @@ describe('product-tree', () => {
   it('links a node-with-children to the next navigation level', () => {
     const parent: ProductNode = {
       id: 'p',
-      titleKey: PRODUCT_TREE.titleKey,
-      children: [{ id: 'c', titleKey: PRODUCT_TREE.titleKey }],
+      title_uz: 'P',
+      title_ru: 'П',
+      children: [{ id: 'c', title_uz: 'C', title_ru: 'Ц' }],
     };
     expect(childCallback(parent)).toBe(pnavCallback('p'));
+  });
+
+  it('loads localised titles (with icon) and descriptions from the config', () => {
+    const boilers = findProductNode('boilers') as ProductNode;
+    expect(nodeTitle(boilers, 'uz')).toBe('🔥 Kotyollar');
+    expect(nodeTitle(boilers, 'ru')).toBe('🔥 Котлы');
+    // The root carries a localised description; a category has none ('').
+    expect(nodeDescription(PRODUCT_TREE, 'uz').length).toBeGreaterThan(0);
+    expect(nodeDescription(boilers, 'uz')).toBe('');
+  });
+
+  it('derives parentId from nesting during the build', () => {
+    expect(findProductNode('boilers')?.parentId).toBe(PRODUCT_ROOT_ID);
+    expect(findProductNode(PRODUCT_ROOT_ID)?.parentId).toBeUndefined();
+  });
+
+  it('hides isVisible:false nodes and orders a level by sortOrder', () => {
+    const config: ProductConfigNode = {
+      id: 'root',
+      title_uz: 'R',
+      title_ru: 'Р',
+      children: [
+        { id: 'b', title_uz: 'B', title_ru: 'Б', sortOrder: 20 },
+        { id: 'a', title_uz: 'A', title_ru: 'А', sortOrder: 10 },
+        { id: 'hidden', title_uz: 'H', title_ru: 'Х', sortOrder: 5, isVisible: false },
+      ],
+    };
+    const tree = buildProductTree(config);
+    // Sorted ascending by sortOrder, hidden node dropped.
+    expect((tree.children ?? []).map((c) => c.id)).toEqual(['a', 'b']);
   });
 
   it('round-trips pnav callbacks (with and without a page)', () => {
