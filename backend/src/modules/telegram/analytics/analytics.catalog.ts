@@ -10,6 +10,7 @@
  */
 import { CallbackData } from '../constants/callback-data.constants';
 import { ContentAction } from '../content/content.constants';
+import { PnavAction, PRODUCT_ROOT_ID } from '../content/product-tree';
 import { FaqAction } from '../faq/faq.presentation';
 import { AnalyticsEvent, AnalyticsMetadata } from './analytics.event';
 
@@ -108,6 +109,15 @@ export function resolveCallbackInteraction(data: string): ResolvedInteraction | 
         metadata: { page: pageId },
       }
     );
+  }
+
+  // Product Navigator: the root is a catalog open; deeper nodes are category views.
+  if (data.startsWith(PnavAction.Prefix)) {
+    const rest = data.slice(PnavAction.Prefix.length);
+    const nodeId = rest.split(':')[0];
+    return nodeId === PRODUCT_ROOT_ID
+      ? { eventName: AnalyticsEvent.CatalogOpened }
+      : { eventName: AnalyticsEvent.ProductCategoryViewed, metadata: { node: nodeId } };
   }
 
   // Opening an FAQ list (from a product page or elsewhere) is a FAQ view.

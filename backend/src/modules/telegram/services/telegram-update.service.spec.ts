@@ -8,6 +8,7 @@ import { COMMAND_HANDLERS, CommandHandler } from '../handlers/command-handler.in
 import { ChatMessageRepository } from '../repositories/chat-message.repository';
 import { ConversationService } from '../conversation/conversation.service';
 import { ContentService } from '../content/content.service';
+import { ProductNavigatorService } from '../content/product-navigator.service';
 import { FaqPresenterService } from '../faq/faq-presenter.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { TelegramApiService } from './telegram-api.service';
@@ -58,6 +59,7 @@ describe('TelegramUpdateService', () => {
     handleCallback: jest.Mock;
   };
   let content: { handleCallback: jest.Mock };
+  let productNavigator: { handleCallback: jest.Mock };
   let faqPresenter: { handleCallback: jest.Mock };
   let api: { answerCallbackQuery: jest.Mock };
 
@@ -73,6 +75,7 @@ describe('TelegramUpdateService', () => {
       handleCallback: jest.fn().mockResolvedValue(false),
     };
     content = { handleCallback: jest.fn().mockResolvedValue(false) };
+    productNavigator = { handleCallback: jest.fn().mockResolvedValue(false) };
     faqPresenter = { handleCallback: jest.fn().mockResolvedValue(false) };
     api = { answerCallbackQuery: jest.fn().mockResolvedValue(undefined) };
 
@@ -89,6 +92,7 @@ describe('TelegramUpdateService', () => {
         { provide: TelegramCallbackService, useValue: callbacks },
         { provide: ConversationService, useValue: conversation },
         { provide: ContentService, useValue: content },
+        { provide: ProductNavigatorService, useValue: productNavigator },
         { provide: FaqPresenterService, useValue: faqPresenter },
         {
           provide: AnalyticsService,

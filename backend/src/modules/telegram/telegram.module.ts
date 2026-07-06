@@ -22,6 +22,7 @@ import { ConversationService } from './conversation/conversation.service';
 import { FlowRegistry } from './conversation/flow.registry';
 import { ContentRegistry } from './content/content.registry';
 import { ContentService } from './content/content.service';
+import { ProductNavigatorService } from './content/product-navigator.service';
 import { CompanyConfigModule } from './config/company-config.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { OperatorModule } from './operator/operator.module';
@@ -69,6 +70,8 @@ const commandHandlerProviders = [
     // Content module (dynamic informational pages)
     ContentRegistry,
     ContentService,
+    // Hierarchical Product Navigator (tree-driven; reuses content + flows)
+    ProductNavigatorService,
     // FAQ presentation layer (reuses FaqService; opened from product pages)
     FaqPresenterService,
     // Command handlers (individual)

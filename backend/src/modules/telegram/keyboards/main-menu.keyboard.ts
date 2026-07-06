@@ -1,6 +1,7 @@
 import { InlineKeyboardMarkup } from '../types/telegram-api.types';
 import { CallbackData } from '../constants/callback-data.constants';
 import { contentPageCallback, ContentPageId } from '../content/content.constants';
+import { pnavCallback, PRODUCT_ROOT_ID } from '../content/product-tree';
 import { TKey } from '../../../i18n/i18n.keys';
 import { Translator } from '../../../i18n/i18n.types';
 
@@ -24,8 +25,9 @@ export const Keyboards = {
       inline_keyboard: [
         [
           {
+            // Products now opens the hierarchical Product Navigator (tree-driven).
             text: t(TKey.menuProducts),
-            callback_data: contentPageCallback(ContentPageId.Products),
+            callback_data: pnavCallback(PRODUCT_ROOT_ID),
           },
         ],
         [
