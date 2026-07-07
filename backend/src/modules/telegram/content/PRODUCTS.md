@@ -21,7 +21,7 @@ src/modules/telegram/content/products.config.ts   →  PRODUCTS_CONFIG
 | `description_uz` | no       | Uzbek description (shown on a level / action page).           |
 | `description_ru` | no       | Russian description.                                          |
 | `icon`           | no       | Emoji prefixed to the title (e.g. `🔥`).                       |
-| `websiteUrl`     | no       | "🌐 View on Website" link. Leave `''` until a real URL exists. |
+| `websiteUrl`     | no       | "🌐 View Products" link. Leave `''` until a real URL exists. |
 | `catalogUrl`     | no       | "📖 Catalog" link.                                             |
 | `parentId`       | no       | Normally derived from nesting; set only to override.          |
 | `children`       | no       | Sub-nodes. Presence ⇒ this node opens the next level.         |
@@ -78,7 +78,7 @@ Set `websiteUrl` on the node:
 { id: 'boilers_gas', title_uz: 'Gaz', title_ru: 'Газовые', websiteUrl: 'https://teplolux.uz/gas' }
 ```
 
-An empty (`''`) or missing `websiteUrl` simply omits the "🌐 View on Website"
+An empty (`''`) or missing `websiteUrl` simply omits the "🌐 View Products"
 button — nothing breaks. Do not invent URLs.
 
 ## How to attach a catalog URL

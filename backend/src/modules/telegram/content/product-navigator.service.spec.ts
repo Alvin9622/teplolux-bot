@@ -157,4 +157,53 @@ describe('ProductNavigatorService', () => {
       spy.mockRestore();
     }
   });
+
+  it('shows the Website button on a category level page when websiteUrl is set', async () => {
+    const child: ProductNode = { id: 'c', title_uz: 'C', title_ru: 'Ц' };
+    const level: ProductNode = {
+      id: 'cat',
+      title_uz: 'Kategoriya',
+      title_ru: 'Категория',
+      parentId: tree.PRODUCT_ROOT_ID,
+      websiteUrl: 'https://teplolux.uz/cat',
+      children: [child],
+    };
+    const spy = jest
+      .spyOn(tree, 'findProductNode')
+      .mockImplementation((id) => (id === 'cat' ? level : child));
+    try {
+      await navigator.handleCallback(ctx(), pnavCallback('cat'));
+      const buttons = responder.editText.mock.calls[0][2].inline_keyboard.flat();
+      // The category's website URL is offered as "View Products".
+      expect(buttons).toContainEqual(expect.objectContaining({ url: 'https://teplolux.uz/cat' }));
+      // Navigation is unchanged: the child link and Back are still present.
+      expect(buttons).toContainEqual(expect.objectContaining({ callback_data: pnavCallback('c') }));
+      expect(buttons).toContainEqual(
+        expect.objectContaining({ callback_data: CallbackData.BackToMenu }),
+      );
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('hides the Website button on a level page when websiteUrl is empty', async () => {
+    const child: ProductNode = { id: 'c', title_uz: 'C', title_ru: 'Ц' };
+    const level: ProductNode = {
+      id: 'cat',
+      title_uz: 'Kategoriya',
+      title_ru: 'Категория',
+      parentId: tree.PRODUCT_ROOT_ID,
+      children: [child],
+    };
+    const spy = jest
+      .spyOn(tree, 'findProductNode')
+      .mockImplementation((id) => (id === 'cat' ? level : child));
+    try {
+      await navigator.handleCallback(ctx(), pnavCallback('cat'));
+      const buttons = responder.editText.mock.calls[0][2].inline_keyboard.flat();
+      expect(buttons.some((b: { url?: string }) => b.url !== undefined)).toBe(false);
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

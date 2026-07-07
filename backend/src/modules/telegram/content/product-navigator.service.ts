@@ -91,6 +91,11 @@ export class ProductNavigatorService {
       rows.push(controls);
     }
 
+    // "🌐 View Products" opens this category's page on the website (config-driven).
+    const website = this.websiteRow(t, node);
+    if (website) {
+      rows.push(website);
+    }
     rows.push(this.navRow(t, node));
     await this.responder.editText(context, this.body(context, node), { inline_keyboard: rows });
     this.logger.log(`Product level rendered: ${node.id} (page ${slice.page})`, 'ProductNavigator');
@@ -101,9 +106,11 @@ export class ProductNavigatorService {
     const t = this.i18n.scoped(context.locale);
     const rows: InlineKeyboardButton[][] = [];
 
-    // URL buttons are omitted while empty (architecture only — no URLs yet).
-    if (node.websiteUrl) {
-      rows.push([{ text: t(TKey.contentButtonWebsiteVisit), url: node.websiteUrl }]);
+    // The "🌐 View Products" website button — omitted while empty (never a
+    // broken link). The URL comes from products.config.ts.
+    const website = this.websiteRow(t, node);
+    if (website) {
+      rows.push(website);
     }
     if (node.catalogUrl) {
       rows.push([{ text: t(TKey.contentButtonViewCatalog), url: node.catalogUrl }]);
@@ -118,6 +125,17 @@ export class ProductNavigatorService {
 
     await this.responder.editText(context, this.body(context, node), { inline_keyboard: rows });
     this.logger.log(`Product action page rendered: ${node.id}`, 'ProductNavigator');
+  }
+
+  /**
+   * The "🌐 View Products" website row — shown only when the node has a
+   * websiteUrl (never a broken link). The URL comes from products.config.ts; no
+   * URL is ever hardcoded here.
+   */
+  private websiteRow(t: Translator, node: ProductNode): InlineKeyboardButton[] | undefined {
+    return node.websiteUrl
+      ? [{ text: t(TKey.contentButtonWebsiteVisit), url: node.websiteUrl }]
+      : undefined;
   }
 
   /** Title + short description; a friendly placeholder when there is no body. */
