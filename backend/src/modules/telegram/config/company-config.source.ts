@@ -43,7 +43,7 @@ export class StaticCompanyConfigSource implements CompanyConfigSource {
       facebook: 'https://facebook.com/teplolux',
       youtube: 'https://youtube.com/@teplolux',
     },
-    workingHours: 'Mon–Sat: 09:00–18:00',
+    workingHours: '09:00–18:00',
     catalog: CATALOG_URLS,
   };
 

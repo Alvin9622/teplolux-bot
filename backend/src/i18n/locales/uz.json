@@ -140,7 +140,7 @@
     },
     "contacts": {
       "title": "📍 Kontaktlar",
-      "description": "🏢 {{companyName}}\n\n📞 Telefon: {{phone}}\n✉️ Email: {{email}}\n🌐 Veb-sayt: {{website}}\n📍 Manzil: {{address}}\n🕒 Ish vaqti: {{workingHours}}\n\n📱 Telegram: {{telegram}}\n📸 Instagram: {{instagram}}\n👍 Facebook: {{facebook}}\n▶️ YouTube: {{youtube}}"
+      "description": "🏢 {{companyName}}\n\n📞 Telefon: {{phone}}\n✉️ Email: {{email}}\n🌐 Veb-sayt: {{website}}\n📍 Manzil: {{address}}\n🕒 Ish vaqti: Dushanba–Shanba, {{workingHours}}\n\n📱 Telegram: {{telegram}}\n📸 Instagram: {{instagram}}\n👍 Facebook: {{facebook}}\n▶️ YouTube: {{youtube}}"
     },
     "branches": {
       "title": "🏬 Filiallar",

@@ -1,11 +1,12 @@
 ---
-question: What warranty do you provide?
+question_uz: Mahsulotlarga qanday kafolat beriladi?
+question_ru: Какая гарантия предоставляется на продукцию?
 category: general
 keywords: warranty, guarantee, return, kafolat, гарантия, возврат
 ---
 
-All products come with an official manufacturer warranty (typically 2–5 years,
-depending on the model and brand). Keep your proof of purchase to use the
-warranty, and note that professional installation by our technicians keeps the
-warranty valid. For warranty questions, contact an operator or leave a service
-request.
+Barcha mahsulotlarimizga ishlab chiqaruvchining rasmiy kafolati beriladi — modelga qarab 2 yildan 5 yilgacha. Kafolat xizmatidan foydalanish uchun xaridni tasdiqlovchi hujjatni saqlab qo'ying. Kafolat holati yuzaga kelganda servis so'rovini qoldiring — mutaxassislarimiz yordam beradi.
+
+<!-- ru -->
+
+На всю нашу продукцию действует официальная гарантия производителя — от 2 до 5 лет в зависимости от модели. Сохраняйте документ, подтверждающий покупку. При наступлении гарантийного случая оставьте заявку на сервис — наши специалисты помогут.

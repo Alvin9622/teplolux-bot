@@ -1,10 +1,12 @@
 ---
-question: What payment methods do you accept?
+question_uz: Qanday to'lov usullarini qabul qilasiz?
+question_ru: Какие способы оплаты вы принимаете?
 category: orders
 keywords: payment, pay, price, invoice, installment, to'lov, narx, оплата, оплатить, цена, рассрочка
 ---
 
-We accept cash, bank cards and bank transfers (with an official invoice for
-companies). Installments are available for selected products via partner banks.
-Prices are confirmed by an operator before the order is finalized — use the
-Request Price button on the relevant product page.
+Naqd pul, bank o'tkazmasi hamda UZCARD va HUMO kartalari orqali to'lov qabul qilamiz. Yuridik shaxslar uchun hisob-faktura asosida to'lov imkoniyati mavjud. Batafsil ma'lumot uchun operatorga murojaat qiling.
+
+<!-- ru -->
+
+Мы принимаем оплату наличными, банковским переводом, а также картами UZCARD и HUMO. Для юридических лиц возможна оплата по счёту. За подробностями обратитесь к оператору.

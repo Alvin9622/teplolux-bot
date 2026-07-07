@@ -33,8 +33,10 @@ describe('FaqPresenterService', () => {
 
   const deliveryItem = {
     id: 'delivery',
-    question: 'How does delivery work?',
-    answer: 'We deliver across the country.',
+    question_uz: 'Yetkazib berish qanday amalga oshiriladi?',
+    question_ru: 'Как осуществляется доставка?',
+    answer_uz: "Butun O'zbekiston bo'ylab yetkazib beramiz.",
+    answer_ru: 'Мы доставляем по всему Узбекистану.',
     category: 'orders',
     keywords: [],
   };
@@ -82,8 +84,9 @@ describe('FaqPresenterService', () => {
     await presenter.handleCallback(ctx(), faqItemCallback('boilers', 'delivery'));
 
     const [, text, keyboard] = responder.editText.mock.calls[0];
-    expect(text).toContain(deliveryItem.question);
-    expect(text).toContain(deliveryItem.answer);
+    // The context locale is 'uz', so the Uzbek texts are rendered.
+    expect(text).toContain(deliveryItem.question_uz);
+    expect(text).toContain(deliveryItem.answer_uz);
     const buttons = keyboard.inline_keyboard.flat();
     expect(buttons).toContainEqual(
       expect.objectContaining({ callback_data: faqListCallback('boilers') }),

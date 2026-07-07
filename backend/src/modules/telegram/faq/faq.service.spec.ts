@@ -25,12 +25,15 @@ describe('FaqService', () => {
   it('getItem returns a parsed item (question, answer, category, keywords)', () => {
     const delivery = service.getItem('delivery');
     expect(delivery).toBeDefined();
-    expect(delivery?.question).toBe('How does delivery work?');
+    expect(delivery?.question_uz).toBe('Yetkazib berish qanday amalga oshiriladi?');
+    expect(delivery?.question_ru).toBe('Как осуществляется доставка?');
     expect(delivery?.category).toBe('orders');
     expect(delivery?.keywords).toContain('delivery');
-    expect(delivery?.answer).toContain('deliver');
-    // Front-matter must be stripped from the answer.
-    expect(delivery?.answer.startsWith('---')).toBe(false);
+    // Each locale gets its own answer; no English remains.
+    expect(delivery?.answer_uz).toContain('yetkazib');
+    expect(delivery?.answer_ru).toContain('достав');
+    // Front-matter must be stripped from the answers.
+    expect(delivery?.answer_uz.startsWith('---')).toBe(false);
   });
 
   it('getItem returns undefined for an unknown id', () => {

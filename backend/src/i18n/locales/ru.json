@@ -140,7 +140,7 @@
     },
     "contacts": {
       "title": "📍 Контакты",
-      "description": "🏢 {{companyName}}\n\n📞 Телефон: {{phone}}\n✉️ Email: {{email}}\n🌐 Веб-сайт: {{website}}\n📍 Адрес: {{address}}\n🕒 Время работы: {{workingHours}}\n\n📱 Telegram: {{telegram}}\n📸 Instagram: {{instagram}}\n👍 Facebook: {{facebook}}\n▶️ YouTube: {{youtube}}"
+      "description": "🏢 {{companyName}}\n\n📞 Телефон: {{phone}}\n✉️ Email: {{email}}\n🌐 Веб-сайт: {{website}}\n📍 Адрес: {{address}}\n🕒 Время работы: Пн–Сб, {{workingHours}}\n\n📱 Telegram: {{telegram}}\n📸 Instagram: {{instagram}}\n👍 Facebook: {{facebook}}\n▶️ YouTube: {{youtube}}"
     },
     "branches": {
       "title": "🏬 Филиалы",

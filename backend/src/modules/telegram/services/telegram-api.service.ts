@@ -117,15 +117,25 @@ export class TelegramApiService implements OnModuleInit {
     return this.call<TelegramWebhookInfo>('getWebhookInfo', {});
   }
 
-  /** Publish the bot's command list so it appears in the Telegram UI menu. */
+  /**
+   * Publish the bot's command list so it appears in the Telegram UI menu.
+   * Published bilingually: Uzbek as the default (and for `uz` clients) and
+   * Russian for `ru` clients — the menu never shows English.
+   */
   async publishCommands(): Promise<void> {
-    const commands: BotCommandDefinition[] = BOT_COMMAND_DESCRIPTIONS.map((entry) => ({
+    const uzCommands: BotCommandDefinition[] = BOT_COMMAND_DESCRIPTIONS.map((entry) => ({
       command: entry.command,
       description: entry.description,
     }));
-    await this.call('setMyCommands', { commands });
+    const ruCommands: BotCommandDefinition[] = BOT_COMMAND_DESCRIPTIONS.map((entry) => ({
+      command: entry.command,
+      description: entry.descriptionRu,
+    }));
+    await this.call('setMyCommands', { commands: uzCommands });
+    await this.call('setMyCommands', { commands: uzCommands, language_code: 'uz' });
+    await this.call('setMyCommands', { commands: ruCommands, language_code: 'ru' });
     this.logger.log(
-      `${LogEvent.BotCommandsPublished}: ${commands.length} commands`,
+      `${LogEvent.BotCommandsPublished}: ${uzCommands.length} commands (uz, ru)`,
       TelegramApiService.name,
     );
   }

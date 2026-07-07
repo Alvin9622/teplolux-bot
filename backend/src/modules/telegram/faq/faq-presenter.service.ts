@@ -10,7 +10,7 @@ import { HandlerContext } from '../handlers/handler-context';
 import { TelegramResponderService } from '../services/telegram-responder.service';
 import { InlineKeyboardButton } from '../types/telegram-api.types';
 import { Translator } from '../../../i18n/i18n.types';
-import { FaqItem } from './faq.model';
+import { faqAnswer, faqQuestion, FaqItem } from './faq.model';
 import { FaqService } from './faq.service';
 import {
   FaqAction,
@@ -72,7 +72,7 @@ export class FaqPresenterService {
     const text = this.i18n.t(context.locale, items.length ? TKey.faqListTitle : TKey.faqEmpty);
 
     const rows: InlineKeyboardButton[][] = items.map((item) => [
-      { text: item.question, callback_data: faqItemCallback(scope, item.id) },
+      { text: faqQuestion(item, context.locale), callback_data: faqItemCallback(scope, item.id) },
     ]);
     rows.push([operatorButton(t)]);
     rows.push(this.backRow(t, this.listBackTarget(scope)));
@@ -90,7 +90,9 @@ export class FaqPresenterService {
       return;
     }
 
-    const text = `❓ <b>${escapeHtml(item.question)}</b>\n\n${escapeHtml(item.answer)}`;
+    const question = faqQuestion(item, context.locale);
+    const answer = faqAnswer(item, context.locale);
+    const text = `❓ <b>${escapeHtml(question)}</b>\n\n${escapeHtml(answer)}`;
     await this.responder.editText(context, text, {
       inline_keyboard: [[operatorButton(t)], this.backRow(t, faqListCallback(scope))],
     });

@@ -76,7 +76,8 @@ export class FaqService implements OnModuleInit {
       }
     }
     // Token-level match against keywords + question text.
-    const haystack = `${item.keywords.join(' ')} ${item.question}`.toLowerCase();
+    const haystack =
+      `${item.keywords.join(' ')} ${item.question_uz} ${item.question_ru}`.toLowerCase();
     for (const token of tokens) {
       if (haystack.includes(token)) {
         score += 1;
