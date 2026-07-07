@@ -8,6 +8,7 @@ import { TelegramResponderService } from '../services/telegram-responder.service
 import { OperatorSummaryService } from '../operator/operator-summary.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { ConversationService } from './conversation.service';
+import { LEAD_FLOW_IDS } from './conversation.constants';
 import { ConversationStateStore } from './conversation-state.store';
 import { FlowRegistry } from './flow.registry';
 import { CONTACT_REQUEST_FLOW_ID, FlowAction } from './conversation.constants';
@@ -370,5 +371,96 @@ describe('ConversationService — engine capabilities (choice, location, next)',
 
     expect((await state()).data.where).toBe('41.31,69.24');
     expect(responder.removeReplyKeyboard).toHaveBeenCalled();
+  });
+});
+
+describe('ConversationService — lead qualification flows', () => {
+  let store: InMemoryStore;
+  let responder: Responder;
+  let operator: { record: jest.Mock };
+  let service: ConversationService;
+
+  beforeEach(() => {
+    store = new InMemoryStore();
+    responder = buildResponder();
+    operator = { record: jest.fn().mockResolvedValue(undefined) };
+    service = buildService(store, responder, new FlowRegistry(), operator);
+  });
+
+  const st = () => store.get(user.telegramId) as Promise<ConversationState>;
+  const message = (text: string) =>
+    ({
+      ...ctx(),
+      message: { message_id: 1, date: 1, chat: { id: 7, type: 'private' }, text },
+    }) as ReturnType<typeof ctx>;
+
+  it('each customer type starts its OWN flow with lead metadata + start time', async () => {
+    const cases: Array<[string, string, string]> = [
+      ['ctype:individual', 'lead_individual', 'individual'],
+      ['ctype:installer', 'lead_installer', 'installer'],
+      ['ctype:construction', 'lead_construction', 'construction'],
+      ['ctype:designer', 'lead_designer', 'designer'],
+      ['ctype:dealer', 'lead_dealer', 'dealer'],
+      ['ctype:company', 'lead_company', 'company'],
+    ];
+    for (const [trigger, flowId, customerType] of cases) {
+      expect(await service.handleCallback(ctx(), trigger)).toBe(true);
+      const current = await st();
+      expect(current.flowId).toBe(flowId);
+      expect(current.metadata?.customerType).toBe(customerType);
+      expect(current.startedAt).toBeTruthy();
+      await service.abort(user.telegramId);
+    }
+  });
+
+  it('every lead flow asks the Customer Message question LAST', () => {
+    const registry = new FlowRegistry();
+    for (const flowId of Object.values(LEAD_FLOW_IDS)) {
+      const flow = registry.get(flowId);
+      expect(flow).toBeDefined();
+      const steps = flow?.steps ?? [];
+      expect(steps[steps.length - 1].id).toBe('customerMessage');
+    }
+  });
+
+  it('rejects a too-short lead answer and re-prompts (shared validation)', async () => {
+    await service.handleCallback(ctx(), 'ctype:company');
+    await service.handleMessage(message('x'));
+    // Still on the first step — the invalid value was not stored.
+    const current = await st();
+    expect(current.currentStepId).toBe('companyName');
+    expect(current.data.companyName).toBeUndefined();
+  });
+
+  it('installer flow collects its fields and submits one structured CRM payload', async () => {
+    await service.handleCallback(ctx(), 'ctype:installer');
+    await service.handleMessage(message('Alisher Usmonov'));
+    await service.handleMessage(message('+998901234567'));
+    await service.handleMessage(message('Toshkent'));
+    await service.handleMessage(message("Kotyol o'rnatish"));
+    await service.handleMessage(message('Yangi turar-joy majmuasi'));
+    await service.handleMessage(message('Katalog va narxlar kerak'));
+
+    // The confirmation summary shows the collected data before submit.
+    const summaryText = responder.sendText.mock.calls.at(-1)?.[1] as string;
+    expect(summaryText).toContain('Alisher Usmonov');
+    expect(summaryText).toContain("Kotyol o'rnatish");
+
+    await service.handleCallback(ctx(), 'flow:submit');
+    expect(operator.record).toHaveBeenCalledTimes(1);
+    expect(operator.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerType: 'installer',
+        leadType: 'LEAD_INSTALLER',
+        language: 'uz',
+        fullName: 'Alisher Usmonov',
+        conversationStartedAt: expect.any(Date),
+        details: expect.objectContaining({
+          specialization: "Kotyol o'rnatish",
+          currentProject: 'Yangi turar-joy majmuasi',
+          customerMessage: 'Katalog va narxlar kerak',
+        }),
+      }),
+    );
   });
 });

@@ -17,6 +17,14 @@ export interface OperatorSummaryInput {
   readonly language: string;
   /** When the request was submitted; defaults to now if omitted. */
   readonly requestTime?: Date;
+  /** Customer type chosen on the start screen (lead flows). */
+  readonly customerType?: string;
+  /** Canonical lead type (usually mirrors `requestType`). */
+  readonly leadType?: string;
+  /** When the guided conversation started. */
+  readonly conversationStartedAt?: Date;
+  /** Every collected field, keyed by step id — the CRM-ready payload. */
+  readonly details?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -34,4 +42,11 @@ export interface OperatorRequestSummary {
   /** ISO-8601 timestamp. */
   readonly requestTime: string;
   readonly language: string;
+  readonly customerType?: string;
+  readonly leadType?: string;
+  /** ISO-8601 conversation start / finish timestamps. */
+  readonly conversationStartedAt?: string;
+  readonly conversationFinishedAt: string;
+  /** Every collected field, keyed by step id — the CRM-ready payload. */
+  readonly details?: Readonly<Record<string, string>>;
 }

@@ -69,6 +69,8 @@ export interface ConversationMetadata {
   requestType: string;
   /** The selected product category, if any (mirrors `subject`). */
   productCategory?: string;
+  /** Customer type chosen on the start screen (lead flows only). */
+  customerType?: string;
   /** The screen the flow was started from. */
   sourceMenu: string;
 }
@@ -79,6 +81,8 @@ export interface ConversationState {
   subject?: string;
   /** Context captured at start; travels with the flow until confirmation. */
   metadata?: ConversationMetadata;
+  /** ISO timestamp of when the conversation started (for the CRM payload). */
+  startedAt?: string;
   currentStepId: string;
   history: string[];
   mode: ConversationMode;

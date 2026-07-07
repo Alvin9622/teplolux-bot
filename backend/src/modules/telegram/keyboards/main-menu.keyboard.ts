@@ -1,5 +1,6 @@
 import { InlineKeyboardMarkup } from '../types/telegram-api.types';
 import { CallbackData } from '../constants/callback-data.constants';
+import { CustomerType, customerTypeCallback } from '../conversation/conversation.constants';
 import { contentPageCallback, ContentPageId } from '../content/content.constants';
 import { pnavCallback, PRODUCT_ROOT_ID } from '../content/product-tree';
 import { TKey } from '../../../i18n/i18n.keys';
@@ -42,6 +43,47 @@ export const Keyboards = {
           { text: t(TKey.menuAbout), callback_data: contentPageCallback(ContentPageId.About) },
         ],
         [{ text: t(TKey.menuOperator), callback_data: CallbackData.Operator }],
+      ],
+    };
+  },
+
+  /**
+   * Customer-type selection shown right after /start (lead qualification).
+   * Each button is a flow trigger — the conversation engine starts the
+   * matching lead flow directly.
+   */
+  customerType(t: Translator): InlineKeyboardMarkup {
+    return {
+      inline_keyboard: [
+        [
+          {
+            text: t(TKey.ctypeIndividual),
+            callback_data: customerTypeCallback(CustomerType.Individual),
+          },
+        ],
+        [
+          {
+            text: t(TKey.ctypeInstaller),
+            callback_data: customerTypeCallback(CustomerType.Installer),
+          },
+          {
+            text: t(TKey.ctypeConstruction),
+            callback_data: customerTypeCallback(CustomerType.Construction),
+          },
+        ],
+        [
+          {
+            text: t(TKey.ctypeDesigner),
+            callback_data: customerTypeCallback(CustomerType.Designer),
+          },
+          { text: t(TKey.ctypeDealer), callback_data: customerTypeCallback(CustomerType.Dealer) },
+        ],
+        [
+          {
+            text: t(TKey.ctypeCompany),
+            callback_data: customerTypeCallback(CustomerType.Company),
+          },
+        ],
       ],
     };
   },

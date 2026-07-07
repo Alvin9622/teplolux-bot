@@ -4,7 +4,6 @@ import { LogEvent } from '../../../logger/log-events';
 import { I18nService } from '../../../i18n/i18n.service';
 import { TKey } from '../../../i18n/i18n.keys';
 import { BotCommand, BotCommandName } from '../constants/commands.constants';
-import { escapeHtml } from '../constants/messages.constants';
 import { Keyboards } from '../keyboards/main-menu.keyboard';
 import { TelegramResponderService } from '../services/telegram-responder.service';
 import { CommandHandler } from './command-handler.interface';
@@ -43,12 +42,11 @@ export class StartCommandHandler implements CommandHandler {
       return;
     }
 
+    // Lead qualification: ask who the customer is; each type has its own flow.
     await this.responder.sendText(
       context,
-      this.i18n.t(context.locale, TKey.welcome, {
-        name: escapeHtml(context.user.firstName ?? ''),
-      }),
-      Keyboards.mainMenu(this.i18n.scoped(context.locale)),
+      this.i18n.t(context.locale, TKey.startChooseType),
+      Keyboards.customerType(this.i18n.scoped(context.locale)),
     );
   }
 }

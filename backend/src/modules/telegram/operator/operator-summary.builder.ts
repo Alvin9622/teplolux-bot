@@ -14,6 +14,7 @@ export class OperatorSummaryBuilder {
   /** Build the structured summary object from raw request input. */
   build(input: OperatorSummaryInput): OperatorRequestSummary {
     const customerMessage = input.customerMessage?.trim();
+    const finishedAt = (input.requestTime ?? new Date()).toISOString();
     return {
       requestType: input.requestType,
       selectedProduct: input.productCategory || undefined,
@@ -21,8 +22,14 @@ export class OperatorSummaryBuilder {
       phone: input.phone.trim(),
       city: input.city.trim(),
       customerMessage: customerMessage ? customerMessage : undefined,
-      requestTime: (input.requestTime ?? new Date()).toISOString(),
+      requestTime: finishedAt,
       language: input.language,
+      customerType: input.customerType || undefined,
+      leadType: input.leadType || input.requestType,
+      conversationStartedAt: input.conversationStartedAt?.toISOString(),
+      conversationFinishedAt: finishedAt,
+      details:
+        input.details && Object.keys(input.details).length > 0 ? { ...input.details } : undefined,
     };
   }
 
@@ -33,6 +40,9 @@ export class OperatorSummaryBuilder {
   format(summary: OperatorRequestSummary): string {
     const lines: string[] = ['📩 New Customer Request', ''];
     lines.push(`Request Type: ${summary.requestType}`);
+    if (summary.customerType) {
+      lines.push(`Customer Type: ${summary.customerType}`);
+    }
     if (summary.selectedProduct) {
       lines.push(`Selected Product: ${summary.selectedProduct}`);
     }

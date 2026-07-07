@@ -55,7 +55,12 @@ export class TelegramCallbackService {
     if (data === CallbackData.SelectLangUz || data === CallbackData.SelectLangRu) {
       const locale: Locale = data === CallbackData.SelectLangRu ? 'ru' : 'uz';
       await this.users.setLanguage(context.user.id, locale);
-      await this.showMainMenu(context, locale);
+      // Lead qualification: continue with the customer-type selection screen.
+      await this.responder.editText(
+        context,
+        this.i18n.t(locale, TKey.startChooseType),
+        Keyboards.customerType(this.i18n.scoped(locale)),
+      );
       return true;
     }
 

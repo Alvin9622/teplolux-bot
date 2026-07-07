@@ -47,15 +47,18 @@ describe('StartCommandHandler', () => {
     expect(JSON.stringify(keyboard)).toContain('lang:ru');
   });
 
-  it('greets the user with the localised main menu once a language is set', async () => {
+  it('shows the customer-type selection once a language is set', async () => {
     const context: HandlerContext = { chatId: 1, user: buildUser(Language.UZ), locale: 'uz' };
 
     await handler.handle(context);
 
     expect(responder.sendText).toHaveBeenCalledTimes(1);
     const [, text, keyboard] = responder.sendText.mock.calls[0];
-    expect(text).toContain('Vasil');
+    expect(text).toContain('Assalomu');
     expect(keyboard.inline_keyboard.length).toBeGreaterThan(1);
+    // The six customer types are offered as flow triggers.
+    expect(JSON.stringify(keyboard)).toContain('ctype:individual');
+    expect(JSON.stringify(keyboard)).toContain('ctype:company');
   });
 
   it('renders the Russian welcome when the user chose Russian', async () => {

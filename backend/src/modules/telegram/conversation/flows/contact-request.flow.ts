@@ -8,19 +8,19 @@ const NAME_RE = /^[\p{L}][\p{L}\s'.-]{1,99}$/u;
 const CITY_RE = /^[\p{L}][\p{L}\s'.-]{1,59}$/u;
 const PHONE_RE = /^\+?\d{7,15}$/;
 
-function validateFullName(raw: string): StepValidation {
+export function validateFullName(raw: string): StepValidation {
   const value = raw.trim().replace(/\s+/g, ' ');
   return NAME_RE.test(value)
     ? { ok: true, value }
     : { ok: false, errorKey: TKey.flowErrorFullName };
 }
 
-function validatePhone(raw: string): StepValidation {
+export function validatePhone(raw: string): StepValidation {
   const value = raw.trim().replace(/[\s()-]/g, '');
   return PHONE_RE.test(value) ? { ok: true, value } : { ok: false, errorKey: TKey.flowErrorPhone };
 }
 
-function validateCity(raw: string): StepValidation {
+export function validateCity(raw: string): StepValidation {
   const value = raw.trim().replace(/\s+/g, ' ');
   return CITY_RE.test(value) ? { ok: true, value } : { ok: false, errorKey: TKey.flowErrorCity };
 }

@@ -28,6 +28,10 @@ describe('OperatorSummaryBuilder', () => {
       customerMessage: 'Do you deliver?',
       requestTime: when.toISOString(),
       language: 'uz',
+      // Lead-qualification fields: leadType mirrors requestType by default,
+      // and the finish time always accompanies the submission.
+      leadType: 'PRICE_REQUEST',
+      conversationFinishedAt: when.toISOString(),
     });
   });
 
@@ -87,5 +91,33 @@ describe('OperatorSummaryBuilder', () => {
     expect(text).not.toContain('Selected Product:');
     expect(text).not.toContain('Customer Message:');
     expect(text).toContain('Request Type: DEALER_REQUEST');
+  });
+});
+
+describe('OperatorSummaryBuilder — lead qualification payload', () => {
+  it('carries customer type, lead type, timestamps and the full details payload', () => {
+    const builder = new OperatorSummaryBuilder();
+    const startedAt = new Date('2026-07-07T10:00:00Z');
+    const finishedAt = new Date('2026-07-07T10:05:00Z');
+
+    const summary = builder.build({
+      requestType: 'LEAD_INSTALLER',
+      leadType: 'LEAD_INSTALLER',
+      customerType: 'installer',
+      fullName: 'Alisher Usmonov',
+      phone: '+998901234567',
+      city: 'Toshkent',
+      customerMessage: 'Katalog kerak',
+      language: 'uz',
+      requestTime: finishedAt,
+      conversationStartedAt: startedAt,
+      details: { specialization: "Kotyol o'rnatish" },
+    });
+
+    expect(summary.customerType).toBe('installer');
+    expect(summary.leadType).toBe('LEAD_INSTALLER');
+    expect(summary.conversationStartedAt).toBe(startedAt.toISOString());
+    expect(summary.conversationFinishedAt).toBe(finishedAt.toISOString());
+    expect(summary.details).toEqual({ specialization: "Kotyol o'rnatish" });
   });
 });

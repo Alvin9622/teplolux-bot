@@ -224,6 +224,7 @@ export class ConversationService {
       topic,
       subject,
       metadata,
+      startedAt: new Date().toISOString(),
       currentStepId: flow.steps[0].id,
       history: [],
       mode: 'collect',
@@ -355,12 +356,17 @@ export class ConversationService {
     await this.operatorSummary.record({
       requestType: state.metadata?.requestType ?? state.topic,
       productCategory: state.metadata?.productCategory ?? state.subject,
-      fullName: state.data.fullName ?? '',
+      customerType: state.metadata?.customerType,
+      leadType: state.metadata?.requestType ?? state.topic,
+      fullName: state.data.fullName ?? state.data.contactPerson ?? '',
       phone: state.data.phone ?? '',
       city: state.data.city ?? '',
       customerMessage: state.data.customerMessage,
       language: context.locale,
       requestTime: new Date(),
+      conversationStartedAt: state.startedAt ? new Date(state.startedAt) : undefined,
+      // One structured payload with EVERY collected field — CRM-ready.
+      details: { ...state.data },
     });
     this.analytics.trackFlow(this.actor(context), 'completed', {
       flowId: flow.id,

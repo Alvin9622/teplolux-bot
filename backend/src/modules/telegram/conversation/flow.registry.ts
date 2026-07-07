@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { contactRequestFlow } from './flows/contact-request.flow';
+import { leadFlows } from './flows/lead.flows';
 import { FlowDefinition } from './conversation.types';
 
 /**
@@ -15,6 +16,9 @@ export class FlowRegistry {
 
   constructor() {
     this.register(contactRequestFlow);
+    for (const flow of leadFlows) {
+      this.register(flow);
+    }
   }
 
   register(flow: FlowDefinition): void {

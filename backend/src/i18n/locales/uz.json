@@ -45,19 +45,42 @@
       "product": "🛍 Mahsulot bo'yicha so'rov",
       "service": "🛠 Servis so'rovi",
       "dealer": "🤝 Diler arizasi",
-      "operator": "👨 Operator bilan bog'lanish"
+      "operator": "👨 Operator bilan bog'lanish",
+      "individual": "👤 Jismoniy shaxs so'rovi",
+      "installer": "🛠 Usta so'rovi",
+      "construction": "🏗 Quruvchi so'rovi",
+      "designer": "🎨 Dizayner so'rovi",
+      "company": "🏢 Kompaniya so'rovi"
     },
     "prompt": {
       "fullName": "👤 To'liq ismingizni kiriting:",
       "phone": "📱 Telefon raqamingizni yuboring yoki pastdagi tugma orqali ulashing:",
       "city": "🏙 Shahringizni kiriting:",
       "comment": "✍️ Qo'shimcha izoh qoldiring (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
-      "customerMessage": "💬 Bizga nima demoqchisiz? (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:"
+      "customerMessage": "💬 Bizga nima demoqchisiz? (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
+      "objectType": "🏠 Obyekt turini tanlang:",
+      "productInterest": "📦 Qaysi mahsulot sizni qiziqtiradi?",
+      "area": "📐 Taxminiy maydonni kiriting (m², masalan: 120) yoki «O'tkazib yuborish» tugmasini bosing:",
+      "specialization": "🔧 Mutaxassisligingizni yozing (masalan: kotyol o'rnatish, santexnika):",
+      "currentProject": "🏗 Hozirgi loyihangiz haqida qisqacha yozing:",
+      "companyName": "🏢 Kompaniya nomini kiriting:",
+      "contactPerson": "👤 Mas'ul shaxsning ism-familiyasini kiriting:",
+      "projectType": "📋 Loyiha turini yozing (masalan: turar-joy majmuasi, ofis):",
+      "projectStage": "📊 Loyiha qaysi bosqichda? (masalan: loyihalash, qurilish):",
+      "studioName": "🎨 Studiya nomini kiriting (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
+      "currentBusiness": "💼 Hozirgi biznes yo'nalishingizni qisqacha yozing:",
+      "interestedCategories": "📦 Qaysi mahsulot toifalari bilan ishlamoqchisiz?",
+      "position": "💼 Lavozimingizni kiriting:",
+      "email": "✉️ Email manzilingizni kiriting (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
+      "projectDescription": "📝 Loyihangizni qisqacha tavsiflab bering:",
+      "leadMessage": "💬 Iltimos, so'rovingizni imkon qadar batafsil yozib bering — bu mutaxassislarimizga sizga aniqroq javob berishga yordam beradi:"
     },
     "error": {
       "fullName": "❗️ Iltimos, to'g'ri ism kiriting (kamida 2 ta harf).",
       "phone": "❗️ Telefon raqami noto'g'ri. Masalan: +998901234567",
-      "city": "❗️ Iltimos, to'g'ri shahar nomini kiriting."
+      "city": "❗️ Iltimos, to'g'ri shahar nomini kiriting.",
+      "text": "❗️ Iltimos, to'liqroq javob kiriting (kamida 2 ta belgi).",
+      "email": "❗️ Email manzili noto'g'ri. Masalan: info@kompaniya.uz"
     },
     "button": {
       "shareContact": "📱 Telefon raqamni ulashish",
@@ -78,11 +101,34 @@
       "city": "Shahar",
       "comment": "Izoh",
       "customerMessage": "Xabar",
-      "empty": "—"
+      "empty": "—",
+      "objectType": "Obyekt turi",
+      "productInterest": "Qiziqtirgan mahsulot",
+      "area": "Taxminiy maydon",
+      "specialization": "Mutaxassislik",
+      "currentProject": "Joriy loyiha",
+      "companyName": "Kompaniya",
+      "contactPerson": "Mas'ul shaxs",
+      "projectType": "Loyiha turi",
+      "projectStage": "Loyiha bosqichi",
+      "studioName": "Studiya",
+      "currentBusiness": "Biznes yo'nalishi",
+      "interestedCategories": "Qiziqtirgan toifalar",
+      "position": "Lavozim",
+      "email": "Email",
+      "projectDescription": "Loyiha tavsifi"
     },
     "editChoose": "✏️ Nimani tahrirlamoqchisiz?",
     "cancelled": "❌ So'rov bekor qilindi.",
-    "submitted": "✅ Rahmat! So'rovingiz qabul qilindi. Mutaxassislarimiz tez orada siz bilan bog'lanadi."
+    "submitted": "✅ Rahmat! So'rovingiz qabul qilindi. Mutaxassislarimiz tez orada siz bilan bog'lanadi.",
+    "choice": {
+      "object": {
+        "apartment": "🏢 Kvartira",
+        "privateHouse": "🏡 Xususiy uy",
+        "office": "🏬 Ofis"
+      },
+      "other": "🔹 Boshqa"
+    }
   },
   "content": {
     "button": {
@@ -154,5 +200,16 @@
   "faq": {
     "listTitle": "❓ <b>Ko'p so'raladigan savollar</b>\n\nQiziqtirgan savolni tanlang:",
     "empty": "Bu bo'lim uchun hozircha savol yo'q. Operator bilan bog'lanishingiz mumkin."
+  },
+  "start": {
+    "chooseType": "Assalomu alaykum!\n\n<b>Teplolux</b>'ga xush kelibsiz.\n\nSizga tezroq va aniqroq yordam bera olishimiz uchun, iltimos, o'zingizga mos variantni tanlang:"
+  },
+  "ctype": {
+    "individual": "👤 Jismoniy shaxs",
+    "installer": "🛠 Usta",
+    "construction": "🏗 Quruvchi",
+    "designer": "🎨 Dizayner",
+    "dealer": "🤝 Diler",
+    "company": "🏢 Kompaniya"
   }
 }
