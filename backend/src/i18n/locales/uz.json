@@ -46,7 +46,7 @@
       "service": "🛠 Servis so'rovi",
       "dealer": "🤝 Diler arizasi",
       "operator": "👨 Operator bilan bog'lanish",
-      "individual": "👤 Jismoniy shaxs so'rovi",
+      "individual": "👤 Uy egasi so'rovi",
       "installer": "🛠 Usta so'rovi",
       "construction": "🏗 Quruvchi so'rovi",
       "designer": "🎨 Dizayner so'rovi",
@@ -205,7 +205,7 @@
     "chooseType": "Assalomu alaykum!\n\n<b>Teplolux</b>'ga xush kelibsiz.\n\nSizga tezroq va aniqroq yordam bera olishimiz uchun, iltimos, o'zingizga mos variantni tanlang:"
   },
   "ctype": {
-    "individual": "👤 Jismoniy shaxs",
+    "individual": "👤 Uy egasi",
     "installer": "🛠 Usta",
     "construction": "🏗 Quruvchi",
     "designer": "🎨 Dizayner",
