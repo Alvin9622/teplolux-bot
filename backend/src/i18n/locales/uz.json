@@ -3,44 +3,44 @@
     "prompt": "🌐 Tilni tanlang:\n🌐 Выберите язык:",
     "changed": "✅ Til o'zgartirildi."
   },
-  "welcome": "👋 <b>Xush kelibsiz, {{name}}!</b>\n\nBu <b>Teplolux AI CRM Assistant</b> — Teplolux bilan yagona aloqa nuqtangiz.\n\nQuyidagi menyudan kerakli bo'limni tanlang:",
-  "help": "<b>Sizga qanday yordam bera olaman?</b>\n\nMavjud buyruqlar:\n/start — asosiy menyu\n/catalog — mahsulotlar katalogi\n/service — texnik xizmat so'rovi\n/dealer — diler bo'lish\n/operator — operator bilan bog'lanish\n/contact — aloqa ma'lumotlari\n/location — manzilimiz\n/help — ushbu xabar",
+  "welcome": "👋 <b>Xush kelibsiz, {{name}}!</b>\n\nSiz <b>Teplolux</b> bilan bog'landingiz — isitish va suv ta'minoti bo'yicha ishonchli hamkoringiz.\n\nQuyidan kerakli bo'limni tanlang — yordam berishga tayyormiz:",
+  "help": "<b>Sizga qanday yordam beray?</b>\n\n/start — boshidan boshlash\n/catalog — mahsulotlar bilan tanishish\n/service — servisga murojaat qilish\n/dealer — diler bo'lish\n/operator — mutaxassis bilan bog'lanish\n/contact — aloqa ma'lumotlari\n/location — bizning manzil\n\nSavolingiz bo'lsa, bemalol yozing — albatta javob beramiz.",
   "catalog": {
-    "intro": "<b>🛍 Mahsulotlar katalogi</b>\n\nBatafsil ma'lumot uchun mahsulot toifasini tanlang:"
+    "intro": "<b>🔥 Mahsulotlar katalogi</b>\n\nQaysi yo'nalish sizni qiziqtiradi? Toifani tanlang — batafsil ma'lumot beramiz:"
   },
   "category": {
     "boilers": "<b>🏠 Kotyollar</b>\n\nUy va biznes uchun ishonchli isitish kotyollari. Mutaxassislarimiz to'g'ri quvvat va modelni tanlashda yordam beradi.",
     "radiators": "<b>🔥 Radiatorlar</b>\n\nTurli o'lcham va qoplamadagi yuqori samarali radiatorlar.",
     "floorHeating": "<b>♨️ Issiq pol</b>\n\nHar qanday xona uchun qulay issiq pol tizimlari."
   },
-  "service": "<b>🛠 Texnik xizmat so'rovi</b>\n\nMuammoni tasvirlab bering, texnik jamoamiz siz bilan bog'lanadi. Operator qo'ng'iroq qilishi uchun telefon raqamingizni ham yuborishingiz mumkin.",
-  "dealer": "<b>🤝 Diler bo'ling</b>\n\nTeplolux bilan hamkorlik qiling va biznesingizni rivojlantiring. Aloqa ma'lumotlaringizni qoldiring, hamkorlik jamoamiz siz bilan bog'lanadi.",
-  "operator": "<b>👨 Operator bilan bog'lanish</b>\n\nSiz operator navbatiga qo'shildingiz. Savolingizni yozing, tez orada javob beramiz.",
+  "service": "<b>🛠 Servisga murojaat</b>\n\nUskunangizda muammo bormi yoki profilaktika kerakmi? Muammoni qisqacha yozib qoldiring — texnik mutaxassisimiz siz bilan bog'lanib, qulay vaqtni kelishib oladi.",
+  "dealer": "<b>🤝 Diler bo'lish</b>\n\nTeplolux bilan hamkorlikda biznesingizni kengaytiring: ulgurji narxlar, 20 dan ortiq Yevropa brendi va texnik qo'llab-quvvatlash.\n\nMa'lumotlaringizni qoldiring — hamkorlik bo'limimiz o'zi siz bilan bog'lanadi.",
+  "operator": "<b>👨‍💼 Operator bilan bog'lanish</b>\n\nSavolingizni yozib qoldiring — operatorimiz ko'rib chiqib, tez orada javob beradi. Ish vaqtida odatda bir necha daqiqa ichida javob qaytaramiz.",
   "contact": "<b>📞 Aloqa ma'lumotlari</b>\n\nTelefon: +998 (00) 000-00-00\nEmail: info@teplolux.example.com\nIsh vaqti: Dushanba–Shanba, 09:00–18:00",
   "location": {
-    "intro": "<b>📍 Bizning manzilimiz</b>\n\nManzilimiz quyidagi xaritada ko'rsatilgan.",
-    "detail": "<b>📍 Bizning manzilimiz</b>\n\nTeplolux savdo va xizmat ko'rsatish markazi.\nXaritada ochish: https://maps.google.com/?q={{lat}},{{lng}}"
+    "intro": "<b>📍 Bizning manzil</b>\n\nQuyidagi xaritada bizni topishingiz mumkin — tashrifingizdan xursand bo'lamiz.",
+    "detail": "<b>📍 Bizning manzil</b>\n\nTeplolux savdo va servis markazi.\nXaritada ochish: https://maps.google.com/?q={{lat}},{{lng}}"
   },
-  "unknownCommand": "Kechirasiz, bu buyruqni tushunmadim. /help orqali imkoniyatlarni ko'ring.",
-  "fallback": "Xabaringizni qabul qildim. Menyudan foydalaning yoki /help yuboring.",
+  "unknownCommand": "Kechirasiz, bunday buyruqni topa olmadim 🤔\n\n/help orqali imkoniyatlarni ko'ring — yoki savolingizni shunchaki yozib yuboring.",
+  "fallback": "Xabaringiz uchun rahmat! Kerakli bo'limni quyidagi menyudan tanlang. Mutaxassis yordami kerak bo'lsa, «Operator bilan bog'lanish» tugmasini bosing.",
   "callbackAcknowledged": "Tayyor",
   "menu": {
     "boilers": "🏠 Kotyollar",
     "radiators": "🔥 Radiatorlar",
     "floorHeating": "♨️ Issiq pol",
-    "service": "🛠 Servis",
+    "service": "🛠 Servisga murojaat qilish",
     "dealer": "🤝 Diler bo'lish",
     "operator": "👨‍💼 Operator bilan bog'lanish",
     "contact": "📞 Aloqa",
     "location": "📍 Manzil",
     "changeLanguage": "🌐 Tilni o'zgartirish",
-    "back": "⬅️ Asosiy menyu",
+    "back": "🏠 Asosiy menyu",
     "about": "ℹ️ Kompaniya haqida",
-    "products": "🏠 Mahsulotlar",
+    "products": "🔥 Mahsulotlar",
     "contacts": "📍 Kontaktlar"
   },
   "flow": {
-    "started": "<b>{{topic}}</b>\n\nIltimos, quyidagi ma'lumotlarni kiriting. Istalgan vaqtda /cancel buyrug'i bilan bekor qilishingiz mumkin.",
+    "started": "<b>{{topic}}</b>\n\nBir necha qisqa savolga javob bering — mutaxassisimiz siz bilan aniq taklif bilan bog'lanadi.\n\nIstalgan payt «Bekor qilish» tugmasi yoki /cancel orqali to'xtatishingiz mumkin.",
     "topic": {
       "product": "🛍 Mahsulot bo'yicha so'rov",
       "service": "🛠 Servis so'rovi",
@@ -53,46 +53,46 @@
       "company": "🏢 Kompaniya so'rovi"
     },
     "prompt": {
-      "fullName": "👤 To'liq ismingizni kiriting:",
-      "phone": "📱 Telefon raqamingizni yuboring yoki pastdagi tugma orqali ulashing:",
-      "city": "🏙 Shahringizni kiriting:",
-      "comment": "✍️ Qo'shimcha izoh qoldiring (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
-      "customerMessage": "💬 Bizga nima demoqchisiz? (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
-      "objectType": "🏠 Obyekt turini tanlang:",
-      "productInterest": "📦 Qaysi mahsulot sizni qiziqtiradi?",
-      "area": "📐 Taxminiy maydonni kiriting (m², masalan: 120) yoki «O'tkazib yuborish» tugmasini bosing:",
-      "specialization": "🔧 Mutaxassisligingizni yozing (masalan: kotyol o'rnatish, santexnika):",
-      "currentProject": "🏗 Hozirgi loyihangiz haqida qisqacha yozing:",
-      "companyName": "🏢 Kompaniya nomini kiriting:",
-      "contactPerson": "👤 Mas'ul shaxsning ism-familiyasini kiriting:",
-      "projectType": "📋 Loyiha turini yozing (masalan: turar-joy majmuasi, ofis):",
-      "projectStage": "📊 Loyiha qaysi bosqichda? (masalan: loyihalash, qurilish):",
-      "studioName": "🎨 Studiya nomini kiriting (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
-      "currentBusiness": "💼 Hozirgi biznes yo'nalishingizni qisqacha yozing:",
-      "interestedCategories": "📦 Qaysi mahsulot toifalari bilan ishlamoqchisiz?",
-      "position": "💼 Lavozimingizni kiriting:",
-      "email": "✉️ Email manzilingizni kiriting (ixtiyoriy) yoki «O'tkazib yuborish» tugmasini bosing:",
-      "projectDescription": "📝 Loyihangizni qisqacha tavsiflab bering:",
-      "leadMessage": "💬 Iltimos, so'rovingizni imkon qadar batafsil yozib bering — bu mutaxassislarimizga sizga aniqroq javob berishga yordam beradi:"
+      "fullName": "👤 Ismingiz va familiyangizni yozing.\n\nMutaxassisimiz sizga ism bilan murojaat qilishi uchun kerak bo'ladi.",
+      "phone": "📱 Siz bilan bog'lanishimiz uchun telefon raqamingizni yuboring.\n\nQulaylik uchun pastdagi «Telefon raqamni ulashish» tugmasidan foydalanishingiz mumkin.",
+      "city": "🏙 Qaysi shahar yoki tumandansiz?\n\nBu sizni eng yaqin mutaxassis bilan bog'lashimiz uchun kerak.",
+      "comment": "✍️ Qo'shimcha izohingiz bo'lsa, yozib qoldiring (ixtiyoriy) — yoki «O'tkazib yuborish» tugmasini bosing:",
+      "customerMessage": "💬 Yana biror narsa qo'shmoqchimisiz? Savolingizni yozing (ixtiyoriy) — yoki «O'tkazib yuborish» tugmasini bosing:",
+      "objectType": "🏠 Obyekt turini tanlang.\n\nBu to'g'ri uskunani tavsiya qilishimizga yordam beradi:",
+      "productInterest": "📦 Qaysi mahsulot sizni qiziqtiradi? Bittasini tanlang:",
+      "area": "📐 Obyektning taxminiy maydonini yozing (m², masalan: 120).\n\nBu quvvatni to'g'ri hisoblashimiz uchun kerak. Aniq bilmasangiz, «O'tkazib yuborish» tugmasini bosing:",
+      "specialization": "🔧 Qaysi yo'nalishda ishlaysiz? (masalan: kotyol o'rnatish, santexnika)\n\nShunga mos takliflar tayyorlaymiz.",
+      "currentProject": "🏗 Hozirgi loyihangiz haqida qisqacha yozing.\n\nMutaxassisimiz aynan shu loyiha uchun yechim taklif qiladi.",
+      "companyName": "🏢 Kompaniyangiz nomini yozing:",
+      "contactPerson": "👤 Bog'lanish uchun mas'ul shaxsning ism-familiyasini yozing:",
+      "projectType": "📋 Loyiha turini yozing (masalan: turar-joy majmuasi, ofis, mehmonxona):",
+      "projectStage": "📊 Loyiha hozir qaysi bosqichda? (masalan: loyihalash, qurilish, yakunlash)\n\nBu taklifni bosqichga moslashtirish uchun kerak.",
+      "studioName": "🎨 Studiyangiz nomini yozing (ixtiyoriy) — yoki «O'tkazib yuborish» tugmasini bosing:",
+      "currentBusiness": "💼 Hozir qaysi yo'nalishda faoliyat yuritasiz? Qisqacha yozing:",
+      "interestedCategories": "📦 Qaysi mahsulot toifalari bilan ishlashni rejalashtiryapsiz?",
+      "position": "💼 Kompaniyadagi lavozimingizni yozing:",
+      "email": "✉️ Email manzilingizni qoldiring — taklifni yozma ko'rinishda ham yuboramiz (ixtiyoriy). Yoki «O'tkazib yuborish» tugmasini bosing:",
+      "projectDescription": "📝 Loyihangiz haqida qisqacha yozing: nima qurilyapti va qanday yechim kerak?",
+      "leadMessage": "💬 Iltimos, murojaatingizni imkon qadar batafsil yozing.\n\nMasalan:\n• Nima kerak?\n• Qaysi obyekt uchun?\n• Qanday muammoga duch keldingiz?\n\nQancha ko'p ma'lumot bersangiz, mutaxassisimiz sizga shuncha tez va aniq yordam bera oladi."
     },
     "error": {
-      "fullName": "❗️ Iltimos, to'g'ri ism kiriting (kamida 2 ta harf).",
-      "phone": "❗️ Telefon raqami noto'g'ri. Masalan: +998901234567",
-      "city": "❗️ Iltimos, to'g'ri shahar nomini kiriting.",
-      "text": "❗️ Iltimos, to'liqroq javob kiriting (kamida 2 ta belgi).",
-      "email": "❗️ Email manzili noto'g'ri. Masalan: info@kompaniya.uz"
+      "fullName": "Ismingizni to'liqroq yozing, iltimos (kamida 2 ta harf). Masalan: Alisher Usmonov",
+      "phone": "Raqamni tekshirib, qayta yuboring, iltimos. Masalan: +998901234567 — yoki pastdagi tugma orqali ulashing.",
+      "city": "Shahar nomini harflar bilan yozing, iltimos. Masalan: Toshkent",
+      "text": "Iltimos, biroz to'liqroq yozing — shunda sizga aniqroq yordam bera olamiz.",
+      "email": "Email manzilida xatolik bor ko'rinadi. Masalan: ism@pochta.uz — yoki «O'tkazib yuborish» tugmasini bosing."
     },
     "button": {
       "shareContact": "📱 Telefon raqamni ulashish",
       "shareLocation": "📍 Joylashuvni ulashish",
       "cancel": "❌ Bekor qilish",
-      "back": "⬅ Orqaga",
+      "back": "⬅️ Orqaga",
       "skip": "⏭ O'tkazib yuborish",
-      "submit": "✅ Tasdiqlash",
+      "submit": "✅ Yuborish",
       "edit": "✏️ Tahrirlash"
     },
     "summary": {
-      "title": "📋 <b>So'rovingizni tasdiqlang</b>",
+      "title": "📋 <b>Ma'lumotlaringizni tekshiring</b>\n\nHammasi to'g'ri bo'lsa, «Yuborish» tugmasini bosing:",
       "topic": "Bo'lim",
       "requestType": "So'rov turi",
       "product": "Tanlangan mahsulot",
@@ -118,9 +118,9 @@
       "email": "Email",
       "projectDescription": "Loyiha tavsifi"
     },
-    "editChoose": "✏️ Nimani tahrirlamoqchisiz?",
-    "cancelled": "❌ So'rov bekor qilindi.",
-    "submitted": "✅ Rahmat! So'rovingiz qabul qilindi. Mutaxassislarimiz tez orada siz bilan bog'lanadi.",
+    "editChoose": "✏️ Qaysi ma'lumotni o'zgartirmoqchisiz? Tanlang:",
+    "cancelled": "So'rov bekor qilindi. Kerak bo'lganda istalgan payt qaytadan murojaat qilishingiz mumkin 🙂",
+    "submitted": "Rahmat! 🙏\n\nMurojaatingiz qabul qilindi.\n\nMutaxassisimiz uni ko'rib chiqadi va imkon qadar tezroq siz bilan bog'lanadi.",
     "choice": {
       "object": {
         "apartment": "🏢 Kvartira",
@@ -137,7 +137,7 @@
       "warranty": "🛡 Kafolat",
       "website": "🌐 Veb-sayt",
       "call": "☎️ Qo'ng'iroq qilish",
-      "back": "◀ Orqaga",
+      "back": "⬅️ Orqaga",
       "mainMenu": "🏠 Asosiy menyu",
       "next": "➡ Keyingi",
       "prev": "⬅ Oldingi",
@@ -153,7 +153,7 @@
       "brands": "🏷 Mavjud brendlar"
     },
     "callMessage": "☎️ Biz bilan bog'laning: {{phone}}",
-    "emptyState": "ℹ️ Ma'lumot tez orada qo'shiladi. Savolingiz bo'lsa, operator bilan bog'laning.",
+    "emptyState": "Bu bo'lim tez orada to'ldiriladi. Savolingiz bo'lsa, «Operator bilan bog'lanish» tugmasini bosing — yordam beramiz.",
     "products": {
       "title": "🏠 Mahsulotlar",
       "description": "Quyidagi mahsulot toifalaridan birini tanlang:"
@@ -198,8 +198,8 @@
     }
   },
   "faq": {
-    "listTitle": "❓ <b>Ko'p so'raladigan savollar</b>\n\nQiziqtirgan savolni tanlang:",
-    "empty": "Bu bo'lim uchun hozircha savol yo'q. Operator bilan bog'lanishingiz mumkin."
+    "listTitle": "❓ <b>Ko'p so'raladigan savollar</b>\n\nQiziqtirgan savolni tanlang — tayyor javobni darhol ko'rasiz:",
+    "empty": "Bu bo'lim uchun hozircha savollar yo'q. Savolingiz bo'lsa, operatorimiz bilan bog'laning — mamnuniyat bilan javob beramiz."
   },
   "start": {
     "chooseType": "Assalomu alaykum!\n\n<b>Teplolux</b>'ga xush kelibsiz.\n\nSizga tezroq va aniqroq yordam bera olishimiz uchun, iltimos, o'zingizga mos variantni tanlang:"
