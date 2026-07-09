@@ -55,7 +55,7 @@
     "prompt": {
       "fullName": "👤 Ismingiz va familiyangizni yozing.\n\nMutaxassisimiz sizga ism bilan murojaat qilishi uchun kerak bo'ladi.",
       "phone": "📱 Siz bilan bog'lanishimiz uchun telefon raqamingizni yuboring.\n\nQulaylik uchun pastdagi «Telefon raqamni ulashish» tugmasidan foydalanishingiz mumkin.",
-      "city": "🏙 Qaysi shahar yoki tumandansiz?\n\nBu sizni eng yaqin mutaxassis bilan bog'lashimiz uchun kerak.",
+      "city": "🗺 Qaysi hududdan murojaat qilyapsiz?\n\nBu sizni eng yaqin mutaxassis bilan bog'lashimiz uchun kerak.",
       "comment": "✍️ Qo'shimcha izohingiz bo'lsa, yozib qoldiring (ixtiyoriy) — yoki «O'tkazib yuborish» tugmasini bosing:",
       "customerMessage": "💬 Yana biror narsa qo'shmoqchimisiz? Savolingizni yozing (ixtiyoriy) — yoki «O'tkazib yuborish» tugmasini bosing:",
       "objectType": "🏠 Obyekt turini tanlang.\n\nBu to'g'ri uskunani tavsiya qilishimizga yordam beradi:",
@@ -128,6 +128,22 @@
         "office": "🏬 Ofis"
       },
       "other": "🔹 Boshqa"
+    },
+    "region": {
+      "tashkentCity": "Toshkent shahri",
+      "tashkentRegion": "Toshkent viloyati",
+      "andijan": "Andijon",
+      "bukhara": "Buxoro",
+      "fergana": "Farg'ona",
+      "jizzakh": "Jizzax",
+      "namangan": "Namangan",
+      "navoi": "Navoiy",
+      "kashkadarya": "Qashqadaryo",
+      "samarkand": "Samarqand",
+      "syrdarya": "Sirdaryo",
+      "surkhandarya": "Surxondaryo",
+      "khorezm": "Xorazm",
+      "karakalpakstan": "Qoraqalpog'iston"
     }
   },
   "content": {

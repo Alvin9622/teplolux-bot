@@ -27,6 +27,8 @@ export interface FlowStep {
   readonly optional?: boolean;
   /** Options for a `choice` step (required when `type === 'choice'`). */
   readonly choices?: ReadonlyArray<ChoiceOption>;
+  /** How many choice buttons to place per row (defaults to 1). */
+  readonly columns?: number;
   /**
    * Explicit next step id. When omitted the engine advances to the next step in
    * declaration order. This keeps flows configurable (incl. future branching)

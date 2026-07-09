@@ -50,11 +50,17 @@ export const FlowKeyboards = {
     return { inline_keyboard: rows };
   },
 
-  /** A button per choice option, then Back/Cancel. */
+  /** Choice buttons laid out in `step.columns` per row (default 1), then Back/Cancel. */
   choice(t: Translator, step: FlowStep, opts: StepControlOptions): InlineKeyboardMarkup {
-    const rows: InlineKeyboardButton[][] = (step.choices ?? []).map((choice) => [
-      { text: t(choice.labelKey), callback_data: `${FlowAction.ChoicePrefix}${choice.value}` },
-    ]);
+    const columns = Math.max(1, step.columns ?? 1);
+    const buttons: InlineKeyboardButton[] = (step.choices ?? []).map((choice) => ({
+      text: t(choice.labelKey),
+      callback_data: `${FlowAction.ChoicePrefix}${choice.value}`,
+    }));
+    const rows: InlineKeyboardButton[][] = [];
+    for (let i = 0; i < buttons.length; i += columns) {
+      rows.push(buttons.slice(i, i + columns));
+    }
     if (opts.optional) {
       rows.push([{ text: t(TKey.flowButtonSkip), callback_data: FlowAction.Skip }]);
     }

@@ -108,12 +108,12 @@ describe('ConversationService — contact request flow', () => {
     await service.handleCallback(ctx(), CallbackData.Service);
     await service.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
     await service.handleMessage(ctx({ message: textMessage('+998901234567') }));
-    await service.handleMessage(ctx({ message: textMessage('Tashkent') }));
+    await service.handleCallback(ctx(), `${FlowAction.ChoicePrefix}Toshkent shahri`);
 
     expect((await state()).data).toMatchObject({
       fullName: 'Vasil Sodiqov',
       phone: '+998901234567',
-      city: 'Tashkent',
+      city: 'Toshkent shahri',
     });
 
     await service.handleCallback(ctx(), FlowAction.Skip); // optional comment
@@ -131,7 +131,7 @@ describe('ConversationService — contact request flow', () => {
     await svc.handleCallback(ctx(), CallbackData.Service);
     await svc.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
     await svc.handleMessage(ctx({ message: textMessage('+998901234567') }));
-    await svc.handleMessage(ctx({ message: textMessage('Tashkent') }));
+    await svc.handleCallback(ctx(), `${FlowAction.ChoicePrefix}Toshkent shahri`);
     await svc.handleCallback(ctx(), FlowAction.Skip);
     await svc.handleCallback(ctx(), FlowAction.Submit);
 
@@ -141,7 +141,7 @@ describe('ConversationService — contact request flow', () => {
         requestType: 'SERVICE_REQUEST',
         fullName: 'Vasil Sodiqov',
         phone: '+998901234567',
-        city: 'Tashkent',
+        city: 'Toshkent shahri',
         language: 'uz',
       }),
     );
@@ -172,7 +172,7 @@ describe('ConversationService — contact request flow', () => {
     await service.handleCallback(ctx(), CallbackData.Boilers); // product request
     await service.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
     await service.handleMessage(ctx({ message: textMessage('+998901234567') }));
-    await service.handleMessage(ctx({ message: textMessage('Tashkent') }));
+    await service.handleCallback(ctx(), `${FlowAction.ChoicePrefix}Toshkent shahri`);
     await service.handleCallback(ctx(), FlowAction.Skip); // skip customer message
 
     expect((await state()).mode).toBe('summary');
@@ -189,7 +189,7 @@ describe('ConversationService — contact request flow', () => {
     await service.handleCallback(ctx(), CallbackData.Service);
     await service.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
     await service.handleMessage(ctx({ message: textMessage('+998901234567') }));
-    await service.handleMessage(ctx({ message: textMessage('Tashkent') }));
+    await service.handleCallback(ctx(), `${FlowAction.ChoicePrefix}Toshkent shahri`);
     // Final optional question: "What would you like to ask us?"
     await service.handleMessage(ctx({ message: textMessage('Do you deliver to Samarkand?') }));
 
@@ -260,17 +260,17 @@ describe('ConversationService — contact request flow', () => {
     await service.handleCallback(ctx(), CallbackData.Service);
     await service.handleMessage(ctx({ message: textMessage('Vasil Sodiqov') }));
     await service.handleMessage(ctx({ message: textMessage('+998901234567') }));
-    await service.handleMessage(ctx({ message: textMessage('Tashkent') }));
+    await service.handleCallback(ctx(), `${FlowAction.ChoicePrefix}Toshkent shahri`);
     await service.handleCallback(ctx(), FlowAction.Skip);
 
     await service.handleCallback(ctx(), `${FlowAction.EditFieldPrefix}city`);
     expect((await state()).mode).toBe('edit');
     expect((await state()).editStepId).toBe('city');
 
-    await service.handleMessage(ctx({ message: textMessage('Samarkand') }));
+    await service.handleCallback(ctx(), `${FlowAction.ChoicePrefix}Samarqand viloyati`);
     const current = await state();
     expect(current.mode).toBe('summary');
-    expect(current.data.city).toBe('Samarkand');
+    expect(current.data.city).toBe('Samarqand viloyati');
   });
 
   it('ignores flow controls when no flow is active', async () => {
@@ -436,7 +436,7 @@ describe('ConversationService — lead qualification flows', () => {
     await service.handleCallback(ctx(), 'ctype:installer');
     await service.handleMessage(message('Alisher Usmonov'));
     await service.handleMessage(message('+998901234567'));
-    await service.handleMessage(message('Toshkent'));
+    await service.handleCallback(ctx(), 'flow:choice:Toshkent shahri'); // region picker
     await service.handleMessage(message("Kotyol o'rnatish"));
     await service.handleMessage(message('Yangi turar-joy majmuasi'));
     await service.handleMessage(message('Katalog va narxlar kerak'));

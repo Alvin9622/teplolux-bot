@@ -2,10 +2,10 @@ import { TKey } from '../../../../i18n/i18n.keys';
 import { TranslationKey } from '../../../../i18n/i18n.types';
 import { CONTACT_REQUEST_FLOW_ID, FlowTopic } from '../conversation.constants';
 import { FlowDefinition, FlowStep, StepValidation } from '../conversation.types';
+import { cityStep } from './regions';
 
 // Unicode-aware validators (target ES2018+).
 const NAME_RE = /^[\p{L}][\p{L}\s'.-]{1,99}$/u;
-const CITY_RE = /^[\p{L}][\p{L}\s'.-]{1,59}$/u;
 const PHONE_RE = /^\+?\d{7,15}$/;
 
 export function validateFullName(raw: string): StepValidation {
@@ -18,11 +18,6 @@ export function validateFullName(raw: string): StepValidation {
 export function validatePhone(raw: string): StepValidation {
   const value = raw.trim().replace(/[\s()-]/g, '');
   return PHONE_RE.test(value) ? { ok: true, value } : { ok: false, errorKey: TKey.flowErrorPhone };
-}
-
-export function validateCity(raw: string): StepValidation {
-  const value = raw.trim().replace(/\s+/g, ' ');
-  return CITY_RE.test(value) ? { ok: true, value } : { ok: false, errorKey: TKey.flowErrorCity };
 }
 
 function validateCustomerMessage(raw: string): StepValidation {
@@ -46,13 +41,7 @@ const steps: ReadonlyArray<FlowStep> = [
     type: 'phone',
     validate: validatePhone,
   },
-  {
-    id: 'city',
-    promptKey: TKey.flowPromptCity,
-    summaryLabelKey: TKey.flowSummaryCity,
-    type: 'text',
-    validate: validateCity,
-  },
+  cityStep,
   {
     // Final optional question: "What would you like to ask us?" (customerMessage).
     id: 'customerMessage',

@@ -2,7 +2,8 @@ import { TKey } from '../../../../i18n/i18n.keys';
 import { TranslationKey } from '../../../../i18n/i18n.types';
 import { LEAD_FLOW_IDS, LEAD_TOPIC_BY_TYPE } from '../conversation.constants';
 import { ChoiceOption, FlowDefinition, FlowStep, StepValidation } from '../conversation.types';
-import { validateCity, validateFullName, validatePhone } from './contact-request.flow';
+import { validateFullName, validatePhone } from './contact-request.flow';
+import { cityStep } from './regions';
 
 /**
  * Lead-qualification flows — one per customer type, all driven by the SAME
@@ -57,13 +58,9 @@ const phone: FlowStep = {
   validate: validatePhone,
 };
 
-const city: FlowStep = {
-  id: 'city',
-  promptKey: TKey.flowPromptCity,
-  summaryLabelKey: TKey.flowSummaryCity,
-  type: 'text',
-  validate: validateCity,
-};
+// `city` is the shared Uzbekistan-region picker (see ./regions), reused so every
+// flow asks for the region the same way.
+const city = cityStep;
 
 /** Customer Message — ALWAYS the last step of every lead flow. */
 const customerMessage: FlowStep = {
