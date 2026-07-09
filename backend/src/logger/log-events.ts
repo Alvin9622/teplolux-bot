@@ -26,6 +26,8 @@ export const LogEvent = {
   FlowSubmitted: 'Conversation Flow Submitted',
   FlowCancelled: 'Conversation Flow Cancelled',
   OperatorSummaryGenerated: 'Operator Summary Generated',
+  LeadNotificationSent: 'Lead Notification Sent',
+  LeadNotificationFailed: 'Lead Notification Failed',
   AnalyticsEventTracked: 'Analytics Event Tracked',
   AnalyticsTrackingFailed: 'Analytics Tracking Failed',
   ContentPageRendered: 'Content Page Rendered',

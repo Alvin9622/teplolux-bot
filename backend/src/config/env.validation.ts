@@ -50,6 +50,9 @@ export const envSchema = z.object({
     .enum(['true', 'false'])
     .transform((value) => value === 'true')
     .default('false'),
+  // Group/channel chat id that receives every submitted lead (e.g. -1001234567890
+  // or @channelusername). Empty disables Telegram delivery (leads are only logged).
+  TELEGRAM_LEAD_CHAT_ID: z.string().default(''),
 
   // Rate limiting
   RATE_LIMIT_TTL_MS: z.coerce.number().int().positive().default(60_000),

@@ -42,6 +42,8 @@ export interface TelegramConfig {
   readonly webhookSecret: string;
   readonly webhookPath: string;
   readonly setWebhookOnStartup: boolean;
+  /** Group/channel chat id that receives every submitted lead. Empty = disabled. */
+  readonly leadChatId: string;
 }
 
 export interface RateLimitConfig {
@@ -120,6 +122,7 @@ export function configurationFactory(): Configuration {
       webhookSecret: env.TELEGRAM_WEBHOOK_SECRET,
       webhookPath: env.TELEGRAM_WEBHOOK_PATH,
       setWebhookOnStartup: env.TELEGRAM_SET_WEBHOOK_ON_STARTUP,
+      leadChatId: env.TELEGRAM_LEAD_CHAT_ID,
     },
     rateLimit: {
       ttlMs: env.RATE_LIMIT_TTL_MS,
