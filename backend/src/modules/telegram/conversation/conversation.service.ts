@@ -351,9 +351,10 @@ export class ConversationService {
     flow: FlowDefinition,
   ): Promise<void> {
     // Generate one structured operator summary (reusable across request types),
-    // which the operator service logs and prepares for future CRM integration.
+    // which the operator service logs, delivers to the lead group and prepares
+    // for future CRM integration.
     this.logger.log(`${LogEvent.FlowSubmitted}: ${flow.id}`, ConversationService.name);
-    await this.operatorSummary.record({
+    const payload = {
       requestType: state.metadata?.requestType ?? state.topic,
       productCategory: state.metadata?.productCategory ?? state.subject,
       customerType: state.metadata?.customerType,
@@ -367,7 +368,19 @@ export class ConversationService {
       conversationStartedAt: state.startedAt ? new Date(state.startedAt) : undefined,
       // One structured payload with EVERY collected field — CRM-ready.
       details: { ...state.data },
-    });
+    };
+    try {
+      await this.operatorSummary.record(payload);
+    } catch (error) {
+      // The sink already guards its own delivery, but never let an unexpected
+      // failure lose the lead, block the customer's confirmation, or crash the
+      // request — log the full payload so it can always be recovered.
+      this.logger.error(
+        `${LogEvent.LeadNotificationFailed}: recording the lead threw — payload preserved: ${JSON.stringify(payload)}`,
+        error instanceof Error ? error.stack : String(error),
+        ConversationService.name,
+      );
+    }
     this.analytics.trackFlow(this.actor(context), 'completed', {
       flowId: flow.id,
       requestType: state.metadata?.requestType ?? state.topic,
