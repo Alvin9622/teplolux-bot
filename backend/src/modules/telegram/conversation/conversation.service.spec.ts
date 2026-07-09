@@ -423,6 +423,20 @@ describe('ConversationService — lead qualification flows', () => {
     }
   });
 
+  it('individual flow ends with an OPTIONAL extras message (no re-asking)', () => {
+    const registry = new FlowRegistry();
+    const steps = registry.get(LEAD_FLOW_IDS.individual)?.steps ?? [];
+    const last = steps[steps.length - 1];
+    // Object type / product / area are already collected earlier in this flow,
+    // so the final message must be optional and must not repeat those questions.
+    expect(last.id).toBe('customerMessage');
+    expect(last.optional).toBe(true);
+    expect(last.promptKey).toBe(TKey.flowPromptAdditionalMessage);
+    // The installer flow (no object/product questions) keeps a required message.
+    const installerSteps = registry.get(LEAD_FLOW_IDS.installer)?.steps ?? [];
+    expect(installerSteps[installerSteps.length - 1].optional).toBeFalsy();
+  });
+
   it('rejects a too-short lead answer and re-prompts (shared validation)', async () => {
     await service.handleCallback(ctx(), 'ctype:company');
     await service.handleMessage(message('x'));

@@ -73,7 +73,8 @@
       "position": "💼 Kompaniyadagi lavozimingizni yozing:",
       "email": "✉️ Email manzilingizni qoldiring — taklifni yozma ko'rinishda ham yuboramiz (ixtiyoriy). Yoki «O'tkazib yuborish» tugmasini bosing:",
       "projectDescription": "📝 Loyihangiz haqida qisqacha yozing: nima qurilyapti va qanday yechim kerak?",
-      "leadMessage": "💬 Iltimos, murojaatingizni imkon qadar batafsil yozing.\n\nMasalan:\n• Nima kerak?\n• Qaysi obyekt uchun?\n• Qanday muammoga duch keldingiz?\n\nQancha ko'p ma'lumot bersangiz, mutaxassisimiz sizga shuncha tez va aniq yordam bera oladi."
+      "leadMessage": "💬 Iltimos, murojaatingizni imkon qadar batafsil yozing.\n\nMasalan:\n• Nima kerak?\n• Qaysi obyekt uchun?\n• Qanday muammoga duch keldingiz?\n\nQancha ko'p ma'lumot bersangiz, mutaxassisimiz sizga shuncha tez va aniq yordam bera oladi.",
+      "additionalMessage": "💬 Qo'shimcha savol yoki izohingiz bormi?\n\nMasalan:\n• Kerak bo'lgan boshqa mahsulotlar\n• O'rnatish muddati\n• Narx yoki kafolat bo'yicha savollar\n\nAgar yo'q bo'lsa, «⏭ O'tkazib yuborish» tugmasini bosing."
     },
     "error": {
       "fullName": "Ismingizni to'liqroq yozing, iltimos (kamida 2 ta harf). Masalan: Alisher Usmonov",

@@ -144,6 +144,7 @@ export const TKey = {
   flowPromptEmail: 'flow.prompt.email',
   flowPromptProjectDescription: 'flow.prompt.projectDescription',
   flowPromptLeadMessage: 'flow.prompt.leadMessage',
+  flowPromptAdditionalMessage: 'flow.prompt.additionalMessage',
   flowChoiceObjectApartment: 'flow.choice.object.apartment',
   flowChoiceObjectPrivateHouse: 'flow.choice.object.privateHouse',
   flowChoiceObjectOffice: 'flow.choice.object.office',

@@ -71,6 +71,22 @@ const customerMessage: FlowStep = {
   validate: requiredMessage,
 };
 
+/**
+ * Lighter final step for flows that already collected structured details
+ * (object type, product, area). Instead of re-asking what/which/why, it only
+ * invites optional extra questions or additional product needs — so it never
+ * duplicates questions the customer just answered. Still the LAST step and still
+ * keyed `customerMessage`, so submission mapping and the summary are unchanged.
+ */
+const additionalMessage: FlowStep = {
+  id: 'customerMessage',
+  promptKey: TKey.flowPromptAdditionalMessage,
+  summaryLabelKey: TKey.flowSummaryCustomerMessage,
+  type: 'text',
+  optional: true,
+  validate: optionalText,
+};
+
 // --- small step factories (data, not duplicated logic) ---
 
 function text(
@@ -163,7 +179,8 @@ export const leadFlows: ReadonlyArray<FlowDefinition> = [
       productChoices,
     ),
     text('area', TKey.flowPromptArea, TKey.flowSummaryArea, true),
-    customerMessage,
+    // Object/product/area already collected → only ask for extras, not a re-ask.
+    additionalMessage,
   ]),
   leadFlow(LEAD_FLOW_IDS.installer, [
     fullName,
