@@ -176,7 +176,7 @@ async def go_lang(cb: CallbackQuery):
 # ─── Universal go: router ─────────────────────────────────────────
 
 @router.callback_query(F.data.startswith("go:"))
-async def universal_go(cb: CallbackQuery):
+async def universal_go(cb: CallbackQuery, state: FSMContext):
     dest = cb.data[3:]  # "go:task_view_3" -> "task_view_3"
 
     if dest == "admin:users":
@@ -259,6 +259,11 @@ async def universal_go(cb: CallbackQuery):
     if dest == "content_menu":
         from handlers.content import content_menu
         await content_menu(cb)
+        return
+
+    if dest == "qr":
+        from handlers.qr import qr_menu
+        await qr_menu(cb, state)
         return
 
     if dest == "wp_menu":
