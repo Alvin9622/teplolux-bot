@@ -10,7 +10,7 @@ from config import BOT_TOKEN, ADMIN_IDS
 from database import init_db, seed_roadmap_tasks
 from handlers import admin, employee, common, confirm, group, roadmap, expenses
 from handlers import budget, activity, dashboard, inline as inline_handler, ideas
-from handlers import workplan, kpi, content as content_handler
+from handlers import workplan, kpi, content as content_handler, qr
 from utils.reminders import (
     send_reminders, send_daily_digest,
     send_confirm_reminders, send_weekly_report,
@@ -76,6 +76,7 @@ async def main():
     dp.include_router(workplan.router)
     dp.include_router(kpi.router)
     dp.include_router(content_handler.router)
+    dp.include_router(qr.router)
 
     await set_commands(bot)
 

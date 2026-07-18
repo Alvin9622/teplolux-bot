@@ -542,6 +542,14 @@ TEXTS = {
         "content_done":         "✅ Bajarildi deb belgilandi!",
         "content_failed":       "❌ Bajarilmadi deb belgilandi.",
 
+        # QR code
+        "btn_qr":       "🔳 QR kod yasash",
+        "qr_ask_input": "🔳 <b>QR kod generatori</b>\n\nHavola yoki matn yuboring — men uni QR kod (PNG) qilib qaytaraman.\n\n<i>Masalan: https://teploluxgroup.uz</i>",
+        "qr_done":      "✅ <b>QR kod tayyor!</b>\n\n🔗 {data}",
+        "qr_again":     "🔁 Yana QR kod yasash uchun havola/matn yuboring yoki menyuga qayting.",
+        "qr_invalid":   "❌ Bo'sh xabar. Havola yoki matn yuboring.",
+        "qr_too_long":  "❌ Matn juda uzun (maksimal 1500 belgi).",
+
         "categories": [
             "📱 SMM va Kontent",
             "🔍 SEO va Sayt",
@@ -1094,6 +1102,14 @@ TEXTS = {
         "content_week_title":   "📅 <b>Недельный план контента</b>",
         "content_done":         "✅ Отмечено как выполнено!",
         "content_failed":       "❌ Отмечено как не выполнено.",
+
+        # QR code
+        "btn_qr":       "🔳 Создать QR-код",
+        "qr_ask_input": "🔳 <b>Генератор QR-кода</b>\n\nОтправьте ссылку или текст — я верну его в виде QR-кода (PNG).\n\n<i>Например: https://teploluxgroup.uz</i>",
+        "qr_done":      "✅ <b>QR-код готов!</b>\n\n🔗 {data}",
+        "qr_again":     "🔁 Отправьте ещё ссылку/текст для нового QR-кода или вернитесь в меню.",
+        "qr_invalid":   "❌ Пустое сообщение. Отправьте ссылку или текст.",
+        "qr_too_long":  "❌ Текст слишком длинный (максимум 1500 символов).",
 
         "categories": [
             "📱 SMM и Контент",
