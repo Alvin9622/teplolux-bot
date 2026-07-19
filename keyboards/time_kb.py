@@ -9,13 +9,36 @@ def time_menu_kb() -> InlineKeyboardMarkup:
     kb.button(text="▶️ Ishni boshlash", callback_data="tm:track_start")
     kb.button(text="🍅 Pomodoro", callback_data="tm:pomo")
     kb.button(text="⏳ Vaqt bloklari", callback_data="tm:blocks")
-    kb.button(text="📋 Kunlik reja", callback_data="tm:plan")
     kb.button(text="🎯 Maqsadlar", callback_data="tm:goals")
+    kb.button(text="📋 Kunlik reja", callback_data="tm:plan")
+    kb.button(text="📥 Topshiriqlar", callback_data="tm:tasks")
+    kb.button(text="🤖 AI yozuv", callback_data="tm:ai_log")
+    kb.button(text="🤖 Tavsiya", callback_data="tm:ai_tip")
     kb.button(text="📊 Statistikam", callback_data="tm:stats")
+    kb.button(text="📈 Tahlil", callback_data="tm:analytics")
     kb.button(text="🔥 Streak", callback_data="tm:streak")
     kb.button(text="📥 Excel hisobot", callback_data="tm:export")
     kb.button(text="⬅️ Bosh menyu", callback_data="go:main")
-    kb.adjust(1, 2, 2, 2, 1, 1)
+    kb.adjust(1, 2, 2, 2, 2, 2, 1)
+    return kb.as_markup()
+
+
+def ai_log_confirm_kb(category, minutes, task) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Saqlash",
+              callback_data=f"tm:ailog_ok:{category}|{minutes}|{task[:40]}")
+    kb.button(text="❌ Bekor", callback_data="tm:menu")
+    kb.adjust(2)
+    return kb.as_markup()
+
+
+def tasks_list_kb(tasks) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for t in tasks:
+        kb.button(text=f"📋 Rejaga: {t['title'][:25]}",
+                  callback_data=f"tm:task2plan:{t['id']}")
+    kb.button(text="⬅️ Orqaga", callback_data="tm:menu")
+    kb.adjust(1)
     return kb.as_markup()
 
 
@@ -182,11 +205,12 @@ def goal_detail_kb(goal) -> InlineKeyboardMarkup:
         kb.button(text="➕1", callback_data=f"tm:ginc:{goal['id']}:1")
         kb.button(text="➕5", callback_data=f"tm:ginc:{goal['id']}:5")
         kb.button(text="✏️ Aniq son", callback_data=f"tm:gset:{goal['id']}")
+    kb.button(text="📋 Bugungi rejaga", callback_data=f"tm:gplan:{goal['id']}")
     kb.button(text="✅ Bajarildi", callback_data=f"tm:gdone:{goal['id']}")
     kb.button(text="🗑 O'chirish", callback_data=f"tm:gdel:{goal['id']}")
     kb.button(text="⬅️ Orqaga", callback_data="tm:goals")
     if goal["kind"] == "counter":
-        kb.adjust(3, 2, 1)
+        kb.adjust(3, 1, 2, 1)
     else:
-        kb.adjust(2, 1)
+        kb.adjust(1, 2, 1)
     return kb.as_markup()

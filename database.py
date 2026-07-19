@@ -2110,3 +2110,80 @@ async def get_time_logs_detail(user_id, since_date):
             "WHERE user_id=? AND log_date>=? AND duration_seconds IS NOT NULL "
             "ORDER BY log_date DESC, id DESC", (user_id, since_date))
         return [dict(r) for r in await cur.fetchall()]
+
+
+# ═══════════════════════════════════════════════════════════════
+#  STAGE 4 — AI log, reja ko'prigi, chuqur analitika
+# ═══════════════════════════════════════════════════════════════
+
+async def add_manual_log(user_id, task, category, minutes):
+    """Retroaktiv (allaqachon bajarilgan) time log yaratadi."""
+    now = datetime.datetime.now()
+    start = now - datetime.timedelta(minutes=minutes)
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute(
+            "INSERT INTO time_logs "
+            "(user_id, task_name, category, start_time, end_time, "
+            "duration_seconds, log_date) VALUES (?,?,?,?,?,?,?)",
+            (user_id, task, category, start.isoformat(), now.isoformat(),
+             minutes * 60, now.strftime("%Y-%m-%d")))
+        await conn.commit()
+
+
+async def append_plan_item(user_id, plan_date, text):
+    """Bugungi rejaga bitta band qo'shadi (mavjudlarni o'chirmasdan)."""
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT id FROM daily_plans WHERE user_id=? AND plan_date=?",
+            (user_id, plan_date))
+        row = await cur.fetchone()
+        if row:
+            plan_id = row["id"]
+        else:
+            cur = await conn.execute(
+                "INSERT INTO daily_plans (user_id, plan_date, created_at) VALUES (?,?,?)",
+                (user_id, plan_date, datetime.datetime.now().isoformat()))
+            plan_id = cur.lastrowid
+        cur = await conn.execute(
+            "SELECT COALESCE(MAX(position),0) FROM daily_plan_items WHERE plan_id=?",
+            (plan_id,))
+        (mx,) = await cur.fetchone()
+        await conn.execute(
+            "INSERT INTO daily_plan_items (plan_id, position, text) VALUES (?,?,?)",
+            (plan_id, mx + 1, text))
+        await conn.commit()
+
+
+async def get_employee_open_tasks(telegram_id):
+    """Xodimga biriktirilgan ochiq topshiriqlar (telegram_id orqali)."""
+    user = await get_user(telegram_id)
+    if not user:
+        return []
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT id, title, deadline FROM tasks "
+            "WHERE assignee_id=? AND status NOT IN ('done','cancelled') "
+            "ORDER BY id DESC LIMIT 10", (user["id"],))
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def productivity_by_hour(user_id, since_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT CAST(strftime('%H', start_time) AS INTEGER) AS h, "
+            "COALESCE(SUM(duration_seconds),0) FROM time_logs "
+            "WHERE user_id=? AND log_date>=? AND duration_seconds IS NOT NULL "
+            "GROUP BY h", (user_id, since_date))
+        return dict(await cur.fetchall())
+
+
+async def weekly_totals(user_id, since_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT strftime('%Y-%W', start_time) AS wk, "
+            "COALESCE(SUM(duration_seconds),0) FROM time_logs "
+            "WHERE user_id=? AND log_date>=? AND duration_seconds IS NOT NULL "
+            "GROUP BY wk ORDER BY wk", (user_id, since_date))
+        return await cur.fetchall()

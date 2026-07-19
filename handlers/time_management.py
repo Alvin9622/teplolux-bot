@@ -16,6 +16,7 @@ from keyboards.time_kb import (
     PRIORITY_EMOJI, PRIORITY_LABEL,
     templates_menu_kb, template_detail_kb, weekday_picker_kb, WEEKDAYS_UZ,
     goals_menu_kb, goal_kind_kb, goal_category_kb, goal_detail_kb,
+    ai_log_confirm_kb, tasks_list_kb,
 )
 from utils.pomodoro import schedule_pomodoro
 from utils.time_blocks import schedule_block_reminder, block_start_dt
@@ -778,3 +779,129 @@ async def export_excel(cb: CallbackQuery, bot):
         caption="📊 <b>Shaxsiy samaradorlik hisoboti</b>\n"
                 "Umumiy · Vaqt loglari (30 kun) · Maqsadlar",
         parse_mode="HTML")
+
+
+# ═══════════════ AI YORDAMCHI (Stage 4) ═══════════════
+class AiFSM(StatesGroup):
+    waiting_text = State()
+
+
+@router.callback_query(F.data == "tm:ai_log")
+async def ai_log_start(cb: CallbackQuery, state: FSMContext):
+    from utils.ai import is_ai_available
+    if not is_ai_available():
+        await cb.answer("🤖 AI sozlanmagan (ANTHROPIC_API_KEY yo'q).", show_alert=True)
+        return
+    await state.set_state(AiFSM.waiting_text)
+    await cb.message.edit_text(
+        "🤖 <b>Tabiiy til bilan vaqt yozish</b>\n\n"
+        "Nima qilganingizni oddiy yozing, men yozib qo'yaman.\n\n"
+        "<i>Masalan: «bugun 2 soat SEO audit qildim» yoki "
+        "«kontentga 90 daqiqa ketdi»</i>", parse_mode="HTML")
+    await cb.answer()
+
+
+@router.message(AiFSM.waiting_text)
+async def ai_log_parse(message: Message, state: FSMContext):
+    from utils.ai import parse_time_entry
+    await state.clear()
+    thinking = await message.answer("🤖 Tahlil qilyapman...")
+    data = await parse_time_entry(message.text)
+    if not data:
+        await thinking.edit_text(
+            "Tushunolmadim 😅 Aniqroq yozing: «2 soat SEO qildim».",
+            reply_markup=time_menu_kb())
+        return
+    cat, mins, task = data["category"], data["minutes"], data["task"]
+    h, m = divmod(mins, 60)
+    dur = f"{h}s {m}d" if h else f"{m}d"
+    await thinking.edit_text(
+        f"🤖 Shunday tushundim:\n\n"
+        f"📌 {task}\n🗂 {cat}\n⏱ {dur}\n\nTo'g'rimi?",
+        reply_markup=ai_log_confirm_kb(cat, mins, task), parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("tm:ailog_ok:"))
+async def ai_log_save(cb: CallbackQuery):
+    payload = cb.data.split(":", 2)[2]
+    cat, mins, task = payload.split("|", 2)
+    mins = int(mins)
+    await db.add_manual_log(cb.from_user.id, task, cat, mins)
+    points = max(1, round(mins / 60 * 5))
+    await db.add_focus_points(cb.from_user.id, points)
+    await db.touch_streak(cb.from_user.id)
+    await cb.message.edit_text(
+        f"✅ Saqlandi: {task} · {cat} · {mins} daq (+{points} ball)",
+        reply_markup=time_menu_kb(), parse_mode="HTML")
+    await cb.answer("Saqlandi ✅")
+
+
+@router.callback_query(F.data == "tm:ai_tip")
+async def ai_tip(cb: CallbackQuery):
+    from utils.ai import is_ai_available, daily_suggestion
+    if not is_ai_available():
+        await cb.answer("🤖 AI sozlanmagan (ANTHROPIC_API_KEY yo'q).", show_alert=True)
+        return
+    await cb.answer("🤖 Tavsiya tayyorlanmoqda...")
+    tip = await daily_suggestion(cb.from_user.id)
+    await cb.message.edit_text(
+        f"🤖 <b>Bugungi tavsiya</b>\n\n{tip}",
+        reply_markup=time_menu_kb(), parse_mode="HTML")
+
+
+# ═══════════════ TOPSHIRIQ KO'PRIGI (Stage 4) ═══════════════
+@router.callback_query(F.data == "tm:tasks")
+async def my_tasks(cb: CallbackQuery):
+    tasks = await db.get_employee_open_tasks(cb.from_user.id)
+    if not tasks:
+        await cb.message.edit_text(
+            "📥 Ochiq topshiriq yo'q.", reply_markup=time_menu_kb(), parse_mode="HTML")
+        await cb.answer()
+        return
+    lines = ["📥 <b>Topshiriqlaringiz</b>\n", "Rejaga qo'shish uchun bosing:\n"]
+    for t in tasks:
+        dl = f" (⏰ {t['deadline']})" if t.get("deadline") else ""
+        lines.append(f"• {t['title']}{dl}")
+    await cb.message.edit_text("\n".join(lines),
+                               reply_markup=tasks_list_kb(tasks), parse_mode="HTML")
+    await cb.answer()
+
+
+@router.callback_query(F.data.startswith("tm:task2plan:"))
+async def task_to_plan(cb: CallbackQuery):
+    task_id = int(cb.data.split(":")[2])
+    tasks = await db.get_employee_open_tasks(cb.from_user.id)
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if not task:
+        await cb.answer("Topilmadi.", show_alert=True)
+        return
+    await db.append_plan_item(cb.from_user.id, _today(), task["title"])
+    await cb.answer("Bugungi rejaga qo'shildi 📋", show_alert=True)
+
+
+# ═══════════════ MAQSAD → REJA (Stage 4) ═══════════════
+@router.callback_query(F.data.startswith("tm:gplan:"))
+async def goal_to_plan(cb: CallbackQuery):
+    goal_id = int(cb.data.split(":")[2])
+    goal = await db.get_goal(goal_id)
+    if not goal:
+        await cb.answer("Topilmadi.", show_alert=True)
+        return
+    await db.append_plan_item(cb.from_user.id, _today(), f"🎯 {goal['title']}")
+    await cb.answer("Bugungi rejaga qo'shildi 📋", show_alert=True)
+
+
+# ═══════════════ CHUQUR ANALITIKA (Stage 4) ═══════════════
+@router.callback_query(F.data == "tm:analytics")
+async def analytics_show(cb: CallbackQuery, bot):
+    from aiogram.types import BufferedInputFile
+    from utils.analytics import build_analytics_chart
+    await cb.answer("Grafik tayyorlanmoqda...")
+    data = await build_analytics_chart(cb.from_user.id)
+    if not data:
+        await cb.message.answer("Yetarli ma'lumot yo'q (yoki matplotlib o'rnatilmagan).")
+        return
+    await bot.send_photo(
+        cb.from_user.id, BufferedInputFile(data, "tahlil.png"),
+        caption="📈 <b>Samaradorlik tahlili</b>\n"
+                "Peak soatlaringiz va haftalik trend.", parse_mode="HTML")
