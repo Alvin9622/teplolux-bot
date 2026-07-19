@@ -252,57 +252,61 @@ async def api_stats(request: web.Request):
 
 
 async def api_timestats(request: web.Request):
+    """Vaqt paneli uchun ma'lumot — fokus statistikasi, bugungi bloklar, maqsadlar.
+
+    Vaqt boshqaruvi moduli (Stage 1-4) user_id sifatida telegram_id ishlatadi,
+    shuning uchun bu yerda user["id"] (ichki id) EMAS, tg_id beriladi.
+    """
     tg_user = await _get_tg_user(request)
     if not tg_user:
         return json_resp({"error": "unauthorized"}, 401)
     tg_id = tg_user.get("id")
-    user  = await db.get_user(tg_id)
+    if not tg_id:
+        return json_resp({"error": "unauthorized"}, 401)
+    user = await db.get_user(tg_id)
     if not user:
         return json_resp({"error": "not_registered"}, 403)
 
     import datetime as dt
     today = dt.datetime.now().strftime("%Y-%m-%d")
 
-    # Vaqt boshqaruvi funksiyalari user_id sifatida telegram_id ishlatadi
-    stats  = await db.get_focus_stats(tg_id)
+    # ── Fokus statistikasi (streak/ballar/pomodoro/soat) ──
+    stats           = await db.get_focus_stats(tg_id)
+    today_pomodoros = await db.count_today_pomodoros(tg_id)
+
+    # ── Bugungi vaqt bloklari ──
     blocks = await db.get_blocks_for_day(tg_id, today)
-
-    goals_out = []
-    try:
-        goals = await db.get_goals(tg_id)
-        for g in goals:
-            current = await db.compute_goal_current(g)
-            target  = g["target_value"] or 0
-            pct     = min(100, round(current / target * 100)) if target else 0
-            goals_out.append({
-                "title":   g["title"],
-                "kind":    g["kind"],
-                "current": current,
-                "target":  target,
-                "unit":    g.get("unit") or "",
-                "pct":     pct,
-            })
-    except Exception:
-        goals_out = []
-
     blocks_out = [{
-        "title":    b["title"],
-        "start":    b["start_time"],
-        "end":      b["end_time"],
-        "status":   b["status"],
-        "priority": b["priority"],
-        "category": b.get("category") or "",
+        "title":      b["title"],
+        "start_time": b["start_time"],
+        "end_time":   b["end_time"],
+        "status":     b["status"],       # planned | done | skipped
+        "priority":   b["priority"],     # high | medium | low
+        "category":   b.get("category") or "",
     } for b in blocks]
 
+    # ── Faol maqsadlar (vaqt maqsadi uchun progress avtomatik hisoblanadi) ──
+    goals_out = []
+    for g in await db.get_goals(tg_id):
+        current = await db.compute_goal_current(g)   # time-goal → time_logs'dan
+        target  = g["target_value"] or 0
+        pct     = min(100, round(current / target * 100)) if target else 0
+        goals_out.append({
+            "title":    g["title"],
+            "kind":     g["kind"],       # counter | time
+            "current":  current,
+            "target":   target,
+            "unit":     g.get("unit") or "",
+            "progress": pct,
+        })
+
     return json_resp({
-        "stats": {
-            "current_streak":      stats["current_streak"],
-            "longest_streak":      stats["longest_streak"],
-            "total_pomodoros":     stats["total_pomodoros"],
-            "total_focus_hours":   round(stats["total_focus_minutes"] / 60, 1),
-            "focus_points":        stats["focus_points"],
-        },
-        "blocks": blocks_out,
-        "goals":  goals_out,
-        "date":   today,
+        "streak":            stats["current_streak"],
+        "longest_streak":    stats["longest_streak"],
+        "focus_points":      stats["focus_points"],
+        "total_focus_hours": round(stats["total_focus_minutes"] / 60, 1),
+        "today_pomodoros":   today_pomodoros,
+        "blocks":            blocks_out,
+        "goals":             goals_out,
+        "date":              today,
     })

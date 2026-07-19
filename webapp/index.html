@@ -718,24 +718,28 @@ async function reloadTime(){
 }
 async function renderTime() {
   try{
+    // /api/timestats — tekis struktura: streak, focus_points, today_pomodoros,
+    // total_focus_hours, blocks[], goals[]
     const d=await api('/api/timestats');
-    const s=d.stats;
+
+    // 4 ta statistika kartochkasi
     let html=`<div class="stat-grid">
-      <div class="stat-box"><div class="stat-num" style="color:var(--red)">${s.current_streak}</div><div class="stat-lbl">🔥 Streak (kun)</div></div>
-      <div class="stat-box"><div class="stat-num" style="color:var(--yellow)">${s.total_pomodoros}</div><div class="stat-lbl">🍅 Pomodoro</div></div>
-      <div class="stat-box"><div class="stat-num" style="color:var(--link)">${s.total_focus_hours}</div><div class="stat-lbl">⏱ Fokus (soat)</div></div>
-      <div class="stat-box accent"><div class="stat-num" style="color:var(--green)">${s.focus_points}</div><div class="stat-lbl">⭐ Ballar</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--red)">${d.streak}</div><div class="stat-lbl">🔥 Streak (kun)</div></div>
+      <div class="stat-box accent"><div class="stat-num" style="color:var(--green)">${d.focus_points}</div><div class="stat-lbl">⭐ Ballar</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--yellow)">${d.today_pomodoros}</div><div class="stat-lbl">🍅 Bugungi pomodoro</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--link)">${d.total_focus_hours}</div><div class="stat-lbl">⏱ Fokus (soat)</div></div>
     </div>`;
 
-    // Bugungi bloklar
+    // Bugungi bloklar ro'yxati (muhimlik rangi + status ikoni)
+    const blocks=d.blocks||[];
     html+=`<div class="card"><div class="card-head"><span class="card-title">Bugungi bloklar</span>
-      <span style="font-size:12px;color:var(--hint)">${d.blocks.length} ta</span></div>`;
-    if(!d.blocks.length){
-      html+=`<div class="empty"><div class="empty-ico">⏳</div><div>Bugun blok yo'q</div></div>`;
+      <span style="font-size:12px;color:var(--hint)">${blocks.length} ta</span></div>`;
+    if(!blocks.length){
+      html+=`<div class="empty"><div class="empty-ico">⏳</div><div>Hali blok yo'q</div></div>`;
     }else{
-      html+=d.blocks.map(b=>{
+      html+=blocks.map(b=>{
         const ic=BLOCK_STATUS_ICON[b.status]||'⬜';
-        const meta=[`🕒 ${b.start}–${b.end}`,b.category].filter(Boolean).join(' · ');
+        const meta=[`🕒 ${b.start_time}–${b.end_time}`,b.category].filter(Boolean).join(' · ');
         return `<div class="list-item">
           <div class="item-icon" style="font-size:16px">${ic}</div>
           <div class="item-body">
@@ -750,25 +754,32 @@ async function renderTime() {
     }
     html+=`</div>`;
 
-    // Maqsadlar (bor bo'lsa)
-    if(d.goals && d.goals.length){
-      html+=`<div class="card"><div class="card-head"><span class="card-title">Maqsadlar</span>
-        <span style="font-size:12px;color:var(--hint)">${d.goals.length} ta</span></div><div class="card-body">`;
-      html+=d.goals.map(g=>{
-        const color=g.pct>=100?'var(--green)':'var(--link)';
+    // Maqsadlar (progress bar bilan) — bo'lmasa bo'sh holat
+    const goals=d.goals||[];
+    html+=`<div class="card"><div class="card-head"><span class="card-title">Maqsadlar</span>
+      <span style="font-size:12px;color:var(--hint)">${goals.length} ta</span></div>`;
+    if(!goals.length){
+      html+=`<div class="empty"><div class="empty-ico">🎯</div><div>Maqsad yo'q</div></div>`;
+    }else{
+      html+=`<div class="card-body">`+goals.map(g=>{
+        const color=g.progress>=100?'var(--green)':'var(--link)';
         return `<div style="margin-bottom:14px">
           <div class="prog-head"><span class="prog-lbl">${g.kind==='time'?'⏱':'📊'} ${g.title}</span>
-            <span class="prog-pct">${g.pct}%</span></div>
-          <div class="prog-track"><div class="prog-fill" style="width:${g.pct}%;background:${color}"></div></div>
+            <span class="prog-pct">${g.progress}%</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:${g.progress}%;background:${color}"></div></div>
           <div style="font-size:11px;color:var(--hint);margin-top:3px">${g.current} / ${g.target} ${g.unit}</div>
         </div>`;
-      }).join('');
-      html+=`</div></div>`;
+      }).join('')+`</div>`;
     }
+    html+=`</div>`;
 
     document.getElementById('time-body').innerHTML=html;
   }catch(e){
-    document.getElementById('time-body').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${e.message}</div></div>`;
+    // Tarmoq yo'q / server xatosi — foydalanuvchiga tushunarli xabar
+    const msg=(e && e.message && /Failed to fetch|NetworkError/i.test(e.message))
+      ? "Internet aloqasi yo'q. Qayta urinib ko'ring."
+      : "Ma'lumot yuklanmadi. Keyinroq urinib ko'ring.";
+    document.getElementById('time-body').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${msg}</div></div>`;
   }
 }
 
