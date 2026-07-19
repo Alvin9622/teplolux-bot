@@ -184,6 +184,7 @@ def create_app() -> web.Application:
     app.router.add_get("/api/tasks",          api_tasks)
     app.router.add_get("/api/budget",         api_budget)
     app.router.add_get("/api/stats",          api_stats)
+    app.router.add_get("/api/timestats",      api_timestats)
     app.router.add_route("OPTIONS", "/{path:.*}", options_handler)
     return app
 
@@ -247,4 +248,61 @@ async def api_stats(request: web.Request):
     return json_resp({
         "expense_stats": stats,
         "leaderboard": top,
+    })
+
+
+async def api_timestats(request: web.Request):
+    tg_user = await _get_tg_user(request)
+    if not tg_user:
+        return json_resp({"error": "unauthorized"}, 401)
+    tg_id = tg_user.get("id")
+    user  = await db.get_user(tg_id)
+    if not user:
+        return json_resp({"error": "not_registered"}, 403)
+
+    import datetime as dt
+    today = dt.datetime.now().strftime("%Y-%m-%d")
+
+    # Vaqt boshqaruvi funksiyalari user_id sifatida telegram_id ishlatadi
+    stats  = await db.get_focus_stats(tg_id)
+    blocks = await db.get_blocks_for_day(tg_id, today)
+
+    goals_out = []
+    try:
+        goals = await db.get_goals(tg_id)
+        for g in goals:
+            current = await db.compute_goal_current(g)
+            target  = g["target_value"] or 0
+            pct     = min(100, round(current / target * 100)) if target else 0
+            goals_out.append({
+                "title":   g["title"],
+                "kind":    g["kind"],
+                "current": current,
+                "target":  target,
+                "unit":    g.get("unit") or "",
+                "pct":     pct,
+            })
+    except Exception:
+        goals_out = []
+
+    blocks_out = [{
+        "title":    b["title"],
+        "start":    b["start_time"],
+        "end":      b["end_time"],
+        "status":   b["status"],
+        "priority": b["priority"],
+        "category": b.get("category") or "",
+    } for b in blocks]
+
+    return json_resp({
+        "stats": {
+            "current_streak":      stats["current_streak"],
+            "longest_streak":      stats["longest_streak"],
+            "total_pomodoros":     stats["total_pomodoros"],
+            "total_focus_hours":   round(stats["total_focus_minutes"] / 60, 1),
+            "focus_points":        stats["focus_points"],
+        },
+        "blocks": blocks_out,
+        "goals":  goals_out,
+        "date":   today,
     })

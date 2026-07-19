@@ -207,6 +207,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 <div id="pg-roadmap"  class="page"></div>
 <div id="pg-expenses" class="page"></div>
 <div id="pg-stats"    class="page"></div>
+<div id="pg-time"     class="page"></div>
 
 <!-- BOTTOM NAV -->
 <nav class="nav">
@@ -224,6 +225,9 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   </button>
   <button class="nav-item" onclick="go('stats')"   >
     <span class="nav-icon">📈</span>Statistika
+  </button>
+  <button class="nav-item" onclick="go('time')"    >
+    <span class="nav-icon">⏱</span>Vaqt
   </button>
 </nav>
 
@@ -298,7 +302,7 @@ const loaded = {};
 function go(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`pg-${name}`));
   document.querySelectorAll('.nav-item').forEach((b,i)=>
-    b.classList.toggle('active',['home','tasks','roadmap','expenses','stats'][i]===name));
+    b.classList.toggle('active',['home','tasks','roadmap','expenses','stats','time'][i]===name));
   if (!loaded[name]) { loaded[name]=true; pages[name](); }
 }
 const pages = {
@@ -307,6 +311,7 @@ const pages = {
   roadmap:  loadRoadmap,
   expenses: loadExpenses,
   stats:    loadStats,
+  time:     loadTime,
 };
 
 /* ══════════════════════════════════════════════════════
@@ -693,6 +698,77 @@ async function renderStats(){
     }
   }catch(e){
     document.getElementById('stats-body').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${e.message}</div></div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   TIME (Vaqt paneli)
+══════════════════════════════════════════════════════ */
+const BLOCK_STATUS_ICON = {planned:'⬜',done:'✅',skipped:'⏭'};
+async function loadTime() {
+  const el=document.getElementById('pg-time');
+  el.innerHTML=`<div class="page-header"><span class="page-title">Vaqt paneli</span>
+    <button class="refresh-btn" onclick="reloadTime()" title="Yangilash">⟳</button></div>
+    <div id="time-body"><div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div></div></div>`;
+  await renderTime();
+}
+async function reloadTime(){
+  document.getElementById('time-body').innerHTML='<div class="loading"><div style="font-size:32px;animation:spin .8s linear infinite">⟳</div></div>';
+  await renderTime();showToast('Yangilandi ✓');
+}
+async function renderTime() {
+  try{
+    const d=await api('/api/timestats');
+    const s=d.stats;
+    let html=`<div class="stat-grid">
+      <div class="stat-box"><div class="stat-num" style="color:var(--red)">${s.current_streak}</div><div class="stat-lbl">🔥 Streak (kun)</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--yellow)">${s.total_pomodoros}</div><div class="stat-lbl">🍅 Pomodoro</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--link)">${s.total_focus_hours}</div><div class="stat-lbl">⏱ Fokus (soat)</div></div>
+      <div class="stat-box accent"><div class="stat-num" style="color:var(--green)">${s.focus_points}</div><div class="stat-lbl">⭐ Ballar</div></div>
+    </div>`;
+
+    // Bugungi bloklar
+    html+=`<div class="card"><div class="card-head"><span class="card-title">Bugungi bloklar</span>
+      <span style="font-size:12px;color:var(--hint)">${d.blocks.length} ta</span></div>`;
+    if(!d.blocks.length){
+      html+=`<div class="empty"><div class="empty-ico">⏳</div><div>Bugun blok yo'q</div></div>`;
+    }else{
+      html+=d.blocks.map(b=>{
+        const ic=BLOCK_STATUS_ICON[b.status]||'⬜';
+        const meta=[`🕒 ${b.start}–${b.end}`,b.category].filter(Boolean).join(' · ');
+        return `<div class="list-item">
+          <div class="item-icon" style="font-size:16px">${ic}</div>
+          <div class="item-body">
+            <div class="item-title">${b.title}</div>
+            <div class="item-meta">
+              <span style="color:${PRI_COLOR[b.priority]||'var(--hint)'}">● ${b.priority}</span>
+              <span>${meta}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    html+=`</div>`;
+
+    // Maqsadlar (bor bo'lsa)
+    if(d.goals && d.goals.length){
+      html+=`<div class="card"><div class="card-head"><span class="card-title">Maqsadlar</span>
+        <span style="font-size:12px;color:var(--hint)">${d.goals.length} ta</span></div><div class="card-body">`;
+      html+=d.goals.map(g=>{
+        const color=g.pct>=100?'var(--green)':'var(--link)';
+        return `<div style="margin-bottom:14px">
+          <div class="prog-head"><span class="prog-lbl">${g.kind==='time'?'⏱':'📊'} ${g.title}</span>
+            <span class="prog-pct">${g.pct}%</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:${g.pct}%;background:${color}"></div></div>
+          <div style="font-size:11px;color:var(--hint);margin-top:3px">${g.current} / ${g.target} ${g.unit}</div>
+        </div>`;
+      }).join('');
+      html+=`</div></div>`;
+    }
+
+    document.getElementById('time-body').innerHTML=html;
+  }catch(e){
+    document.getElementById('time-body').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div>${e.message}</div></div>`;
   }
 }
 
