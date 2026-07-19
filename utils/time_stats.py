@@ -64,3 +64,37 @@ async def build_streak_card(user_id: int) -> str:
         "<i>Har kuni kamida 1 pomodoro yoki 1 reja bandini bajarib, "
         "streakni uzmang!</i>"
     )
+
+
+async def build_week_chart(user_id: int):
+    """Haftalik vaqt taqsimotini PNG bytes qilib qaytaradi (matplotlib yo'q bo'lsa None)."""
+    try:
+        import io
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except Exception:
+        return None
+
+    start = (datetime.datetime.now() - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
+    by_cat = await db.time_by_category_since(user_id, start)
+    if not by_cat:
+        return None
+    data = sorted(by_cat, key=lambda x: x[1])
+    cats  = [c for c, _ in data]
+    hours = [round(s / 3600, 1) for _, s in data]
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+    bars = ax.barh(cats, hours, color="#2E86DE")
+    ax.set_xlabel("Soat")
+    ax.set_title("Haftalik vaqt taqsimoti (7 kun)")
+    for bar, h in zip(bars, hours):
+        ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height() / 2,
+                f"{h}s", va="center", fontsize=9)
+    fig.tight_layout()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=130, bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+    return buf.getvalue()

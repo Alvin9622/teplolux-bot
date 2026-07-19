@@ -12,8 +12,10 @@ from handlers import admin, employee, common, confirm, group, roadmap, expenses
 from handlers import budget, activity, dashboard, inline as inline_handler, ideas
 from handlers import workplan, kpi, content as content_handler, qr, time_management
 from utils.pomodoro import rehydrate_pomodoros
+from utils.time_blocks import rehydrate_time_blocks
 from utils.time_stats import build_week_report
 from keyboards.time_kb import time_menu_kb
+from database import get_last_activity
 from utils.reminders import (
     send_reminders, send_daily_digest,
     send_confirm_reminders, send_weekly_report,
@@ -139,24 +141,58 @@ async def main():
                 pass
 
     async def weekly_focus_report():
+        from aiogram.types import BufferedInputFile
+        from utils.time_stats import build_week_chart
         for uid in await get_all_employee_ids():
             try:
-                text = await build_week_report(uid)
-                await bot.send_message(uid, "📅 <b>Haftalik yakun</b>\n\n" + text,
-                                       parse_mode="HTML")
+                text  = await build_week_report(uid)
+                chart = await build_week_chart(uid)
+                if chart:
+                    await bot.send_photo(
+                        uid, BufferedInputFile(chart, "week.png"),
+                        caption="📅 <b>Haftalik yakun</b>\n\n" + text,
+                        parse_mode="HTML")
+                else:
+                    await bot.send_message(uid, "📅 <b>Haftalik yakun</b>\n\n" + text,
+                                           parse_mode="HTML")
             except Exception:
                 pass
+
+    # ── Aqlli eslatma (nudge) — ish vaqtida uzoq faollik bo'lmasa ──
+    async def inactivity_nudge():
+        now = datetime.datetime.now()
+        if now.weekday() >= 5:      # shanba/yakshanba
+            return
+        for uid in await get_all_employee_ids():
+            last = await get_last_activity(uid)
+            if not last:
+                continue
+            if last.strftime("%Y-%m-%d") != now.strftime("%Y-%m-%d"):
+                continue
+            if (now - last) >= datetime.timedelta(hours=2):
+                try:
+                    await bot.send_message(
+                        uid,
+                        "🔔 <b>2 soatdan beri faollik yo'q</b>\n\n"
+                        "Nima ustida ishlayapsiz? Vaqtni ▶️ belgilab qo'ying "
+                        "yoki 🍅 pomodoro bilan fokusga qayting.",
+                        parse_mode="HTML")
+                except Exception:
+                    pass
 
     scheduler.add_job(morning_plan_prompt,  "cron", hour=9,  minute=0)
     scheduler.add_job(evening_plan_review,  "cron", hour=18, minute=0)
     scheduler.add_job(weekly_focus_report,  "cron", day_of_week="fri", hour=18, minute=0)
+    for hh, mm in [(11, 30), (14, 30), (16, 30)]:
+        scheduler.add_job(inactivity_nudge, "cron", hour=hh, minute=mm)
     scheduler.start()
 
-    # Faol pomodorolarni tiklash (restartdan keyin)
+    # Faol taymerlarni tiklash (restartdan keyin)
     try:
         await rehydrate_pomodoros(scheduler, bot)
+        await rehydrate_time_blocks(scheduler, bot)
     except Exception as _pe:
-        logger.warning("Pomodoro rehydrate skipped: %s", _pe)
+        logger.warning("Timer rehydrate skipped: %s", _pe)
 
     # Mini App web server
     webapp_runner = None

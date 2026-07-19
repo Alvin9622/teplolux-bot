@@ -1,6 +1,7 @@
 """Vaqt boshqaruvi: vaqt hisobi, pomodoro, kunlik reja, statistika, streak."""
 import datetime
 import logging
+import re
 
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
@@ -11,8 +12,11 @@ import database as db
 from keyboards.time_kb import (
     time_menu_kb, category_kb, active_track_kb,
     pomo_duration_kb, active_pomo_kb, plan_items_kb,
+    blocks_menu_kb, block_category_kb, block_priority_kb,
+    PRIORITY_EMOJI, PRIORITY_LABEL,
 )
 from utils.pomodoro import schedule_pomodoro
+from utils.time_blocks import schedule_block_reminder, block_start_dt
 from utils.time_stats import build_week_report, build_streak_card
 
 logger = logging.getLogger(__name__)
@@ -281,3 +285,145 @@ async def streak_show(cb: CallbackQuery):
     text = await build_streak_card(cb.from_user.id)
     await cb.message.edit_text(text, reply_markup=time_menu_kb(), parse_mode="HTML")
     await cb.answer()
+
+
+# ═══════════════ VAQT BLOKLARI (Stage 2) ═══════════════
+STATUS_EMOJI = {"planned": "⬜️", "done": "✅", "skipped": "⏭"}
+
+
+class BlockFSM(StatesGroup):
+    title = State()
+    category = State()
+    priority = State()
+    time_range = State()
+
+
+def _parse_block_time(text: str):
+    t = text.strip().replace(" ", "").replace("–", "-").replace("—", "-")
+    m = re.match(r"^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$", t)
+    if not m:
+        return None
+    h1, m1, h2, m2 = map(int, m.groups())
+    if not (0 <= h1 < 24 and 0 <= m1 < 60 and 0 <= h2 < 24 and 0 <= m2 < 60):
+        return None
+    start, end = f"{h1:02d}:{m1:02d}", f"{h2:02d}:{m2:02d}"
+    if end <= start:
+        return None
+    return start, end
+
+
+def _render_blocks(blocks) -> str:
+    if not blocks:
+        return ("⏳ <b>Bugungi bloklar yo'q</b>\n\n"
+                "Kuningizni oldindan bloklarga bo'ling — diqqatni "
+                "jamlashning eng samarali usuli.\n\n"
+                "Masalan:\n🔴 09:00–11:00  SEO audit\n"
+                "🟡 11:00–12:00  Kontent\n🟢 14:00–16:00  Reklama")
+    lines = ["⏳ <b>Bugungi vaqt bloklari</b>\n"]
+    for b in blocks:
+        prio = PRIORITY_EMOJI.get(b["priority"], "")
+        stat = STATUS_EMOJI.get(b["status"], "")
+        lines.append(f"{prio} {b['start_time']}–{b['end_time']}  "
+                     f"{b['title']} {stat}")
+    lines.append("\n<i>🔴 yuqori · 🟡 o'rta · 🟢 past</i>")
+    return "\n".join(lines)
+
+
+@router.callback_query(F.data == "tm:blocks")
+async def blocks_show(cb: CallbackQuery):
+    blocks = await db.get_blocks_for_day(cb.from_user.id, _today())
+    await cb.message.edit_text(_render_blocks(blocks),
+                               reply_markup=blocks_menu_kb(), parse_mode="HTML")
+    await cb.answer()
+
+
+@router.callback_query(F.data == "tm:block_add")
+async def block_add(cb: CallbackQuery, state: FSMContext):
+    await state.set_state(BlockFSM.title)
+    await cb.message.edit_text(
+        "✍️ Blok nomi?\n<i>(masalan: «De Dietrich reklamasi»)</i>",
+        parse_mode="HTML")
+    await cb.answer()
+
+
+@router.message(BlockFSM.title)
+async def block_title(message: Message, state: FSMContext):
+    await state.update_data(title=message.text.strip())
+    await state.set_state(BlockFSM.category)
+    await message.answer("🗂 Kategoriya?", reply_markup=block_category_kb())
+
+
+@router.callback_query(BlockFSM.category, F.data.startswith("tm:bcat:"))
+async def block_category(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(category=cb.data.split(":", 2)[2])
+    await state.set_state(BlockFSM.priority)
+    await cb.message.edit_text("🎯 Muhimlik darajasi?",
+                               reply_markup=block_priority_kb())
+    await cb.answer()
+
+
+@router.callback_query(BlockFSM.priority, F.data.startswith("tm:bprio:"))
+async def block_priority(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(priority=cb.data.split(":", 2)[2])
+    await state.set_state(BlockFSM.time_range)
+    await cb.message.edit_text(
+        "🕒 Vaqt oralig'ini yozing:\n\nFormat: <code>09:00-11:00</code>",
+        parse_mode="HTML")
+    await cb.answer()
+
+
+@router.message(BlockFSM.time_range)
+async def block_save(message: Message, state: FSMContext, scheduler, bot):
+    parsed = _parse_block_time(message.text)
+    if not parsed:
+        await message.answer(
+            "❌ Noto'g'ri format. Masalan: <code>09:00-11:00</code>\n"
+            "(tugash vaqti boshlanishdan keyin bo'lsin)", parse_mode="HTML")
+        return
+    start, end = parsed
+    data = await state.get_data()
+    priority = data.get("priority", "medium")
+    block_id = await db.add_time_block(
+        message.from_user.id, _today(), data["title"],
+        data.get("category", "Boshqa"), start, end, priority)
+
+    run_dt = block_start_dt(_today(), start)
+    if run_dt > datetime.datetime.now():
+        schedule_block_reminder(scheduler, bot, message.from_user.id,
+                                block_id, run_dt)
+
+    await state.clear()
+    blocks = await db.get_blocks_for_day(message.from_user.id, _today())
+    prio = PRIORITY_EMOJI.get(priority, "")
+    await message.answer(
+        f"✅ Blok qo'shildi: {prio} {start}–{end}  {data['title']}\n\n"
+        + _render_blocks(blocks),
+        reply_markup=blocks_menu_kb(), parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("tm:bdone:"))
+async def block_done(cb: CallbackQuery):
+    block_id = int(cb.data.split(":")[2])
+    await db.set_block_status(block_id, "done")
+    await db.add_focus_points(cb.from_user.id, 5)
+    await db.touch_streak(cb.from_user.id)
+    try:
+        await cb.message.edit_text(
+            cb.message.html_text + "\n\n✅ <b>Bajarildi</b> (+5 ball)",
+            parse_mode="HTML")
+    except Exception:
+        pass
+    await cb.answer("Ajoyib! 🎯")
+
+
+@router.callback_query(F.data.startswith("tm:bskip:"))
+async def block_skip(cb: CallbackQuery):
+    block_id = int(cb.data.split(":")[2])
+    await db.set_block_status(block_id, "skipped")
+    try:
+        await cb.message.edit_text(
+            cb.message.html_text + "\n\n⏭ <i>O'tkazib yuborildi</i>",
+            parse_mode="HTML")
+    except Exception:
+        pass
+    await cb.answer("Belgilandi")

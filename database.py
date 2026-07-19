@@ -309,6 +309,19 @@ async def init_db():
             total_pomodoros     INTEGER DEFAULT 0,
             focus_points        INTEGER DEFAULT 0
         );
+
+        CREATE TABLE IF NOT EXISTS time_blocks (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL,
+            block_date TEXT NOT NULL,
+            title      TEXT NOT NULL,
+            category   TEXT,
+            start_time TEXT NOT NULL,
+            end_time   TEXT NOT NULL,
+            priority   TEXT DEFAULT 'medium',
+            reminded   INTEGER DEFAULT 0,
+            status     TEXT DEFAULT 'planned'
+        );
         """)
         await db.commit()
 
@@ -1803,3 +1816,80 @@ async def get_all_employee_ids():
     async with aiosqlite.connect(DB_PATH) as conn:
         cur = await conn.execute("SELECT telegram_id FROM users WHERE is_active=1")
         return [r[0] for r in await cur.fetchall()]
+
+
+# ═══════════════════════════════════════════════════════════════
+#  VAQT BLOKLARI (TIME BLOCKING) — Stage 2
+# ═══════════════════════════════════════════════════════════════
+
+async def add_time_block(user_id, block_date, title, category, start, end, priority):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "INSERT INTO time_blocks "
+            "(user_id, block_date, title, category, start_time, end_time, priority) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (user_id, block_date, title, category, start, end, priority))
+        await conn.commit()
+        return cur.lastrowid
+
+
+async def get_time_block(block_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute("SELECT * FROM time_blocks WHERE id=?", (block_id,))
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+
+async def get_blocks_for_day(user_id, block_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM time_blocks WHERE user_id=? AND block_date=? "
+            "ORDER BY start_time", (user_id, block_date))
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def get_blocks_for_reminder(block_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM time_blocks WHERE block_date=? "
+            "AND status='planned' AND reminded=0", (block_date,))
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def mark_block_reminded(block_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute("UPDATE time_blocks SET reminded=1 WHERE id=?", (block_id,))
+        await conn.commit()
+
+
+async def set_block_status(block_id, status):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute("UPDATE time_blocks SET status=? WHERE id=?", (status, block_id))
+        await conn.commit()
+
+
+async def delete_time_block(block_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute("DELETE FROM time_blocks WHERE id=?", (block_id,))
+        await conn.commit()
+
+
+async def get_last_activity(user_id):
+    """Barcha modullardan oxirgi faollik vaqtini qaytaradi (aqlli nudge uchun)."""
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute("""
+            SELECT MAX(ts) FROM (
+                SELECT MAX(COALESCE(end_time, start_time)) AS ts
+                    FROM time_logs WHERE user_id=?
+                UNION ALL
+                SELECT MAX(start_time) FROM pomodoro_sessions WHERE user_id=?
+                UNION ALL
+                SELECT MAX(i.done_at) FROM daily_plan_items i
+                    JOIN daily_plans p ON p.id=i.plan_id WHERE p.user_id=?
+            )
+        """, (user_id, user_id, user_id))
+        (ts,) = await cur.fetchone()
+        return datetime.datetime.fromisoformat(ts) if ts else None
