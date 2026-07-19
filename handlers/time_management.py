@@ -14,6 +14,8 @@ from keyboards.time_kb import (
     pomo_duration_kb, active_pomo_kb, plan_items_kb,
     blocks_menu_kb, block_category_kb, block_priority_kb,
     PRIORITY_EMOJI, PRIORITY_LABEL,
+    templates_menu_kb, template_detail_kb, weekday_picker_kb, WEEKDAYS_UZ,
+    goals_menu_kb, goal_kind_kb, goal_category_kb, goal_detail_kb,
 )
 from utils.pomodoro import schedule_pomodoro
 from utils.time_blocks import schedule_block_reminder, block_start_dt
@@ -427,3 +429,352 @@ async def block_skip(cb: CallbackQuery):
     except Exception:
         pass
     await cb.answer("Belgilandi")
+
+
+# ═══════════════ BLOK SHABLONLARI (Stage 3) ═══════════════
+class TemplateFSM(StatesGroup):
+    save_name = State()
+
+class WeekdayFSM(StatesGroup):
+    selecting = State()
+
+
+def _render_template_detail(tpl, items) -> str:
+    lines = [f"📁 <b>{tpl['name']}</b>\n"]
+    for it in items:
+        prio = PRIORITY_EMOJI.get(it["priority"], "")
+        lines.append(f"{prio} {it['start_time']}–{it['end_time']}  {it['title']}")
+    if tpl["auto_weekdays"]:
+        days = [WEEKDAYS_UZ[int(x)] for x in tpl["auto_weekdays"].split(",") if x != ""]
+        lines.append(f"\n🔁 Avtomatik: {', '.join(days)}")
+    else:
+        lines.append("\n🔁 Avtomatik: o'chirilgan")
+    return "\n".join(lines)
+
+
+@router.callback_query(F.data == "tm:templates")
+async def templates_show(cb: CallbackQuery):
+    tpls = await db.get_templates(cb.from_user.id)
+    if not tpls:
+        txt = ("📁 <b>Shablonlar yo'q</b>\n\n"
+               "Har kuni bir xil bloklarni qayta yaratmang — bir marta "
+               "shablon qiling, keyin bir tugma bilan qo'llang.\n\n"
+               "Bugungi bloklaringizni «💾 Shablon qilish» orqali saqlang.")
+    else:
+        txt = "📁 <b>Shablonlar</b>\n\n🔁 = avtomatik qo'llanadigan"
+    await cb.message.edit_text(txt, reply_markup=templates_menu_kb(tpls), parse_mode="HTML")
+    await cb.answer()
+
+
+@router.callback_query(F.data == "tm:tpl_save")
+async def tpl_save_start(cb: CallbackQuery, state: FSMContext):
+    blocks = await db.get_blocks_for_day(cb.from_user.id, _today())
+    if not blocks:
+        await cb.answer("Bugun bloklar yo'q — avval blok qo'shing.", show_alert=True)
+        return
+    await state.set_state(TemplateFSM.save_name)
+    await cb.message.edit_text(
+        f"💾 Bugungi {len(blocks)} ta blokni shablon qilamiz.\n\n"
+        "Shablon nomini yozing (masalan: «Ish kuni»):", parse_mode="HTML")
+    await cb.answer()
+
+
+@router.message(TemplateFSM.save_name)
+async def tpl_save_finish(message: Message, state: FSMContext):
+    name = message.text.strip()
+    await db.save_blocks_as_template(message.from_user.id, name, _today())
+    await state.clear()
+    tpls = await db.get_templates(message.from_user.id)
+    await message.answer(
+        f"✅ «{name}» shabloni saqlandi.\n\n"
+        "Endi uni istalgan kuni bir tugma bilan qo'llashingiz mumkin.",
+        reply_markup=templates_menu_kb(tpls), parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("tm:tpl_apply:"))
+async def tpl_apply(cb: CallbackQuery, scheduler, bot):
+    tid = int(cb.data.split(":")[2])
+    created = await db.apply_template(cb.from_user.id, tid, _today())
+    now = datetime.datetime.now()
+    for b in created:
+        run_dt = block_start_dt(_today(), b["start_time"])
+        if run_dt > now:
+            schedule_block_reminder(scheduler, bot, cb.from_user.id, b["id"], run_dt)
+    blocks = await db.get_blocks_for_day(cb.from_user.id, _today())
+    await cb.message.edit_text(
+        f"✅ {len(created)} ta blok bugunga qo'shildi!\n\n" + _render_blocks(blocks),
+        reply_markup=blocks_menu_kb(), parse_mode="HTML")
+    await cb.answer("Qo'llandi 🎯")
+
+
+@router.callback_query(F.data.startswith("tm:tpl_del:"))
+async def tpl_del(cb: CallbackQuery):
+    tid = int(cb.data.split(":")[2])
+    await db.delete_template(tid)
+    tpls = await db.get_templates(cb.from_user.id)
+    await cb.message.edit_text("🗑 Shablon o'chirildi.",
+                               reply_markup=templates_menu_kb(tpls), parse_mode="HTML")
+    await cb.answer()
+
+
+@router.callback_query(F.data.startswith("tm:tpl_days:"))
+async def tpl_days(cb: CallbackQuery, state: FSMContext):
+    tid = int(cb.data.split(":")[2])
+    tpl = await db.get_template(tid)
+    selected = [int(x) for x in tpl["auto_weekdays"].split(",") if x != ""]
+    await state.set_state(WeekdayFSM.selecting)
+    await state.update_data(template_id=tid, selected=selected)
+    await cb.message.edit_text(
+        "🔁 <b>Avtomatik qo'llash kunlari</b>\n\n"
+        "Tanlangan kunlari ertalab (07:30) shablon avtomatik qo'llanadi. "
+        "Kunlarni belgilang:",
+        reply_markup=weekday_picker_kb(tid, selected), parse_mode="HTML")
+    await cb.answer()
+
+
+@router.callback_query(WeekdayFSM.selecting, F.data.startswith("tm:wd:"))
+async def tpl_wd_toggle(cb: CallbackQuery, state: FSMContext):
+    day = int(cb.data.split(":")[2])
+    data = await state.get_data()
+    selected = set(data["selected"])
+    selected.symmetric_difference_update({day})
+    selected = sorted(selected)
+    await state.update_data(selected=selected)
+    await cb.message.edit_reply_markup(
+        reply_markup=weekday_picker_kb(data["template_id"], selected))
+    await cb.answer()
+
+
+@router.callback_query(WeekdayFSM.selecting, F.data == "tm:wd_save")
+async def tpl_wd_save(cb: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    tid = data["template_id"]
+    await db.set_template_weekdays(tid, ",".join(str(d) for d in data["selected"]))
+    await state.clear()
+    tpl = await db.get_template(tid)
+    items = await db.get_template_items(tid)
+    await cb.message.edit_text(_render_template_detail(tpl, items),
+                               reply_markup=template_detail_kb(tid), parse_mode="HTML")
+    await cb.answer("Saqlandi ✅")
+
+
+@router.callback_query(F.data.startswith("tm:tpl:"))
+async def tpl_detail(cb: CallbackQuery):
+    tid = int(cb.data.split(":")[2])
+    tpl = await db.get_template(tid)
+    items = await db.get_template_items(tid)
+    await cb.message.edit_text(_render_template_detail(tpl, items),
+                               reply_markup=template_detail_kb(tid), parse_mode="HTML")
+    await cb.answer()
+
+
+# ═══════════════ MAQSADLAR (Stage 3) ═══════════════
+class GoalFSM(StatesGroup):
+    title = State()
+    kind = State()
+    counter_target = State()
+    counter_unit = State()
+    time_category = State()
+    time_hours = State()
+    set_value = State()
+
+
+def _is_number(s):
+    try:
+        float(s.replace(",", "."))
+        return True
+    except (ValueError, AttributeError):
+        return False
+
+
+async def _render_goal_detail(goal) -> str:
+    current = await db.compute_goal_current(goal)
+    target = goal["target_value"]
+    pct = min(100, round(current / target * 100)) if target else 0
+    filled = min(10, round(current / target * 10)) if target else 0
+    bar_s = "▰" * filled + "▱" * (10 - filled)
+    kind_label = "⏱ Vaqt maqsadi" if goal["kind"] == "time" else "📊 Sanoq maqsadi"
+    lines = [f"🎯 <b>{goal['title']}</b>", kind_label]
+    if goal["kind"] == "time":
+        lines.append(f"🗂 {goal['category']} · {goal['period']}")
+    lines.append(f"\n{bar_s}  {pct}%")
+    lines.append(f"{current:g} / {target:g} {goal['unit']}")
+    if pct >= 100:
+        lines.append("\n🎉 Maqsadga erishildi! «✅ Bajarildi»ni bosing.")
+    return "\n".join(lines)
+
+
+@router.callback_query(F.data == "tm:goals")
+async def goals_show(cb: CallbackQuery):
+    goals = await db.get_goals(cb.from_user.id)
+    if not goals:
+        txt = ("🎯 <b>Maqsadlar yo'q</b>\n\n"
+               "Kundalik ishni kattaroq maqsadga bog'lang:\n"
+               "• 50 ta mahsulot kartochkasi SEO (sanoq)\n"
+               "• Iyulda 40 soat kontent (vaqt — avtomatik hisoblanadi)\n\n"
+               "«➕ Yangi maqsad» bilan boshlang.")
+    else:
+        txt = "🎯 <b>Maqsadlaringiz</b>\n\nBatafsil ko'rish uchun tanlang:"
+    await cb.message.edit_text(txt, reply_markup=goals_menu_kb(goals), parse_mode="HTML")
+    await cb.answer()
+
+
+@router.callback_query(F.data == "tm:goal_new")
+async def goal_new(cb: CallbackQuery, state: FSMContext):
+    await state.set_state(GoalFSM.title)
+    await cb.message.edit_text(
+        "🎯 Maqsad nomi?\n<i>(masalan: «Mahsulot kartochkalari SEO»)</i>",
+        parse_mode="HTML")
+    await cb.answer()
+
+
+@router.message(GoalFSM.title)
+async def goal_title(message: Message, state: FSMContext):
+    await state.update_data(title=message.text.strip())
+    await state.set_state(GoalFSM.kind)
+    await message.answer("Maqsad turi?", reply_markup=goal_kind_kb())
+
+
+@router.callback_query(GoalFSM.kind, F.data.startswith("tm:gkind:"))
+async def goal_kind(cb: CallbackQuery, state: FSMContext):
+    kind = cb.data.split(":")[2]
+    await state.update_data(kind=kind)
+    if kind == "counter":
+        await state.set_state(GoalFSM.counter_target)
+        await cb.message.edit_text("📊 Nechta? (maqsad soni, masalan: 50)", parse_mode="HTML")
+    else:
+        await state.set_state(GoalFSM.time_category)
+        await cb.message.edit_text("⏱ Qaysi yo'nalish bo'yicha?",
+                                   reply_markup=goal_category_kb(), parse_mode="HTML")
+    await cb.answer()
+
+
+@router.message(GoalFSM.counter_target)
+async def goal_counter_target(message: Message, state: FSMContext):
+    if not _is_number(message.text):
+        await message.answer("Iltimos, raqam yuboring (masalan: 50).")
+        return
+    await state.update_data(target=float(message.text.replace(",", ".")))
+    await state.set_state(GoalFSM.counter_unit)
+    await message.answer("Birlik nomi? (masalan: «ta», «dona»)\n"
+                         "Kerak bo'lmasa «-» yuboring:")
+
+
+@router.message(GoalFSM.counter_unit)
+async def goal_counter_unit(message: Message, state: FSMContext):
+    unit = "" if message.text.strip() == "-" else message.text.strip()
+    data = await state.get_data()
+    await db.add_goal(message.from_user.id, data["title"], "counter",
+                      data["target"], unit, None, None, None)
+    await state.clear()
+    goals = await db.get_goals(message.from_user.id)
+    await message.answer("✅ Maqsad qo'shildi!", reply_markup=goals_menu_kb(goals),
+                         parse_mode="HTML")
+
+
+@router.callback_query(GoalFSM.time_category, F.data.startswith("tm:gcat:"))
+async def goal_time_category(cb: CallbackQuery, state: FSMContext):
+    await state.update_data(category=cb.data.split(":")[2])
+    await state.set_state(GoalFSM.time_hours)
+    await cb.message.edit_text("⏱ Necha soat? (bu oy uchun maqsad, masalan: 40)",
+                               parse_mode="HTML")
+    await cb.answer()
+
+
+@router.message(GoalFSM.time_hours)
+async def goal_time_hours(message: Message, state: FSMContext):
+    if not _is_number(message.text):
+        await message.answer("Iltimos, raqam yuboring (masalan: 40).")
+        return
+    data = await state.get_data()
+    period = datetime.datetime.now().strftime("%Y-%m")
+    await db.add_goal(message.from_user.id, data["title"], "time",
+                      float(message.text.replace(",", ".")), "soat",
+                      data["category"], period, None)
+    await state.clear()
+    goals = await db.get_goals(message.from_user.id)
+    await message.answer(
+        "✅ Vaqt maqsadi qo'shildi!\n"
+        "<i>Progress vaqt loglaringizdan avtomatik hisoblanadi.</i>",
+        reply_markup=goals_menu_kb(goals), parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("tm:ginc:"))
+async def goal_inc(cb: CallbackQuery):
+    _, _, gid, delta = cb.data.split(":")
+    await db.update_goal_progress(int(gid), float(delta))
+    goal = await db.get_goal(int(gid))
+    await cb.message.edit_text(await _render_goal_detail(goal),
+                               reply_markup=goal_detail_kb(goal), parse_mode="HTML")
+    await cb.answer(f"+{delta} ✅")
+
+
+@router.callback_query(F.data.startswith("tm:gset:"))
+async def goal_set_start(cb: CallbackQuery, state: FSMContext):
+    gid = int(cb.data.split(":")[2])
+    await state.set_state(GoalFSM.set_value)
+    await state.update_data(goal_id=gid)
+    await cb.message.edit_text("✏️ Joriy qiymatni yozing (masalan: 23):", parse_mode="HTML")
+    await cb.answer()
+
+
+@router.message(GoalFSM.set_value)
+async def goal_set_finish(message: Message, state: FSMContext):
+    if not _is_number(message.text):
+        await message.answer("Raqam yuboring.")
+        return
+    data = await state.get_data()
+    await db.set_goal_value(data["goal_id"], float(message.text.replace(",", ".")))
+    await state.clear()
+    goal = await db.get_goal(data["goal_id"])
+    await message.answer(await _render_goal_detail(goal),
+                         reply_markup=goal_detail_kb(goal), parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("tm:gdone:"))
+async def goal_done(cb: CallbackQuery):
+    gid = int(cb.data.split(":")[2])
+    await db.set_goal_status(gid, "done")
+    await db.add_focus_points(cb.from_user.id, 20)
+    goals = await db.get_goals(cb.from_user.id)
+    await cb.message.edit_text(
+        "🎉 <b>Maqsad bajarildi!</b> +20 fokus ball\n\nZo'r natija! 🏆",
+        reply_markup=goals_menu_kb(goals), parse_mode="HTML")
+    await cb.answer("Tabriklaymiz! 🎉")
+
+
+@router.callback_query(F.data.startswith("tm:gdel:"))
+async def goal_del(cb: CallbackQuery):
+    gid = int(cb.data.split(":")[2])
+    await db.delete_goal(gid)
+    goals = await db.get_goals(cb.from_user.id)
+    await cb.message.edit_text("🗑 Maqsad o'chirildi.",
+                               reply_markup=goals_menu_kb(goals), parse_mode="HTML")
+    await cb.answer()
+
+
+@router.callback_query(F.data.startswith("tm:goal:"))
+async def goal_detail(cb: CallbackQuery):
+    gid = int(cb.data.split(":")[2])
+    goal = await db.get_goal(gid)
+    if not goal:
+        await cb.answer("Topilmadi.", show_alert=True)
+        return
+    await cb.message.edit_text(await _render_goal_detail(goal),
+                               reply_markup=goal_detail_kb(goal), parse_mode="HTML")
+    await cb.answer()
+
+
+# ═══════════════ EXCEL EKSPORT (Stage 3) ═══════════════
+@router.callback_query(F.data == "tm:export")
+async def export_excel(cb: CallbackQuery, bot):
+    from aiogram.types import BufferedInputFile
+    from utils.export import build_excel_report
+    await cb.answer("Hisobot tayyorlanmoqda...")
+    data = await build_excel_report(cb.from_user.id)
+    fname = f"samaradorlik_{datetime.datetime.now():%Y%m%d}.xlsx"
+    await bot.send_document(
+        cb.from_user.id, BufferedInputFile(data, fname),
+        caption="📊 <b>Shaxsiy samaradorlik hisoboti</b>\n"
+                "Umumiy · Vaqt loglari (30 kun) · Maqsadlar",
+        parse_mode="HTML")

@@ -10,10 +10,12 @@ def time_menu_kb() -> InlineKeyboardMarkup:
     kb.button(text="🍅 Pomodoro", callback_data="tm:pomo")
     kb.button(text="⏳ Vaqt bloklari", callback_data="tm:blocks")
     kb.button(text="📋 Kunlik reja", callback_data="tm:plan")
+    kb.button(text="🎯 Maqsadlar", callback_data="tm:goals")
     kb.button(text="📊 Statistikam", callback_data="tm:stats")
     kb.button(text="🔥 Streak", callback_data="tm:streak")
+    kb.button(text="📥 Excel hisobot", callback_data="tm:export")
     kb.button(text="⬅️ Bosh menyu", callback_data="go:main")
-    kb.adjust(1, 1, 2, 2, 1)
+    kb.adjust(1, 2, 2, 2, 1, 1)
     return kb.as_markup()
 
 
@@ -78,9 +80,11 @@ PRIORITY_LABEL = {"high": "Yuqori", "medium": "O'rta", "low": "Past"}
 def blocks_menu_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="➕ Blok qo'shish", callback_data="tm:block_add")
+    kb.button(text="📁 Shablonlar", callback_data="tm:templates")
+    kb.button(text="💾 Shablon qilish", callback_data="tm:tpl_save")
     kb.button(text="🔄 Yangilash", callback_data="tm:blocks")
     kb.button(text="⬅️ Orqaga", callback_data="tm:menu")
-    kb.adjust(1, 2)
+    kb.adjust(1, 2, 2)
     return kb.as_markup()
 
 
@@ -106,4 +110,83 @@ def block_action_kb(block_id) -> InlineKeyboardMarkup:
     kb.button(text="✅ Bajardim", callback_data=f"tm:bdone:{block_id}")
     kb.button(text="⏭ O'tkazdim", callback_data=f"tm:bskip:{block_id}")
     kb.adjust(2)
+    return kb.as_markup()
+
+
+# ═══════════════ Shablonlar (Stage 3) ═══════════════
+WEEKDAYS_UZ = ["Du", "Se", "Cho", "Pa", "Ju", "Sha", "Ya"]  # 0..6
+
+
+def templates_menu_kb(templates) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for t in templates:
+        auto = " 🔁" if t["auto_weekdays"] else ""
+        kb.button(text=f"📁 {t['name']}{auto}", callback_data=f"tm:tpl:{t['id']}")
+    kb.button(text="⬅️ Orqaga", callback_data="tm:blocks")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def template_detail_kb(template_id) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="▶️ Bugunga qo'llash", callback_data=f"tm:tpl_apply:{template_id}")
+    kb.button(text="🔁 Avto-kunlar", callback_data=f"tm:tpl_days:{template_id}")
+    kb.button(text="🗑 O'chirish", callback_data=f"tm:tpl_del:{template_id}")
+    kb.button(text="⬅️ Orqaga", callback_data="tm:templates")
+    kb.adjust(1, 2, 1)
+    return kb.as_markup()
+
+
+def weekday_picker_kb(template_id, selected) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for i, name in enumerate(WEEKDAYS_UZ):
+        mark = "✅" if i in selected else "▫️"
+        kb.button(text=f"{mark} {name}", callback_data=f"tm:wd:{i}")
+    kb.button(text="💾 Saqlash", callback_data="tm:wd_save")
+    kb.button(text="❌ Bekor", callback_data=f"tm:tpl:{template_id}")
+    kb.adjust(4, 3, 2)
+    return kb.as_markup()
+
+
+# ═══════════════ Maqsadlar (Stage 3) ═══════════════
+
+def goals_menu_kb(goals) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for g in goals:
+        kb.button(text=f"🎯 {g['title'][:28]}", callback_data=f"tm:goal:{g['id']}")
+    kb.button(text="➕ Yangi maqsad", callback_data="tm:goal_new")
+    kb.button(text="⬅️ Orqaga", callback_data="tm:menu")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def goal_kind_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📊 Sanoq (masalan: 50 ta)", callback_data="tm:gkind:counter")
+    kb.button(text="⏱ Vaqt (masalan: 40 soat)", callback_data="tm:gkind:time")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def goal_category_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for cat in CATEGORIES:
+        kb.button(text=cat, callback_data=f"tm:gcat:{cat}")
+    kb.adjust(2)
+    return kb.as_markup()
+
+
+def goal_detail_kb(goal) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    if goal["kind"] == "counter":
+        kb.button(text="➕1", callback_data=f"tm:ginc:{goal['id']}:1")
+        kb.button(text="➕5", callback_data=f"tm:ginc:{goal['id']}:5")
+        kb.button(text="✏️ Aniq son", callback_data=f"tm:gset:{goal['id']}")
+    kb.button(text="✅ Bajarildi", callback_data=f"tm:gdone:{goal['id']}")
+    kb.button(text="🗑 O'chirish", callback_data=f"tm:gdel:{goal['id']}")
+    kb.button(text="⬅️ Orqaga", callback_data="tm:goals")
+    if goal["kind"] == "counter":
+        kb.adjust(3, 2, 1)
+    else:
+        kb.adjust(2, 1)
     return kb.as_markup()

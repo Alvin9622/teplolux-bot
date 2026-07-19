@@ -322,6 +322,39 @@ async def init_db():
             reminded   INTEGER DEFAULT 0,
             status     TEXT DEFAULT 'planned'
         );
+
+        CREATE TABLE IF NOT EXISTS block_templates (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id       INTEGER NOT NULL,
+            name          TEXT NOT NULL,
+            auto_weekdays TEXT DEFAULT '',
+            created_at    TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS block_template_items (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            template_id INTEGER NOT NULL,
+            title       TEXT NOT NULL,
+            category    TEXT,
+            start_time  TEXT NOT NULL,
+            end_time    TEXT NOT NULL,
+            priority    TEXT DEFAULT 'medium'
+        );
+
+        CREATE TABLE IF NOT EXISTS goals (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id       INTEGER NOT NULL,
+            title         TEXT NOT NULL,
+            kind          TEXT DEFAULT 'counter',
+            target_value  REAL NOT NULL,
+            current_value REAL DEFAULT 0,
+            unit          TEXT DEFAULT '',
+            category      TEXT,
+            period        TEXT,
+            deadline      TEXT,
+            status        TEXT DEFAULT 'active',
+            created_at    TEXT NOT NULL
+        );
         """)
         await db.commit()
 
@@ -1893,3 +1926,187 @@ async def get_last_activity(user_id):
         """, (user_id, user_id, user_id))
         (ts,) = await cur.fetchone()
         return datetime.datetime.fromisoformat(ts) if ts else None
+
+
+# ═══════════════════════════════════════════════════════════════
+#  BLOK SHABLONLARI — Stage 3
+# ═══════════════════════════════════════════════════════════════
+
+async def create_template(user_id, name):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "INSERT INTO block_templates (user_id, name, created_at) VALUES (?,?,?)",
+            (user_id, name, datetime.datetime.now().isoformat()))
+        await conn.commit()
+        return cur.lastrowid
+
+
+async def add_template_item(template_id, title, category, start, end, priority):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute(
+            "INSERT INTO block_template_items "
+            "(template_id, title, category, start_time, end_time, priority) "
+            "VALUES (?,?,?,?,?,?)",
+            (template_id, title, category, start, end, priority))
+        await conn.commit()
+
+
+async def save_blocks_as_template(user_id, name, block_date):
+    blocks = await get_blocks_for_day(user_id, block_date)
+    if not blocks:
+        return None
+    tid = await create_template(user_id, name)
+    for b in blocks:
+        await add_template_item(tid, b["title"], b["category"],
+                                b["start_time"], b["end_time"], b["priority"])
+    return tid
+
+
+async def get_templates(user_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM block_templates WHERE user_id=? ORDER BY id", (user_id,))
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def get_template(template_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute("SELECT * FROM block_templates WHERE id=?", (template_id,))
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+
+async def get_template_items(template_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM block_template_items WHERE template_id=? ORDER BY start_time",
+            (template_id,))
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def apply_template(user_id, template_id, block_date):
+    items = await get_template_items(template_id)
+    created = []
+    for it in items:
+        bid = await add_time_block(user_id, block_date, it["title"],
+                                   it["category"], it["start_time"],
+                                   it["end_time"], it["priority"])
+        created.append(await get_time_block(bid))
+    return created
+
+
+async def set_template_weekdays(template_id, weekdays_str):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute(
+            "UPDATE block_templates SET auto_weekdays=? WHERE id=?",
+            (weekdays_str, template_id))
+        await conn.commit()
+
+
+async def get_auto_templates_for_weekday(weekday):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM block_templates WHERE auto_weekdays != ''")
+        rows = [dict(r) for r in await cur.fetchall()]
+    result = []
+    for r in rows:
+        days = [int(x) for x in r["auto_weekdays"].split(",") if x != ""]
+        if weekday in days:
+            result.append(r)
+    return result
+
+
+async def delete_template(template_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute("DELETE FROM block_template_items WHERE template_id=?", (template_id,))
+        await conn.execute("DELETE FROM block_templates WHERE id=?", (template_id,))
+        await conn.commit()
+
+
+# ═══════════════════════════════════════════════════════════════
+#  MAQSADLAR (GOALS) — Stage 3
+# ═══════════════════════════════════════════════════════════════
+
+async def add_goal(user_id, title, kind, target, unit, category, period, deadline):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "INSERT INTO goals "
+            "(user_id, title, kind, target_value, unit, category, period, deadline, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (user_id, title, kind, target, unit, category, period, deadline,
+             datetime.datetime.now().isoformat()))
+        await conn.commit()
+        return cur.lastrowid
+
+
+async def get_goals(user_id, active_only=True):
+    q = "SELECT * FROM goals WHERE user_id=?"
+    if active_only:
+        q += " AND status='active'"
+    q += " ORDER BY id DESC"
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(q, (user_id,))
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def get_goal(goal_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute("SELECT * FROM goals WHERE id=?", (goal_id,))
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+
+async def update_goal_progress(goal_id, delta):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute(
+            "UPDATE goals SET current_value = MAX(0, current_value + ?) WHERE id=?",
+            (delta, goal_id))
+        await conn.commit()
+
+
+async def set_goal_value(goal_id, value):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute("UPDATE goals SET current_value=? WHERE id=?", (value, goal_id))
+        await conn.commit()
+
+
+async def set_goal_status(goal_id, status):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute("UPDATE goals SET status=? WHERE id=?", (status, goal_id))
+        await conn.commit()
+
+
+async def delete_goal(goal_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute("DELETE FROM goals WHERE id=?", (goal_id,))
+        await conn.commit()
+
+
+async def compute_goal_current(goal):
+    """time-turdagi maqsad uchun joriy qiymatni time_logs'dan hisoblaydi (soat)."""
+    if goal["kind"] != "time":
+        return goal["current_value"]
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT COALESCE(SUM(duration_seconds),0) FROM time_logs "
+            "WHERE user_id=? AND category=? AND log_date LIKE ? "
+            "AND duration_seconds IS NOT NULL",
+            (goal["user_id"], goal["category"], f"{goal['period']}%"))
+        (sec,) = await cur.fetchone()
+    return round(sec / 3600, 1)
+
+
+async def get_time_logs_detail(user_id, since_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT log_date, category, task_name, duration_seconds FROM time_logs "
+            "WHERE user_id=? AND log_date>=? AND duration_seconds IS NOT NULL "
+            "ORDER BY log_date DESC, id DESC", (user_id, since_date))
+        return [dict(r) for r in await cur.fetchall()]

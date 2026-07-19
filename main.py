@@ -7,12 +7,13 @@ from aiogram.types import BotCommand, BotCommandScopeChat
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import BOT_TOKEN, ADMIN_IDS
-from database import init_db, seed_roadmap_tasks, get_all_employee_ids, get_plan_items
+from database import (init_db, seed_roadmap_tasks, get_all_employee_ids, get_plan_items,
+                      get_auto_templates_for_weekday, get_blocks_for_day, apply_template)
 from handlers import admin, employee, common, confirm, group, roadmap, expenses
 from handlers import budget, activity, dashboard, inline as inline_handler, ideas
 from handlers import workplan, kpi, content as content_handler, qr, time_management
 from utils.pomodoro import rehydrate_pomodoros
-from utils.time_blocks import rehydrate_time_blocks
+from utils.time_blocks import rehydrate_time_blocks, schedule_block_reminder, block_start_dt
 from utils.time_stats import build_week_report
 from keyboards.time_kb import time_menu_kb
 from database import get_last_activity
@@ -180,9 +181,34 @@ async def main():
                 except Exception:
                     pass
 
+    # ── Avtomatik shablon qo'llash (ertalab 07:30) ──
+    async def auto_apply_templates():
+        today   = datetime.datetime.now().strftime("%Y-%m-%d")
+        weekday = datetime.datetime.now().weekday()   # 0=Dushanba..6=Yakshanba
+        now     = datetime.datetime.now()
+        for tpl in await get_auto_templates_for_weekday(weekday):
+            uid = tpl["user_id"]
+            if await get_blocks_for_day(uid, today):
+                continue   # bugun allaqachon bloklar bor — tegmaymiz
+            created = await apply_template(uid, tpl["id"], today)
+            for b in created:
+                run_dt = block_start_dt(today, b["start_time"])
+                if run_dt > now:
+                    schedule_block_reminder(scheduler, bot, uid, b["id"], run_dt)
+            if created:
+                try:
+                    await bot.send_message(
+                        uid,
+                        f"📁 «{tpl['name']}» shabloni bo'yicha bugungi "
+                        f"{len(created)} ta blok avtomatik qo'shildi. Xayrli ish! ☀️",
+                        parse_mode="HTML")
+                except Exception:
+                    pass
+
     scheduler.add_job(morning_plan_prompt,  "cron", hour=9,  minute=0)
     scheduler.add_job(evening_plan_review,  "cron", hour=18, minute=0)
     scheduler.add_job(weekly_focus_report,  "cron", day_of_week="fri", hour=18, minute=0)
+    scheduler.add_job(auto_apply_templates, "cron", hour=7, minute=30)
     for hh, mm in [(11, 30), (14, 30), (16, 30)]:
         scheduler.add_job(inactivity_nudge, "cron", hour=hh, minute=mm)
     scheduler.start()
