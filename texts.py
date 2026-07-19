@@ -542,6 +542,8 @@ TEXTS = {
         "content_done":         "✅ Bajarildi deb belgilandi!",
         "content_failed":       "❌ Bajarilmadi deb belgilandi.",
 
+        # Time management
+        "btn_time":     "⏱ Vaqt boshqaruvi",
         # QR code
         "btn_qr":       "🔳 QR kod yasash",
         "qr_ask_input": "🔳 <b>QR kod generatori</b>\n\nHavola yoki matn yuboring — men uni QR kod (PNG) qilib qaytaraman.\n\n<i>Masalan: https://teploluxgroup.uz</i>",
@@ -1103,6 +1105,8 @@ TEXTS = {
         "content_done":         "✅ Отмечено как выполнено!",
         "content_failed":       "❌ Отмечено как не выполнено.",
 
+        # Time management
+        "btn_time":     "⏱ Управление временем",
         # QR code
         "btn_qr":       "🔳 Создать QR-код",
         "qr_ask_input": "🔳 <b>Генератор QR-кода</b>\n\nОтправьте ссылку или текст — я верну его в виде QR-кода (PNG).\n\n<i>Например: https://teploluxgroup.uz</i>",

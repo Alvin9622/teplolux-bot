@@ -266,6 +266,12 @@ async def universal_go(cb: CallbackQuery, state: FSMContext):
         await qr_menu(cb, state)
         return
 
+    if dest == "tm_menu":
+        from handlers.time_management import open_menu
+        await open_menu(cb, state)
+        await cb.answer()
+        return
+
     if dest == "wp_menu":
         from handlers.workplan import wp_menu
         await wp_menu(cb)

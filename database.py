@@ -260,6 +260,55 @@ async def init_db():
             created_at   TEXT,
             updated_at   TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS time_logs (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id          INTEGER NOT NULL,
+            task_name        TEXT NOT NULL,
+            category         TEXT,
+            start_time       TEXT NOT NULL,
+            end_time         TEXT,
+            duration_seconds INTEGER,
+            log_date         TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS daily_plans (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER NOT NULL,
+            plan_date  TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(user_id, plan_date)
+        );
+
+        CREATE TABLE IF NOT EXISTS daily_plan_items (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            plan_id  INTEGER NOT NULL,
+            position INTEGER NOT NULL,
+            text     TEXT NOT NULL,
+            is_done  INTEGER DEFAULT 0,
+            done_at  TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id         INTEGER NOT NULL,
+            task_name       TEXT,
+            start_time      TEXT NOT NULL,
+            ends_at         TEXT NOT NULL,
+            planned_minutes INTEGER DEFAULT 25,
+            status          TEXT DEFAULT 'active',
+            session_date    TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS user_focus_stats (
+            user_id             INTEGER PRIMARY KEY,
+            current_streak      INTEGER DEFAULT 0,
+            longest_streak      INTEGER DEFAULT 0,
+            last_active_date    TEXT,
+            total_focus_minutes INTEGER DEFAULT 0,
+            total_pomodoros     INTEGER DEFAULT 0,
+            focus_points        INTEGER DEFAULT 0
+        );
         """)
         await db.commit()
 
@@ -1461,3 +1510,296 @@ async def get_content_stats(user_id, month, year):
         ) as c:
             by_platform = {r["platform"]: r["cnt"] for r in await c.fetchall()}
     return {"by_status": rows, "by_platform": by_platform}
+
+
+# ═══════════════════════════════════════════════════════════════
+#  TIME MANAGEMENT — vaqt hisobi
+# ═══════════════════════════════════════════════════════════════
+
+async def get_active_time_log(user_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM time_logs WHERE user_id=? AND end_time IS NULL "
+            "ORDER BY id DESC LIMIT 1", (user_id,))
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+
+async def start_time_log(user_id, task, category):
+    now = datetime.datetime.now()
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute(
+            "INSERT INTO time_logs (user_id, task_name, category, start_time, log_date) "
+            "VALUES (?,?,?,?,?)",
+            (user_id, task, category, now.isoformat(), now.strftime("%Y-%m-%d")))
+        await conn.commit()
+
+
+async def stop_time_log(user_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM time_logs WHERE user_id=? AND end_time IS NULL "
+            "ORDER BY id DESC LIMIT 1", (user_id,))
+        row = await cur.fetchone()
+        if not row:
+            return None
+        start = datetime.datetime.fromisoformat(row["start_time"])
+        end   = datetime.datetime.now()
+        dur   = int((end - start).total_seconds())
+        await conn.execute(
+            "UPDATE time_logs SET end_time=?, duration_seconds=? WHERE id=?",
+            (end.isoformat(), dur, row["id"]))
+        await conn.commit()
+        d = dict(row)
+        d["duration_seconds"] = dur
+        d["end_time"] = end.isoformat()
+        return d
+
+
+async def today_total_str(user_id):
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT COALESCE(SUM(duration_seconds),0) FROM time_logs "
+            "WHERE user_id=? AND log_date=? AND duration_seconds IS NOT NULL",
+            (user_id, today))
+        (total,) = await cur.fetchone()
+    m = total // 60
+    h, mm = divmod(m, 60)
+    return f"{h} soat {mm} daq" if h else f"{mm} daq"
+
+
+async def time_by_category_since(user_id, start_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT COALESCE(category,'Boshqa'), COALESCE(SUM(duration_seconds),0) "
+            "FROM time_logs WHERE user_id=? AND log_date>=? "
+            "AND duration_seconds IS NOT NULL GROUP BY category",
+            (user_id, start_date))
+        return await cur.fetchall()
+
+
+# ═══════════════════════════════════════════════════════════════
+#  POMODORO
+# ═══════════════════════════════════════════════════════════════
+
+async def start_pomodoro(user_id, task, minutes, ends_at):
+    now = datetime.datetime.now()
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "INSERT INTO pomodoro_sessions "
+            "(user_id, task_name, start_time, ends_at, planned_minutes, status, session_date) "
+            "VALUES (?,?,?,?,?, 'active', ?)",
+            (user_id, task, now.isoformat(), ends_at.isoformat(),
+             minutes, now.strftime("%Y-%m-%d")))
+        await conn.commit()
+        return cur.lastrowid
+
+
+async def get_active_pomodoro(user_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM pomodoro_sessions WHERE user_id=? AND status='active' "
+            "ORDER BY id DESC LIMIT 1", (user_id,))
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+
+async def get_pomodoro_session(session_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM pomodoro_sessions WHERE id=?", (session_id,))
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+
+async def get_active_pomodoros():
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM pomodoro_sessions WHERE status='active'")
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def complete_pomodoro(session_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM pomodoro_sessions WHERE id=?", (session_id,))
+        s = await cur.fetchone()
+        if not s or s["status"] != "active":
+            return
+        await conn.execute(
+            "UPDATE pomodoro_sessions SET status='completed' WHERE id=?",
+            (session_id,))
+        await conn.execute(
+            "INSERT INTO user_focus_stats "
+            "(user_id, total_focus_minutes, total_pomodoros, focus_points) "
+            "VALUES (?,?,1,10) "
+            "ON CONFLICT(user_id) DO UPDATE SET "
+            "total_focus_minutes = total_focus_minutes + ?, "
+            "total_pomodoros = total_pomodoros + 1, "
+            "focus_points = focus_points + 10",
+            (s["user_id"], s["planned_minutes"], s["planned_minutes"]))
+        await conn.commit()
+    await touch_streak(s["user_id"])
+
+
+async def cancel_pomodoro(session_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute(
+            "UPDATE pomodoro_sessions SET status='cancelled' WHERE id=?",
+            (session_id,))
+        await conn.commit()
+
+
+async def count_today_pomodoros(user_id):
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT COUNT(*) FROM pomodoro_sessions "
+            "WHERE user_id=? AND session_date=? AND status='completed'",
+            (user_id, today))
+        (n,) = await cur.fetchone()
+        return n
+
+
+async def count_pomodoros_since(user_id, start_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT COUNT(*) FROM pomodoro_sessions "
+            "WHERE user_id=? AND session_date>=? AND status='completed'",
+            (user_id, start_date))
+        (n,) = await cur.fetchone()
+        return n
+
+
+# ═══════════════════════════════════════════════════════════════
+#  KUNLIK REJA (DAILY PLAN / MIT)
+# ═══════════════════════════════════════════════════════════════
+
+async def save_daily_plan(user_id, plan_date, items):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT id FROM daily_plans WHERE user_id=? AND plan_date=?",
+            (user_id, plan_date))
+        row = await cur.fetchone()
+        if row:
+            plan_id = row["id"]
+            await conn.execute(
+                "DELETE FROM daily_plan_items WHERE plan_id=?", (plan_id,))
+        else:
+            cur = await conn.execute(
+                "INSERT INTO daily_plans (user_id, plan_date, created_at) "
+                "VALUES (?,?,?)",
+                (user_id, plan_date, datetime.datetime.now().isoformat()))
+            plan_id = cur.lastrowid
+        for pos, text in enumerate(items, start=1):
+            await conn.execute(
+                "INSERT INTO daily_plan_items (plan_id, position, text) "
+                "VALUES (?,?,?)", (plan_id, pos, text))
+        await conn.commit()
+
+
+async def get_plan_items(user_id, plan_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT i.* FROM daily_plan_items i "
+            "JOIN daily_plans p ON p.id=i.plan_id "
+            "WHERE p.user_id=? AND p.plan_date=? ORDER BY i.position",
+            (user_id, plan_date))
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def toggle_plan_item(item_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT is_done FROM daily_plan_items WHERE id=?", (item_id,))
+        row = await cur.fetchone()
+        if not row:
+            return False
+        new_val = 0 if row["is_done"] else 1
+        done_at = datetime.datetime.now().isoformat() if new_val else None
+        await conn.execute(
+            "UPDATE daily_plan_items SET is_done=?, done_at=? WHERE id=?",
+            (new_val, done_at, item_id))
+        await conn.commit()
+        return bool(new_val)
+
+
+async def plan_completion_since(user_id, start_date):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(i.is_done),0) "
+            "FROM daily_plan_items i JOIN daily_plans p ON p.id=i.plan_id "
+            "WHERE p.user_id=? AND p.plan_date>=?", (user_id, start_date))
+        total, done = await cur.fetchone()
+        return round(done / total * 100) if total else 0
+
+
+# ═══════════════════════════════════════════════════════════════
+#  FOKUS STATISTIKA / STREAK
+# ═══════════════════════════════════════════════════════════════
+
+async def get_focus_stats(user_id):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT * FROM user_focus_stats WHERE user_id=?", (user_id,))
+        row = await cur.fetchone()
+        if row:
+            return dict(row)
+        return {"user_id": user_id, "current_streak": 0, "longest_streak": 0,
+                "last_active_date": None, "total_focus_minutes": 0,
+                "total_pomodoros": 0, "focus_points": 0}
+
+
+async def add_focus_points(user_id, points):
+    async with aiosqlite.connect(DB_PATH) as conn:
+        await conn.execute(
+            "INSERT INTO user_focus_stats (user_id, focus_points) VALUES (?,?) "
+            "ON CONFLICT(user_id) DO UPDATE SET focus_points = focus_points + ?",
+            (user_id, points, points))
+        await conn.commit()
+
+
+async def touch_streak(user_id):
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute(
+            "SELECT current_streak, longest_streak, last_active_date "
+            "FROM user_focus_stats WHERE user_id=?", (user_id,))
+        row = await cur.fetchone()
+        if not row:
+            await conn.execute(
+                "INSERT INTO user_focus_stats "
+                "(user_id, current_streak, longest_streak, last_active_date) "
+                "VALUES (?,1,1,?)", (user_id, today))
+            await conn.commit()
+            return
+        last = row["last_active_date"]
+        if last == today:
+            return
+        yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        new_streak = row["current_streak"] + 1 if last == yesterday else 1
+        longest = max(row["longest_streak"], new_streak)
+        await conn.execute(
+            "UPDATE user_focus_stats SET current_streak=?, longest_streak=?, "
+            "last_active_date=? WHERE user_id=?",
+            (new_streak, longest, today, user_id))
+        await conn.commit()
+
+
+async def get_all_employee_ids():
+    """Barcha faol foydalanuvchilarning telegram ID lari (eslatmalar uchun)."""
+    async with aiosqlite.connect(DB_PATH) as conn:
+        cur = await conn.execute("SELECT telegram_id FROM users WHERE is_active=1")
+        return [r[0] for r in await cur.fetchall()]

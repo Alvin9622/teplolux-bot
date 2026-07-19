@@ -7,10 +7,13 @@ from aiogram.types import BotCommand, BotCommandScopeChat
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import BOT_TOKEN, ADMIN_IDS
-from database import init_db, seed_roadmap_tasks
+from database import init_db, seed_roadmap_tasks, get_all_employee_ids, get_plan_items
 from handlers import admin, employee, common, confirm, group, roadmap, expenses
 from handlers import budget, activity, dashboard, inline as inline_handler, ideas
-from handlers import workplan, kpi, content as content_handler, qr
+from handlers import workplan, kpi, content as content_handler, qr, time_management
+from utils.pomodoro import rehydrate_pomodoros
+from utils.time_stats import build_week_report
+from keyboards.time_kb import time_menu_kb
 from utils.reminders import (
     send_reminders, send_daily_digest,
     send_confirm_reminders, send_weekly_report,
@@ -77,6 +80,7 @@ async def main():
     dp.include_router(kpi.router)
     dp.include_router(content_handler.router)
     dp.include_router(qr.router)
+    dp.include_router(time_management.router)
 
     await set_commands(bot)
 
@@ -100,7 +104,59 @@ async def main():
         y   = now.year if now.month > 1 else now.year - 1
         await send_monthly_reports(bot, m, y)
     scheduler.add_job(_monthly_report, "cron", day=1, hour=10, minute=0)
+
+    # ── Vaqt boshqaruvi eslatmalari ──
+    async def morning_plan_prompt():
+        for uid in await get_all_employee_ids():
+            try:
+                await bot.send_message(
+                    uid,
+                    "☀️ <b>Xayrli tong!</b>\n\n"
+                    "Bugungi kuningizni rejalashtiring. "
+                    "Eng muhim 3 ta ishingiz qaysi?\n\n"
+                    "«📋 Kunlik reja» → «➕ Yangi reja tuzish»",
+                    reply_markup=time_menu_kb(), parse_mode="HTML")
+            except Exception:
+                pass
+
+    async def evening_plan_review():
+        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        for uid in await get_all_employee_ids():
+            items = await get_plan_items(uid, today)
+            if not items:
+                continue
+            done = sum(1 for i in items if i["is_done"])
+            tail = ("🎉 Ajoyib kun! Hammasini uddaladingiz."
+                    if done == len(items)
+                    else "Bajarilmaganlarini ertaga rejaga qo'shing.")
+            try:
+                await bot.send_message(
+                    uid,
+                    f"🌙 <b>Kun yakuni</b>\n\n"
+                    f"Bugungi reja: {done}/{len(items)} bajarildi.\n{tail}",
+                    parse_mode="HTML")
+            except Exception:
+                pass
+
+    async def weekly_focus_report():
+        for uid in await get_all_employee_ids():
+            try:
+                text = await build_week_report(uid)
+                await bot.send_message(uid, "📅 <b>Haftalik yakun</b>\n\n" + text,
+                                       parse_mode="HTML")
+            except Exception:
+                pass
+
+    scheduler.add_job(morning_plan_prompt,  "cron", hour=9,  minute=0)
+    scheduler.add_job(evening_plan_review,  "cron", hour=18, minute=0)
+    scheduler.add_job(weekly_focus_report,  "cron", day_of_week="fri", hour=18, minute=0)
     scheduler.start()
+
+    # Faol pomodorolarni tiklash (restartdan keyin)
+    try:
+        await rehydrate_pomodoros(scheduler, bot)
+    except Exception as _pe:
+        logger.warning("Pomodoro rehydrate skipped: %s", _pe)
 
     # Mini App web server
     webapp_runner = None
@@ -113,7 +169,8 @@ async def main():
 
     logger.info("Bot ishga tushdi ✅")
     try:
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types(),
+                               scheduler=scheduler)
     finally:
         scheduler.shutdown()
         if webapp_runner:

@@ -26,7 +26,8 @@ def main_kb(lang, is_admin=False):
                  btn(T(lang, "btn_my_kpi"),      "go:mykpi")])
     rows.append([btn(T(lang, "btn_content"),  "go:content_menu"),
                  btn(T(lang, "btn_ideas"),    "go:ideas")])
-    rows.append([btn(T(lang, "btn_qr"), "go:qr")])
+    rows.append([btn(T(lang, "btn_time"), "go:tm_menu"),
+                 btn(T(lang, "btn_qr"), "go:qr")])
     if WEBAPP_URL:
         rows.append([InlineKeyboardButton(
             text=T(lang, "btn_miniapp"),
